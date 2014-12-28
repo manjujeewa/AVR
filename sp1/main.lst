@@ -1,0 +1,158 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	__vector_7
+  18               	__vector_7:
+  19               	.LFB7:
+  20               	.LM1:
+  21 0000 1F92      		push __zero_reg__
+  22 0002 0F92      		push r0
+  23 0004 0FB6      		in r0,__SREG__
+  24 0006 0F92      		push r0
+  25 0008 1124      		clr __zero_reg__
+  26 000a 8F93      		push r24
+  27 000c 9F93      		push r25
+  28               	/* prologue: Signal */
+  29               	/* frame size = 0 */
+  30               	.LM2:
+  31 000e 8AB5      		in r24,74-32
+  32 0010 9BB5      		in r25,(74)+1-32
+  33 0012 835F      		subi r24,lo8(-(781))
+  34 0014 9C4F      		sbci r25,hi8(-(781))
+  35 0016 9BBD      		out (74)+1-32,r25
+  36 0018 8ABD      		out 74-32,r24
+  37               	.LM3:
+  38 001a 8091 0000 		lds r24,PWM_setting
+  39               	.LM4:
+  40 001e 8091 0000 		lds r24,PWM_setting+1
+  41               	.LM5:
+  42 0022 8091 0000 		lds r24,PWM_setting+2
+  43               	.LM6:
+  44 0026 8091 0000 		lds r24,PWM_setting+3
+  45               	.LM7:
+  46 002a 8091 0000 		lds r24,PWM_setting+4
+  47               	.LM8:
+  48 002e 8091 0000 		lds r24,PWM_setting+5
+  49               	.LM9:
+  50 0032 8091 0000 		lds r24,PWM_setting+6
+  51               	.LM10:
+  52 0036 8091 0000 		lds r24,PWM_setting+7
+  53               	.LM11:
+  54 003a 8091 0000 		lds r24,overflows.1380
+  55 003e 8F5F      		subi r24,lo8(-(1))
+  56 0040 8093 0000 		sts overflows.1380,r24
+  57               	/* epilogue start */
+  58               	.LM12:
+  59 0044 9F91      		pop r25
+  60 0046 8F91      		pop r24
+  61 0048 0F90      		pop r0
+  62 004a 0FBE      		out __SREG__,r0
+  63 004c 0F90      		pop r0
+  64 004e 1F90      		pop __zero_reg__
+  65 0050 1895      		reti
+  66               	.LFE7:
+  68               	.global	main
+  70               	main:
+  71               	.LFB6:
+  72               	.LM13:
+  73 0052 FF92      		push r15
+  74 0054 0F93      		push r16
+  75 0056 DF93      		push r29
+  76 0058 CF93      		push r28
+  77 005a 00D0      		rcall .
+  78 005c CDB7      		in r28,__SP_L__
+  79 005e DEB7      		in r29,__SP_H__
+  80               	/* prologue: function */
+  81               	/* frame size = 2 */
+  82               	.LM14:
+  83 0060 81E0      		ldi r24,lo8(1)
+  84 0062 8EBD      		out 78-32,r24
+  85               	.LM15:
+  86 0064 80E1      		ldi r24,lo8(16)
+  87 0066 89BF      		out 89-32,r24
+  88               	.LM16:
+  89 0068 1ABA      		out 58-32,__zero_reg__
+  90               	.LM17:
+  91               	/* #APP */
+  92               	 ;  29 "main.c" 1
+  93 006a 7894      		sei
+  94               	 ;  0 "" 2
+  95               	/* #NOAPP */
+  96 006c 00E0      		ldi r16,lo8(0)
+  97               	.LVL0:
+  98               	.LM18:
+  99 006e FF24      		clr r15
+ 100 0070 F394      		inc r15
+ 101 0072 00C0      		rjmp .L8
+ 102               	.L5:
+ 103               	.LBB2:
+ 104               	.LM19:
+ 105 0074 802F      		mov r24,r16
+ 106 0076 90E0      		ldi r25,lo8(0)
+ 107 0078 9A83      		std Y+2,r25
+ 108 007a 8983      		std Y+1,r24
+ 109 007c 0E94 0000 		call rand
+ 110 0080 69E1      		ldi r22,lo8(25)
+ 111 0082 70E0      		ldi r23,hi8(25)
+ 112 0084 0E94 0000 		call __divmodhi4
+ 113 0088 9C01      		movw r18,r24
+ 114 008a 2F5F      		subi r18,lo8(-(1))
+ 115 008c 3F4F      		sbci r19,hi8(-(1))
+ 116 008e 4427      		clr r20
+ 117 0090 37FD      		sbrc r19,7
+ 118 0092 4095      		com r20
+ 119 0094 542F      		mov r21,r20
+ 120 0096 6DE0      		ldi r22,lo8(781)
+ 121 0098 73E0      		ldi r23,hi8(781)
+ 122 009a 80E0      		ldi r24,hlo8(781)
+ 123 009c 90E0      		ldi r25,hhi8(781)
+ 124 009e 0E94 0000 		call __udivmodsi4
+ 125 00a2 E981      		ldd r30,Y+1
+ 126 00a4 FA81      		ldd r31,Y+2
+ 127 00a6 E050      		subi r30,lo8(-(PWM_setting))
+ 128 00a8 F040      		sbci r31,hi8(-(PWM_setting))
+ 129 00aa 2083      		st Z,r18
+ 130               	.LM20:
+ 131 00ac 0F5F      		subi r16,lo8(-(1))
+ 132               	.L8:
+ 133 00ae 0830      		cpi r16,lo8(8)
+ 134 00b0 00F0      		brlo .L5
+ 135               	.LBE2:
+ 136               	.LM21:
+ 137 00b2 C89B      		sbis 57-32,0
+ 138 00b4 00C0      		rjmp .L9
+ 139               	.L6:
+ 140               	.LM22:
+ 141 00b6 FABA      		out 58-32,r15
+ 142               	.LM23:
+ 143 00b8 FBBA      		out 59-32,r15
+ 144               	.L9:
+ 145 00ba 00E0      		ldi r16,lo8(0)
+ 146 00bc 00C0      		rjmp .L5
+ 147               	.LFE6:
+ 149               		.lcomm overflows.1380,1
+ 150               		.comm PWM_setting,8,1
+ 183               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Rasika\AppData\Local\Temp/cc6PJpI3.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/cc6PJpI3.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/cc6PJpI3.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/cc6PJpI3.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/cc6PJpI3.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc6PJpI3.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc6PJpI3.s:18     .text:00000000 __vector_7
+                            *COM*:00000008 PWM_setting
+                             .bss:00000000 overflows.1380
+C:\Users\Rasika\AppData\Local\Temp/cc6PJpI3.s:70     .text:00000052 main
+
+UNDEFINED SYMBOLS
+rand
+__divmodhi4
+__udivmodsi4
+__do_clear_bss

@@ -1,0 +1,79 @@
+   1               		.file	"SPI_routines.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	spi_init
+  18               	spi_init:
+  19               	.LFB2:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 82E5      		ldi r24,lo8(82)
+  25 0002 8DB9      		out 45-32,r24
+  26               	.LM3:
+  27 0004 1EB8      		out 46-32,__zero_reg__
+  28               	/* epilogue start */
+  29               	.LM4:
+  30 0006 0895      		ret
+  31               	.LFE2:
+  33               	.global	SPI_transmit
+  35               	SPI_transmit:
+  36               	.LFB3:
+  37               	.LM5:
+  38               	.LVL0:
+  39               	/* prologue: function */
+  40               	/* frame size = 0 */
+  41               	.LM6:
+  42 0008 8FB9      		out 47-32,r24
+  43               	.L4:
+  44               	.LM7:
+  45 000a 779B      		sbis 46-32,7
+  46 000c 00C0      		rjmp .L4
+  47               	.LM8:
+  48 000e 8FB1      		in r24,47-32
+  49               	.LVL1:
+  50               	.LVL2:
+  51               	/* epilogue start */
+  52               	.LM9:
+  53 0010 0895      		ret
+  54               	.LFE3:
+  56               	.global	SPI_receive
+  58               	SPI_receive:
+  59               	.LFB4:
+  60               	.LM10:
+  61               	/* prologue: function */
+  62               	/* frame size = 0 */
+  63               	.LM11:
+  64 0012 8FEF      		ldi r24,lo8(-1)
+  65 0014 8FB9      		out 47-32,r24
+  66               	.L8:
+  67               	.LM12:
+  68 0016 779B      		sbis 46-32,7
+  69 0018 00C0      		rjmp .L8
+  70               	.LM13:
+  71 001a 8FB1      		in r24,47-32
+  72               	.LVL3:
+  73               	.LVL4:
+  74               	/* epilogue start */
+  75               	.LM14:
+  76 001c 0895      		ret
+  77               	.LFE4:
+ 119               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 SPI_routines.c
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:18     .text:00000000 spi_init
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:35     .text:00000008 SPI_transmit
+C:\Users\Rasika\AppData\Local\Temp/ccN3TfJX.s:58     .text:00000012 SPI_receive
+
+NO UNDEFINED SYMBOLS

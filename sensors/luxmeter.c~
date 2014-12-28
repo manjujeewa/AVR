@@ -1,0 +1,74 @@
+//=================================================
+//	Date 	:	2014-11-04
+//	Author 	:	Dushmantha
+//				Shanuka
+//				Nadun
+//	Target	: 	Atmega32
+//=================================================
+
+#include <avr/io.h>
+#include <util/delay.h>
+#include "luxmeter.h"
+
+
+//=================================================
+//		Global variable
+//=================================================
+
+//  This variable defines relavant adc value of lux
+unsigned int amount = 0;
+
+// This variable defines real lux value
+float lux = 0;
+
+//=================================================
+//		Low level function
+//=================================================
+
+// This method configure the ADC0 pin
+void initLuxmeter(void){
+	//upper reference selected to 2.56V and select ADC0 pin as input pin
+	ADMUX = 1 << REFS0 | 1<<REFS1 ;
+	ADCSRA = 1<< ADEN | 1<<ADATE | 1<<ADPS0 | 1<<ADPS1 | 1<<ADPS2; 
+}
+
+// This method read the ADC
+unsigned int readAdc(void){
+	//start conversion
+	ADCSRA |= 1<<ADSC;
+	//wait till conversion is done
+	while(ADCSRA & 1<<ADSC)
+	return ADCL | ADCH<<8;
+
+}
+
+// This method reads the ADC value 10 times and return the avarage
+void getAvgADC(void){
+	unsigned int sum = 0;
+	int a = 0;
+	while(a < 10){
+			sum = readAdc() + sum;
+			_delay_us(50000);
+			a++;	
+		}	
+		amount = sum/10;		
+}
+
+// This method calculate real lux and error using ADC values
+void readLux(void){
+	lux = ((-1.07013 *amount*amount) + (219997 * amount) + 1485000000)/10000000;
+}
+
+
+//=================================================
+//		Public Functions
+//=================================================
+
+// This method return lux value
+int getLux(void){
+	initLuxmeter();
+	readAdc();
+	getAvgADC();
+	readLux();
+	return (int)lux;
+}

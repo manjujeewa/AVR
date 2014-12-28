@@ -1,0 +1,511 @@
+   1               		.file	"twimaster.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	i2c_init
+  12               	i2c_init:
+  13               	.LFB0:
+  14               		.file 1 "twimaster.c"
+   1:twimaster.c   **** /*************************************************************************
+   2:twimaster.c   **** * Title:    I2C master library using hardware TWI interface
+   3:twimaster.c   **** * Author:   Peter Fleury <pfleury@gmx.ch>  http://jump.to/fleury
+   4:twimaster.c   **** * File:     $Id: twimaster.c,v 1.3 2005/07/02 11:14:21 Peter Exp $
+   5:twimaster.c   **** * Software: AVR-GCC 3.4.3 / avr-libc 1.2.3
+   6:twimaster.c   **** * Target:   any AVR device with hardware TWI 
+   7:twimaster.c   **** * Usage:    API compatible with I2C Software Library i2cmaster.h
+   8:twimaster.c   **** **************************************************************************/
+   9:twimaster.c   **** #include <inttypes.h>
+  10:twimaster.c   **** #include <compat/twi.h>
+  11:twimaster.c   **** 
+  12:twimaster.c   **** #include "i2cmaster.h"
+  13:twimaster.c   **** 
+  14:twimaster.c   **** 
+  15:twimaster.c   **** /* define CPU frequency in Mhz here if not defined in Makefile */
+  16:twimaster.c   **** 
+  17:twimaster.c   **** 
+  18:twimaster.c   **** /* I2C clock in Hz */
+  19:twimaster.c   **** #define SCL_CLOCK  10000L
+  20:twimaster.c   **** 
+  21:twimaster.c   **** 
+  22:twimaster.c   **** /*************************************************************************
+  23:twimaster.c   ****  Initialization of the I2C bus interface. Need to be called only once
+  24:twimaster.c   **** *************************************************************************/
+  25:twimaster.c   **** void i2c_init(void)
+  26:twimaster.c   **** {
+  15               		.loc 1 26 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  27:twimaster.c   ****   /* initialize TWI clock: 100 kHz clock, TWPS = 0 => prescaler = 1 */
+  28:twimaster.c   ****   
+  29:twimaster.c   ****   TWSR = 0;                         /* no prescaler */
+  21               		.loc 1 29 0
+  22 0000 11B8      		out 0x1,__zero_reg__
+  30:twimaster.c   ****   TWBR = ((F_CPU/SCL_CLOCK)-16)/2;  /* must be > 10 for stable operation */
+  23               		.loc 1 30 0
+  24 0002 88E1      		ldi r24,lo8(24)
+  25 0004 80B9      		out 0,r24
+  26 0006 0895      		ret
+  27               		.cfi_endproc
+  28               	.LFE0:
+  30               	.global	i2c_start
+  32               	i2c_start:
+  33               	.LFB1:
+  31:twimaster.c   **** 
+  32:twimaster.c   **** }/* i2c_init */
+  33:twimaster.c   **** 
+  34:twimaster.c   **** 
+  35:twimaster.c   **** /*************************************************************************	
+  36:twimaster.c   ****   Issues a start condition and sends address and transfer direction.
+  37:twimaster.c   ****   return 0 = device accessible, 1= failed to access device
+  38:twimaster.c   **** *************************************************************************/
+  39:twimaster.c   **** unsigned char i2c_start(unsigned char address)
+  40:twimaster.c   **** {
+  34               		.loc 1 40 0
+  35               		.cfi_startproc
+  36               	.LVL0:
+  37               	/* prologue: function */
+  38               	/* frame size = 0 */
+  39               	/* stack size = 0 */
+  40               	.L__stack_usage = 0
+  41:twimaster.c   ****     uint8_t   twst;
+  42:twimaster.c   **** 
+  43:twimaster.c   **** 	// send START condition
+  44:twimaster.c   **** 	TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+  41               		.loc 1 44 0
+  42 0008 94EA      		ldi r25,lo8(-92)
+  43 000a 96BF      		out 0x36,r25
+  44               	.L4:
+  45:twimaster.c   **** 
+  46:twimaster.c   **** 	// wait until transmission completed
+  47:twimaster.c   **** 	while(!(TWCR & (1<<TWINT)));
+  45               		.loc 1 47 0 discriminator 1
+  46 000c 06B6      		in __tmp_reg__,0x36
+  47 000e 07FE      		sbrs __tmp_reg__,7
+  48 0010 00C0      		rjmp .L4
+  48:twimaster.c   **** 
+  49:twimaster.c   **** 	// check value of TWI Status Register. Mask prescaler bits.
+  50:twimaster.c   **** 	twst = TW_STATUS & 0xF8;
+  49               		.loc 1 50 0
+  50 0012 91B1      		in r25,0x1
+  51 0014 987F      		andi r25,lo8(-8)
+  52               	.LVL1:
+  51:twimaster.c   **** 	if ( (twst != TW_START) && (twst != TW_REP_START)) return 1;
+  53               		.loc 1 51 0
+  54 0016 9830      		cpi r25,lo8(8)
+  55 0018 01F0      		breq .L5
+  56               		.loc 1 51 0 is_stmt 0 discriminator 1
+  57 001a 9031      		cpi r25,lo8(16)
+  58 001c 01F0      		breq .L5
+  59               	.LVL2:
+  60               	.L9:
+  61               		.loc 1 51 0
+  62 001e 81E0      		ldi r24,lo8(1)
+  63 0020 0895      		ret
+  64               	.LVL3:
+  65               	.L5:
+  52:twimaster.c   **** 
+  53:twimaster.c   **** 	// send device address
+  54:twimaster.c   **** 	TWDR = address;
+  66               		.loc 1 54 0 is_stmt 1
+  67 0022 83B9      		out 0x3,r24
+  55:twimaster.c   **** 	TWCR = (1<<TWINT) | (1<<TWEN);
+  68               		.loc 1 55 0
+  69 0024 84E8      		ldi r24,lo8(-124)
+  70               	.LVL4:
+  71 0026 86BF      		out 0x36,r24
+  72               	.LVL5:
+  73               	.L8:
+  56:twimaster.c   **** 
+  57:twimaster.c   **** 	// wail until transmission completed and ACK/NACK has been received
+  58:twimaster.c   **** 	while(!(TWCR & (1<<TWINT)));
+  74               		.loc 1 58 0 discriminator 1
+  75 0028 06B6      		in __tmp_reg__,0x36
+  76 002a 07FE      		sbrs __tmp_reg__,7
+  77 002c 00C0      		rjmp .L8
+  59:twimaster.c   **** 
+  60:twimaster.c   **** 	// check value of TWI Status Register. Mask prescaler bits.
+  61:twimaster.c   **** 	twst = TW_STATUS & 0xF8;
+  78               		.loc 1 61 0
+  79 002e 81B1      		in r24,0x1
+  80               	.LVL6:
+  81 0030 887F      		andi r24,lo8(-8)
+  82               	.LVL7:
+  62:twimaster.c   **** 	if ( (twst != TW_MT_SLA_ACK) && (twst != TW_MR_SLA_ACK) ) return 1;
+  83               		.loc 1 62 0
+  84 0032 8831      		cpi r24,lo8(24)
+  85 0034 01F0      		breq .L10
+  86               		.loc 1 62 0 is_stmt 0 discriminator 1
+  87 0036 8034      		cpi r24,lo8(64)
+  88 0038 01F4      		brne .L9
+  89               	.L10:
+  63:twimaster.c   **** 
+  64:twimaster.c   **** 	return 0;
+  90               		.loc 1 64 0 is_stmt 1
+  91 003a 80E0      		ldi r24,0
+  92               	.LVL8:
+  65:twimaster.c   **** 
+  66:twimaster.c   **** }/* i2c_start */
+  93               		.loc 1 66 0
+  94 003c 0895      		ret
+  95               		.cfi_endproc
+  96               	.LFE1:
+  98               	.global	i2c_start_wait
+ 100               	i2c_start_wait:
+ 101               	.LFB2:
+  67:twimaster.c   **** 
+  68:twimaster.c   **** 
+  69:twimaster.c   **** /*************************************************************************
+  70:twimaster.c   ****  Issues a start condition and sends address and transfer direction.
+  71:twimaster.c   ****  If device is busy, use ack polling to wait until device is ready
+  72:twimaster.c   ****  
+  73:twimaster.c   ****  Input:   address and transfer direction of I2C device
+  74:twimaster.c   **** *************************************************************************/
+  75:twimaster.c   **** void i2c_start_wait(unsigned char address)
+  76:twimaster.c   **** {
+ 102               		.loc 1 76 0
+ 103               		.cfi_startproc
+ 104               	.LVL9:
+ 105               	/* prologue: function */
+ 106               	/* frame size = 0 */
+ 107               	/* stack size = 0 */
+ 108               	.L__stack_usage = 0
+  77:twimaster.c   ****     uint8_t   twst;
+  78:twimaster.c   **** 
+  79:twimaster.c   **** 
+  80:twimaster.c   ****     while ( 1 )
+  81:twimaster.c   ****     {
+  82:twimaster.c   **** 	    // send START condition
+  83:twimaster.c   **** 	    TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+ 109               		.loc 1 83 0
+ 110 003e 24EA      		ldi r18,lo8(-92)
+  84:twimaster.c   ****     
+  85:twimaster.c   ****     	// wait until transmission completed
+  86:twimaster.c   ****     	while(!(TWCR & (1<<TWINT)));
+  87:twimaster.c   ****     
+  88:twimaster.c   ****     	// check value of TWI Status Register. Mask prescaler bits.
+  89:twimaster.c   ****     	twst = TW_STATUS & 0xF8;
+  90:twimaster.c   ****     	if ( (twst != TW_START) && (twst != TW_REP_START)) continue;
+  91:twimaster.c   ****     
+  92:twimaster.c   ****     	// send device address
+  93:twimaster.c   ****     	TWDR = address;
+  94:twimaster.c   ****     	TWCR = (1<<TWINT) | (1<<TWEN);
+ 111               		.loc 1 94 0
+ 112 0040 34E8      		ldi r19,lo8(-124)
+  95:twimaster.c   ****     
+  96:twimaster.c   ****     	// wail until transmission completed
+  97:twimaster.c   ****     	while(!(TWCR & (1<<TWINT)));
+  98:twimaster.c   ****     
+  99:twimaster.c   ****     	// check value of TWI Status Register. Mask prescaler bits.
+ 100:twimaster.c   ****     	twst = TW_STATUS & 0xF8;
+ 101:twimaster.c   ****     	if ( (twst == TW_MT_SLA_NACK )||(twst ==TW_MR_DATA_NACK) ) 
+ 102:twimaster.c   ****     	{    	    
+ 103:twimaster.c   ****     	    /* device busy, send stop condition to terminate write operation */
+ 104:twimaster.c   **** 	        TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
+ 113               		.loc 1 104 0
+ 114 0042 44E9      		ldi r20,lo8(-108)
+ 115               	.L20:
+  83:twimaster.c   **** 	    TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+ 116               		.loc 1 83 0
+ 117 0044 26BF      		out 0x36,r18
+ 118               	.L19:
+  86:twimaster.c   ****     	while(!(TWCR & (1<<TWINT)));
+ 119               		.loc 1 86 0 discriminator 1
+ 120 0046 06B6      		in __tmp_reg__,0x36
+ 121 0048 07FE      		sbrs __tmp_reg__,7
+ 122 004a 00C0      		rjmp .L19
+  89:twimaster.c   ****     	twst = TW_STATUS & 0xF8;
+ 123               		.loc 1 89 0
+ 124 004c 91B1      		in r25,0x1
+ 125 004e 987F      		andi r25,lo8(-8)
+ 126               	.LVL10:
+  90:twimaster.c   ****     	if ( (twst != TW_START) && (twst != TW_REP_START)) continue;
+ 127               		.loc 1 90 0
+ 128 0050 9830      		cpi r25,lo8(8)
+ 129 0052 01F0      		breq .L22
+  90:twimaster.c   ****     	if ( (twst != TW_START) && (twst != TW_REP_START)) continue;
+ 130               		.loc 1 90 0 is_stmt 0 discriminator 1
+ 131 0054 9031      		cpi r25,lo8(16)
+ 132 0056 01F4      		brne .L20
+ 133               	.L22:
+  93:twimaster.c   ****     	TWDR = address;
+ 134               		.loc 1 93 0 is_stmt 1
+ 135 0058 83B9      		out 0x3,r24
+  94:twimaster.c   ****     	TWCR = (1<<TWINT) | (1<<TWEN);
+ 136               		.loc 1 94 0
+ 137 005a 36BF      		out 0x36,r19
+ 138               	.L25:
+  97:twimaster.c   ****     	while(!(TWCR & (1<<TWINT)));
+ 139               		.loc 1 97 0 discriminator 1
+ 140 005c 06B6      		in __tmp_reg__,0x36
+ 141 005e 07FE      		sbrs __tmp_reg__,7
+ 142 0060 00C0      		rjmp .L25
+ 100:twimaster.c   ****     	twst = TW_STATUS & 0xF8;
+ 143               		.loc 1 100 0
+ 144 0062 91B1      		in r25,0x1
+ 145               	.LVL11:
+ 146 0064 987F      		andi r25,lo8(-8)
+ 147               	.LVL12:
+ 101:twimaster.c   ****     	if ( (twst == TW_MT_SLA_NACK )||(twst ==TW_MR_DATA_NACK) ) 
+ 148               		.loc 1 101 0
+ 149 0066 9032      		cpi r25,lo8(32)
+ 150 0068 01F0      		breq .L26
+ 101:twimaster.c   ****     	if ( (twst == TW_MT_SLA_NACK )||(twst ==TW_MR_DATA_NACK) ) 
+ 151               		.loc 1 101 0 is_stmt 0 discriminator 1
+ 152 006a 9835      		cpi r25,lo8(88)
+ 153 006c 01F4      		brne .L18
+ 154               	.L26:
+ 155               		.loc 1 104 0 is_stmt 1
+ 156 006e 46BF      		out 0x36,r20
+ 157               	.L28:
+ 105:twimaster.c   **** 	        
+ 106:twimaster.c   **** 	        // wait until stop condition is executed and bus released
+ 107:twimaster.c   **** 	        while(TWCR & (1<<TWSTO));
+ 158               		.loc 1 107 0 discriminator 1
+ 159 0070 06B6      		in __tmp_reg__,0x36
+ 160 0072 04FC      		sbrc __tmp_reg__,4
+ 161 0074 00C0      		rjmp .L28
+ 162 0076 00C0      		rjmp .L20
+ 163               	.L18:
+ 164 0078 0895      		ret
+ 165               		.cfi_endproc
+ 166               	.LFE2:
+ 168               	.global	i2c_rep_start
+ 170               	i2c_rep_start:
+ 171               	.LFB3:
+ 108:twimaster.c   **** 	        
+ 109:twimaster.c   ****     	    continue;
+ 110:twimaster.c   ****     	}
+ 111:twimaster.c   ****     	//if( twst != TW_MT_SLA_ACK) return 1;
+ 112:twimaster.c   ****     	break;
+ 113:twimaster.c   ****      }
+ 114:twimaster.c   **** 
+ 115:twimaster.c   **** }/* i2c_start_wait */
+ 116:twimaster.c   **** 
+ 117:twimaster.c   **** 
+ 118:twimaster.c   **** /*************************************************************************
+ 119:twimaster.c   ****  Issues a repeated start condition and sends address and transfer direction 
+ 120:twimaster.c   **** 
+ 121:twimaster.c   ****  Input:   address and transfer direction of I2C device
+ 122:twimaster.c   ****  
+ 123:twimaster.c   ****  Return:  0 device accessible
+ 124:twimaster.c   ****           1 failed to access device
+ 125:twimaster.c   **** *************************************************************************/
+ 126:twimaster.c   **** unsigned char i2c_rep_start(unsigned char address)
+ 127:twimaster.c   **** {
+ 172               		.loc 1 127 0
+ 173               		.cfi_startproc
+ 174               	.LVL13:
+ 175               	/* prologue: function */
+ 176               	/* frame size = 0 */
+ 177               	/* stack size = 0 */
+ 178               	.L__stack_usage = 0
+ 128:twimaster.c   ****     return i2c_start( address );
+ 179               		.loc 1 128 0
+ 180 007a 0C94 0000 		jmp i2c_start
+ 181               	.LVL14:
+ 182               		.cfi_endproc
+ 183               	.LFE3:
+ 185               	.global	i2c_stop
+ 187               	i2c_stop:
+ 188               	.LFB4:
+ 129:twimaster.c   **** 
+ 130:twimaster.c   **** }/* i2c_rep_start */
+ 131:twimaster.c   **** 
+ 132:twimaster.c   **** 
+ 133:twimaster.c   **** /*************************************************************************
+ 134:twimaster.c   ****  Terminates the data transfer and releases the I2C bus
+ 135:twimaster.c   **** *************************************************************************/
+ 136:twimaster.c   **** void i2c_stop(void)
+ 137:twimaster.c   **** {
+ 189               		.loc 1 137 0
+ 190               		.cfi_startproc
+ 191               	/* prologue: function */
+ 192               	/* frame size = 0 */
+ 193               	/* stack size = 0 */
+ 194               	.L__stack_usage = 0
+ 138:twimaster.c   ****     /* send stop condition */
+ 139:twimaster.c   **** 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
+ 195               		.loc 1 139 0
+ 196 007e 84E9      		ldi r24,lo8(-108)
+ 197 0080 86BF      		out 0x36,r24
+ 198               	.L41:
+ 140:twimaster.c   **** 	
+ 141:twimaster.c   **** 	// wait until stop condition is executed and bus released
+ 142:twimaster.c   **** 	while(TWCR & (1<<TWSTO));
+ 199               		.loc 1 142 0 discriminator 1
+ 200 0082 06B6      		in __tmp_reg__,0x36
+ 201 0084 04FC      		sbrc __tmp_reg__,4
+ 202 0086 00C0      		rjmp .L41
+ 203               	/* epilogue start */
+ 143:twimaster.c   **** 
+ 144:twimaster.c   **** }/* i2c_stop */
+ 204               		.loc 1 144 0
+ 205 0088 0895      		ret
+ 206               		.cfi_endproc
+ 207               	.LFE4:
+ 209               	.global	i2c_write
+ 211               	i2c_write:
+ 212               	.LFB5:
+ 145:twimaster.c   **** 
+ 146:twimaster.c   **** 
+ 147:twimaster.c   **** /*************************************************************************
+ 148:twimaster.c   ****   Send one byte to I2C device
+ 149:twimaster.c   ****   
+ 150:twimaster.c   ****   Input:    byte to be transfered
+ 151:twimaster.c   ****   Return:   0 write successful 
+ 152:twimaster.c   ****             1 write failed
+ 153:twimaster.c   **** *************************************************************************/
+ 154:twimaster.c   **** unsigned char i2c_write( unsigned char data )
+ 155:twimaster.c   **** {	
+ 213               		.loc 1 155 0
+ 214               		.cfi_startproc
+ 215               	.LVL15:
+ 216               	/* prologue: function */
+ 217               	/* frame size = 0 */
+ 218               	/* stack size = 0 */
+ 219               	.L__stack_usage = 0
+ 156:twimaster.c   ****     uint8_t   twst;
+ 157:twimaster.c   ****     
+ 158:twimaster.c   **** 	// send data to the previously addressed device
+ 159:twimaster.c   **** 	TWDR = data;
+ 220               		.loc 1 159 0
+ 221 008a 83B9      		out 0x3,r24
+ 160:twimaster.c   **** 	TWCR = (1<<TWINT) | (1<<TWEN);
+ 222               		.loc 1 160 0
+ 223 008c 84E8      		ldi r24,lo8(-124)
+ 224               	.LVL16:
+ 225 008e 86BF      		out 0x36,r24
+ 226               	.LVL17:
+ 227               	.L44:
+ 161:twimaster.c   **** 
+ 162:twimaster.c   **** 	// wait until transmission completed
+ 163:twimaster.c   **** 	while(!(TWCR & (1<<TWINT)));
+ 228               		.loc 1 163 0 discriminator 1
+ 229 0090 06B6      		in __tmp_reg__,0x36
+ 230 0092 07FE      		sbrs __tmp_reg__,7
+ 231 0094 00C0      		rjmp .L44
+ 164:twimaster.c   **** 
+ 165:twimaster.c   **** 	// check value of TWI Status Register. Mask prescaler bits
+ 166:twimaster.c   **** 	twst = TW_STATUS & 0xF8;
+ 232               		.loc 1 166 0
+ 233 0096 91B1      		in r25,0x1
+ 234               	.LVL18:
+ 235 0098 987F      		andi r25,lo8(-8)
+ 236               	.LVL19:
+ 167:twimaster.c   **** 	if( twst != TW_MT_DATA_ACK) return 1;
+ 237               		.loc 1 167 0
+ 238 009a 81E0      		ldi r24,lo8(1)
+ 239 009c 9832      		cpi r25,lo8(40)
+ 240 009e 01F4      		brne .L45
+ 241 00a0 80E0      		ldi r24,0
+ 242               	.L45:
+ 168:twimaster.c   **** 	return 0;
+ 169:twimaster.c   **** 
+ 170:twimaster.c   **** }/* i2c_write */
+ 243               		.loc 1 170 0
+ 244 00a2 0895      		ret
+ 245               		.cfi_endproc
+ 246               	.LFE5:
+ 248               	.global	i2c_readAck
+ 250               	i2c_readAck:
+ 251               	.LFB6:
+ 171:twimaster.c   **** 
+ 172:twimaster.c   **** 
+ 173:twimaster.c   **** /*************************************************************************
+ 174:twimaster.c   ****  Read one byte from the I2C device, request more data from device 
+ 175:twimaster.c   ****  
+ 176:twimaster.c   ****  Return:  byte read from I2C device
+ 177:twimaster.c   **** *************************************************************************/
+ 178:twimaster.c   **** unsigned char i2c_readAck(void)
+ 179:twimaster.c   **** {
+ 252               		.loc 1 179 0
+ 253               		.cfi_startproc
+ 254               	/* prologue: function */
+ 255               	/* frame size = 0 */
+ 256               	/* stack size = 0 */
+ 257               	.L__stack_usage = 0
+ 180:twimaster.c   **** 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
+ 258               		.loc 1 180 0
+ 259 00a4 84EC      		ldi r24,lo8(-60)
+ 260 00a6 86BF      		out 0x36,r24
+ 261               	.L48:
+ 181:twimaster.c   **** 	while(!(TWCR & (1<<TWINT)));    
+ 262               		.loc 1 181 0 discriminator 1
+ 263 00a8 06B6      		in __tmp_reg__,0x36
+ 264 00aa 07FE      		sbrs __tmp_reg__,7
+ 265 00ac 00C0      		rjmp .L48
+ 182:twimaster.c   **** 
+ 183:twimaster.c   ****     return TWDR;
+ 266               		.loc 1 183 0
+ 267 00ae 83B1      		in r24,0x3
+ 184:twimaster.c   **** 
+ 185:twimaster.c   **** }/* i2c_readAck */
+ 268               		.loc 1 185 0
+ 269 00b0 0895      		ret
+ 270               		.cfi_endproc
+ 271               	.LFE6:
+ 273               	.global	i2c_readNak
+ 275               	i2c_readNak:
+ 276               	.LFB7:
+ 186:twimaster.c   **** 
+ 187:twimaster.c   **** 
+ 188:twimaster.c   **** /*************************************************************************
+ 189:twimaster.c   ****  Read one byte from the I2C device, read is followed by a stop condition 
+ 190:twimaster.c   ****  
+ 191:twimaster.c   ****  Return:  byte read from I2C device
+ 192:twimaster.c   **** *************************************************************************/
+ 193:twimaster.c   **** unsigned char i2c_readNak(void)
+ 194:twimaster.c   **** {
+ 277               		.loc 1 194 0
+ 278               		.cfi_startproc
+ 279               	/* prologue: function */
+ 280               	/* frame size = 0 */
+ 281               	/* stack size = 0 */
+ 282               	.L__stack_usage = 0
+ 195:twimaster.c   **** 	TWCR = (1<<TWINT) | (1<<TWEN);
+ 283               		.loc 1 195 0
+ 284 00b2 84E8      		ldi r24,lo8(-124)
+ 285 00b4 86BF      		out 0x36,r24
+ 286               	.L51:
+ 196:twimaster.c   **** 	while(!(TWCR & (1<<TWINT)));
+ 287               		.loc 1 196 0 discriminator 1
+ 288 00b6 06B6      		in __tmp_reg__,0x36
+ 289 00b8 07FE      		sbrs __tmp_reg__,7
+ 290 00ba 00C0      		rjmp .L51
+ 197:twimaster.c   **** 	
+ 198:twimaster.c   ****     return TWDR;
+ 291               		.loc 1 198 0
+ 292 00bc 83B1      		in r24,0x3
+ 199:twimaster.c   **** 
+ 200:twimaster.c   **** }/* i2c_readNak */
+ 293               		.loc 1 200 0
+ 294 00be 0895      		ret
+ 295               		.cfi_endproc
+ 296               	.LFE7:
+ 298               	.Letext0:
+ 299               		.file 2 "/usr/lib/avr/include/stdint.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 twimaster.c
+     /tmp/cc8iOsS2.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/cc8iOsS2.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/cc8iOsS2.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/cc8iOsS2.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/cc8iOsS2.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/cc8iOsS2.s:12     .text:0000000000000000 i2c_init
+     /tmp/cc8iOsS2.s:32     .text:0000000000000008 i2c_start
+     /tmp/cc8iOsS2.s:100    .text:000000000000003e i2c_start_wait
+     /tmp/cc8iOsS2.s:170    .text:000000000000007a i2c_rep_start
+     /tmp/cc8iOsS2.s:187    .text:000000000000007e i2c_stop
+     /tmp/cc8iOsS2.s:211    .text:000000000000008a i2c_write
+     /tmp/cc8iOsS2.s:250    .text:00000000000000a4 i2c_readAck
+     /tmp/cc8iOsS2.s:275    .text:00000000000000b2 i2c_readNak
+
+NO UNDEFINED SYMBOLS

@@ -1,0 +1,242 @@
+   1               		.file	"adc.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	adc_init
+  18               	adc_init:
+  19               	.LFB2:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 80E4      		ldi r24,lo8(64)
+  25 0002 87B9      		out 39-32,r24
+  26               	.LM3:
+  27 0004 85E8      		ldi r24,lo8(-123)
+  28 0006 86B9      		out 38-32,r24
+  29               	/* epilogue start */
+  30               	.LM4:
+  31 0008 0895      		ret
+  32               	.LFE2:
+  34               	.global	adc_read
+  36               	adc_read:
+  37               	.LFB3:
+  38               	.LM5:
+  39               	.LVL0:
+  40               	/* prologue: function */
+  41               	/* frame size = 0 */
+  42               	.LM6:
+  43 000a 97B1      		in r25,39-32
+  44 000c 8770      		andi r24,lo8(7)
+  45               	.LVL1:
+  46 000e 987F      		andi r25,lo8(-8)
+  47 0010 892B      		or r24,r25
+  48 0012 87B9      		out 39-32,r24
+  49               	.LM7:
+  50 0014 369A      		sbi 38-32,6
+  51               	.L4:
+  52               	.LM8:
+  53 0016 3699      		sbic 38-32,6
+  54 0018 00C0      		rjmp .L4
+  55               	.LM9:
+  56 001a 24B1      		in r18,36-32
+  57 001c 35B1      		in r19,(36)+1-32
+  58               	.LM10:
+  59 001e C901      		movw r24,r18
+  60               	/* epilogue start */
+  61 0020 0895      		ret
+  62               	.LFE3:
+  64               	.global	get_cs1_voltage
+  66               	get_cs1_voltage:
+  67               	.LFB4:
+  68               	.LM11:
+  69               	/* prologue: function */
+  70               	/* frame size = 0 */
+  71               	.LM12:
+  72 0022 86E0      		ldi r24,lo8(6)
+  73 0024 0E94 0000 		call adc_read
+  74 0028 A0E0      		ldi r26,lo8(0)
+  75 002a B0E0      		ldi r27,hi8(0)
+  76               	.LVL2:
+  77 002c BC01      		movw r22,r24
+  78 002e CD01      		movw r24,r26
+  79               	.LVL3:
+  80 0030 0E94 0000 		call __floatunsisf
+  81               	.LVL4:
+  82 0034 20E0      		ldi r18,lo8(0x40a00000)
+  83 0036 30E0      		ldi r19,hi8(0x40a00000)
+  84 0038 40EA      		ldi r20,hlo8(0x40a00000)
+  85 003a 50E4      		ldi r21,hhi8(0x40a00000)
+  86 003c 0E94 0000 		call __mulsf3
+  87 0040 20E0      		ldi r18,lo8(0x3a800000)
+  88 0042 30E0      		ldi r19,hi8(0x3a800000)
+  89 0044 40E8      		ldi r20,hlo8(0x3a800000)
+  90 0046 5AE3      		ldi r21,hhi8(0x3a800000)
+  91 0048 0E94 0000 		call __mulsf3
+  92               	/* epilogue start */
+  93               	.LM13:
+  94 004c 0895      		ret
+  95               	.LFE4:
+  97               	.global	get_cs2_voltage
+  99               	get_cs2_voltage:
+ 100               	.LFB5:
+ 101               	.LM14:
+ 102               	/* prologue: function */
+ 103               	/* frame size = 0 */
+ 104               	.LM15:
+ 105 004e 86E0      		ldi r24,lo8(6)
+ 106 0050 0E94 0000 		call adc_read
+ 107 0054 A0E0      		ldi r26,lo8(0)
+ 108 0056 B0E0      		ldi r27,hi8(0)
+ 109               	.LVL5:
+ 110 0058 BC01      		movw r22,r24
+ 111 005a CD01      		movw r24,r26
+ 112               	.LVL6:
+ 113 005c 0E94 0000 		call __floatunsisf
+ 114               	.LVL7:
+ 115 0060 20E0      		ldi r18,lo8(0x40a00000)
+ 116 0062 30E0      		ldi r19,hi8(0x40a00000)
+ 117 0064 40EA      		ldi r20,hlo8(0x40a00000)
+ 118 0066 50E4      		ldi r21,hhi8(0x40a00000)
+ 119 0068 0E94 0000 		call __mulsf3
+ 120 006c 20E0      		ldi r18,lo8(0x3a800000)
+ 121 006e 30E0      		ldi r19,hi8(0x3a800000)
+ 122 0070 40E8      		ldi r20,hlo8(0x3a800000)
+ 123 0072 5AE3      		ldi r21,hhi8(0x3a800000)
+ 124 0074 0E94 0000 		call __mulsf3
+ 125               	/* epilogue start */
+ 126               	.LM16:
+ 127 0078 0895      		ret
+ 128               	.LFE5:
+ 130               	.global	get_supply_voltage
+ 132               	get_supply_voltage:
+ 133               	.LFB6:
+ 134               	.LM17:
+ 135               	/* prologue: function */
+ 136               	/* frame size = 0 */
+ 137               	.LM18:
+ 138 007a 85E0      		ldi r24,lo8(5)
+ 139 007c 0E94 0000 		call adc_read
+ 140 0080 A0E0      		ldi r26,lo8(0)
+ 141 0082 B0E0      		ldi r27,hi8(0)
+ 142               	.LVL8:
+ 143 0084 BC01      		movw r22,r24
+ 144 0086 CD01      		movw r24,r26
+ 145               	.LVL9:
+ 146 0088 0E94 0000 		call __floatunsisf
+ 147               	.LVL10:
+ 148 008c 20E0      		ldi r18,lo8(0x40a00000)
+ 149 008e 30E0      		ldi r19,hi8(0x40a00000)
+ 150 0090 40EA      		ldi r20,hlo8(0x40a00000)
+ 151 0092 50E4      		ldi r21,hhi8(0x40a00000)
+ 152 0094 0E94 0000 		call __mulsf3
+ 153 0098 20E0      		ldi r18,lo8(0x41a00000)
+ 154 009a 30E0      		ldi r19,hi8(0x41a00000)
+ 155 009c 40EA      		ldi r20,hlo8(0x41a00000)
+ 156 009e 51E4      		ldi r21,hhi8(0x41a00000)
+ 157 00a0 0E94 0000 		call __mulsf3
+ 158 00a4 20E0      		ldi r18,lo8(0x3a800000)
+ 159 00a6 30E0      		ldi r19,hi8(0x3a800000)
+ 160 00a8 40E8      		ldi r20,hlo8(0x3a800000)
+ 161 00aa 5AE3      		ldi r21,hhi8(0x3a800000)
+ 162 00ac 0E94 0000 		call __mulsf3
+ 163               	/* epilogue start */
+ 164               	.LM19:
+ 165 00b0 0895      		ret
+ 166               	.LFE6:
+ 168               	.global	get_batry_voltage
+ 170               	get_batry_voltage:
+ 171               	.LFB7:
+ 172               	.LM20:
+ 173               	/* prologue: function */
+ 174               	/* frame size = 0 */
+ 175               	.LM21:
+ 176 00b2 84E0      		ldi r24,lo8(4)
+ 177 00b4 0E94 0000 		call adc_read
+ 178 00b8 A0E0      		ldi r26,lo8(0)
+ 179 00ba B0E0      		ldi r27,hi8(0)
+ 180               	.LVL11:
+ 181 00bc BC01      		movw r22,r24
+ 182 00be CD01      		movw r24,r26
+ 183               	.LVL12:
+ 184 00c0 0E94 0000 		call __floatunsisf
+ 185               	.LVL13:
+ 186 00c4 20E0      		ldi r18,lo8(0x40a00000)
+ 187 00c6 30E0      		ldi r19,hi8(0x40a00000)
+ 188 00c8 40EA      		ldi r20,hlo8(0x40a00000)
+ 189 00ca 50E4      		ldi r21,hhi8(0x40a00000)
+ 190 00cc 0E94 0000 		call __mulsf3
+ 191 00d0 21EE      		ldi r18,lo8(0x40447ae1)
+ 192 00d2 3AE7      		ldi r19,hi8(0x40447ae1)
+ 193 00d4 44E4      		ldi r20,hlo8(0x40447ae1)
+ 194 00d6 50E4      		ldi r21,hhi8(0x40447ae1)
+ 195 00d8 0E94 0000 		call __mulsf3
+ 196 00dc 20E0      		ldi r18,lo8(0x3a800000)
+ 197 00de 30E0      		ldi r19,hi8(0x3a800000)
+ 198 00e0 40E8      		ldi r20,hlo8(0x3a800000)
+ 199 00e2 5AE3      		ldi r21,hhi8(0x3a800000)
+ 200 00e4 0E94 0000 		call __mulsf3
+ 201               	/* epilogue start */
+ 202               	.LM22:
+ 203 00e8 0895      		ret
+ 204               	.LFE7:
+ 206               	.global	get_internal_voltage
+ 208               	get_internal_voltage:
+ 209               	.LFB8:
+ 210               	.LM23:
+ 211               	/* prologue: function */
+ 212               	/* frame size = 0 */
+ 213               	.LM24:
+ 214 00ea 83E0      		ldi r24,lo8(3)
+ 215 00ec 0E94 0000 		call adc_read
+ 216 00f0 A0E0      		ldi r26,lo8(0)
+ 217 00f2 B0E0      		ldi r27,hi8(0)
+ 218               	.LVL14:
+ 219 00f4 BC01      		movw r22,r24
+ 220 00f6 CD01      		movw r24,r26
+ 221               	.LVL15:
+ 222 00f8 0E94 0000 		call __floatunsisf
+ 223               	.LVL16:
+ 224 00fc 20E0      		ldi r18,lo8(0x40a00000)
+ 225 00fe 30E0      		ldi r19,hi8(0x40a00000)
+ 226 0100 40EA      		ldi r20,hlo8(0x40a00000)
+ 227 0102 50E4      		ldi r21,hhi8(0x40a00000)
+ 228 0104 0E94 0000 		call __mulsf3
+ 229 0108 20E0      		ldi r18,lo8(0x40400000)
+ 230 010a 30E0      		ldi r19,hi8(0x40400000)
+ 231 010c 40E4      		ldi r20,hlo8(0x40400000)
+ 232 010e 50E4      		ldi r21,hhi8(0x40400000)
+ 233 0110 0E94 0000 		call __mulsf3
+ 234 0114 20E0      		ldi r18,lo8(0x3a800000)
+ 235 0116 30E0      		ldi r19,hi8(0x3a800000)
+ 236 0118 40E8      		ldi r20,hlo8(0x3a800000)
+ 237 011a 5AE3      		ldi r21,hhi8(0x3a800000)
+ 238 011c 0E94 0000 		call __mulsf3
+ 239               	/* epilogue start */
+ 240               	.LM25:
+ 241 0120 0895      		ret
+ 242               	.LFE8:
+ 316               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 adc.c
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:18     .text:00000000 adc_init
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:36     .text:0000000a adc_read
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:66     .text:00000022 get_cs1_voltage
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:99     .text:0000004e get_cs2_voltage
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:132    .text:0000007a get_supply_voltage
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:170    .text:000000b2 get_batry_voltage
+C:\Users\Rasika\AppData\Local\Temp/ccLejWvv.s:208    .text:000000ea get_internal_voltage
+
+UNDEFINED SYMBOLS
+__floatunsisf
+__mulsf3

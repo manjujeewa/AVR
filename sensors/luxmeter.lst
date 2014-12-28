@@ -1,0 +1,288 @@
+   1               		.file	"luxmeter.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	initLuxmeter
+  18               	initLuxmeter:
+  19               	.LFB6:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 80EC      		ldi r24,lo8(-64)
+  25 0002 87B9      		out 39-32,r24
+  26               	.LM3:
+  27 0004 87EA      		ldi r24,lo8(-89)
+  28 0006 86B9      		out 38-32,r24
+  29               	/* epilogue start */
+  30               	.LM4:
+  31 0008 0895      		ret
+  32               	.LFE6:
+  34               	.global	readAdc
+  36               	readAdc:
+  37               	.LFB7:
+  38               	.LM5:
+  39               	/* prologue: function */
+  40               	/* frame size = 0 */
+  41               	.LM6:
+  42 000a 369A      		sbi 38-32,6
+  43               	.LM7:
+  44 000c 369B      		sbis 38-32,6
+  45 000e 00C0      		rjmp .L6
+  46               	.LM8:
+  47 0010 24B1      		in r18,36-32
+  48 0012 45B1      		in r20,37-32
+  49 0014 942F      		mov r25,r20
+  50 0016 80E0      		ldi r24,lo8(0)
+  51 0018 30E0      		ldi r19,lo8(0)
+  52 001a 282B      		or r18,r24
+  53 001c 392B      		or r19,r25
+  54               	.LM9:
+  55 001e C901      		movw r24,r18
+  56 0020 0895      		ret
+  57               	.L6:
+  58 0022 0895      		ret
+  59               	.LFE7:
+  61               	.global	getAvgADC
+  63               	getAvgADC:
+  64               	.LFB8:
+  65               	.LM10:
+  66 0024 EF92      		push r14
+  67 0026 FF92      		push r15
+  68 0028 0F93      		push r16
+  69 002a 1F93      		push r17
+  70 002c CF93      		push r28
+  71 002e DF93      		push r29
+  72               	/* prologue: function */
+  73               	/* frame size = 0 */
+  74               	.LM11:
+  75 0030 00E0      		ldi r16,lo8(0)
+  76 0032 10E0      		ldi r17,hi8(0)
+  77               	.LVL0:
+  78 0034 C0E0      		ldi r28,lo8(0)
+  79 0036 D0E0      		ldi r29,hi8(0)
+  80               	.LVL1:
+  81               	.LBB26:
+  82               	.LBB27:
+  83               	.LBB28:
+  84               	.LBB29:
+  85               	.LBB30:
+  86               	.LBB31:
+  87               	.LM12:
+  88 0038 80E9      		ldi r24,lo8(400)
+  89 003a E82E      		mov r14,r24
+  90 003c 81E0      		ldi r24,hi8(400)
+  91 003e F82E      		mov r15,r24
+  92               	.LVL2:
+  93               	.L9:
+  94               	.LBE31:
+  95               	.LBE30:
+  96               	.LBE29:
+  97               	.LBE28:
+  98               	.LBE27:
+  99               	.LBE26:
+ 100               	.LM13:
+ 101 0040 0E94 0000 		call readAdc
+ 102               	.LVL3:
+ 103 0044 080F      		add r16,r24
+ 104 0046 191F      		adc r17,r25
+ 105 0048 84EF      		ldi r24,lo8(500)
+ 106 004a 91E0      		ldi r25,hi8(500)
+ 107               	.LVL4:
+ 108               	.L8:
+ 109               	.LBB37:
+ 110               	.LBB36:
+ 111               	.LBB35:
+ 112               	.LBB34:
+ 113               	.LBB33:
+ 114               	.LBB32:
+ 115               	.LM14:
+ 116 004c F701      		movw r30,r14
+ 117               	.LVL5:
+ 118               	/* #APP */
+ 119               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 120 004e 3197      		1: sbiw r30,1
+ 121 0050 01F4      		brne 1b
+ 122               	 ;  0 "" 2
+ 123               	/* #NOAPP */
+ 124               	.LBE32:
+ 125               	.LBE33:
+ 126               	.LM15:
+ 127 0052 0197      		sbiw r24,1
+ 128               	.LM16:
+ 129 0054 01F4      		brne .L8
+ 130               	.LBE34:
+ 131               	.LBE35:
+ 132               	.LBE36:
+ 133               	.LBE37:
+ 134               	.LM17:
+ 135 0056 2196      		adiw r28,1
+ 136               	.LM18:
+ 137 0058 CA30      		cpi r28,10
+ 138 005a D105      		cpc r29,__zero_reg__
+ 139 005c 01F4      		brne .L9
+ 140               	.LM19:
+ 141 005e C801      		movw r24,r16
+ 142               	.LVL6:
+ 143 0060 6AE0      		ldi r22,lo8(10)
+ 144 0062 70E0      		ldi r23,hi8(10)
+ 145 0064 0E94 0000 		call __udivmodhi4
+ 146 0068 7093 0000 		sts (amount)+1,r23
+ 147 006c 6093 0000 		sts amount,r22
+ 148               	/* epilogue start */
+ 149               	.LM20:
+ 150 0070 DF91      		pop r29
+ 151 0072 CF91      		pop r28
+ 152               	.LVL7:
+ 153 0074 1F91      		pop r17
+ 154 0076 0F91      		pop r16
+ 155               	.LVL8:
+ 156 0078 FF90      		pop r15
+ 157 007a EF90      		pop r14
+ 158 007c 0895      		ret
+ 159               	.LFE8:
+ 161               	.global	readLux
+ 163               	readLux:
+ 164               	.LFB9:
+ 165               	.LM21:
+ 166 007e AF92      		push r10
+ 167 0080 BF92      		push r11
+ 168 0082 CF92      		push r12
+ 169 0084 DF92      		push r13
+ 170 0086 EF92      		push r14
+ 171 0088 FF92      		push r15
+ 172 008a 0F93      		push r16
+ 173 008c 1F93      		push r17
+ 174               	/* prologue: function */
+ 175               	/* frame size = 0 */
+ 176               	.LM22:
+ 177 008e E090 0000 		lds r14,amount
+ 178 0092 F090 0000 		lds r15,(amount)+1
+ 179 0096 00E0      		ldi r16,lo8(0)
+ 180 0098 10E0      		ldi r17,hi8(0)
+ 181 009a C801      		movw r24,r16
+ 182 009c B701      		movw r22,r14
+ 183 009e 0E94 0000 		call __floatunsisf
+ 184 00a2 5B01      		movw r10,r22
+ 185 00a4 6C01      		movw r12,r24
+ 186 00a6 25E0      		ldi r18,lo8(0xbf88fa05)
+ 187 00a8 3AEF      		ldi r19,hi8(0xbf88fa05)
+ 188 00aa 48E8      		ldi r20,hlo8(0xbf88fa05)
+ 189 00ac 5FEB      		ldi r21,hhi8(0xbf88fa05)
+ 190 00ae 0E94 0000 		call __mulsf3
+ 191 00b2 A601      		movw r20,r12
+ 192 00b4 9501      		movw r18,r10
+ 193 00b6 0E94 0000 		call __mulsf3
+ 194 00ba 5B01      		movw r10,r22
+ 195 00bc 6C01      		movw r12,r24
+ 196 00be C801      		movw r24,r16
+ 197 00c0 B701      		movw r22,r14
+ 198 00c2 2DE5      		ldi r18,lo8(219997)
+ 199 00c4 3BE5      		ldi r19,hi8(219997)
+ 200 00c6 43E0      		ldi r20,hlo8(219997)
+ 201 00c8 50E0      		ldi r21,hhi8(219997)
+ 202 00ca 0E94 0000 		call __mulsi3
+ 203 00ce 0E94 0000 		call __floatsisf
+ 204 00d2 9B01      		movw r18,r22
+ 205 00d4 AC01      		movw r20,r24
+ 206 00d6 C601      		movw r24,r12
+ 207 00d8 B501      		movw r22,r10
+ 208 00da 0E94 0000 		call __addsf3
+ 209 00de 2AE9      		ldi r18,lo8(0x4eb1069a)
+ 210 00e0 36E0      		ldi r19,hi8(0x4eb1069a)
+ 211 00e2 41EB      		ldi r20,hlo8(0x4eb1069a)
+ 212 00e4 5EE4      		ldi r21,hhi8(0x4eb1069a)
+ 213 00e6 0E94 0000 		call __addsf3
+ 214 00ea 20E8      		ldi r18,lo8(0x4b189680)
+ 215 00ec 36E9      		ldi r19,hi8(0x4b189680)
+ 216 00ee 48E1      		ldi r20,hlo8(0x4b189680)
+ 217 00f0 5BE4      		ldi r21,hhi8(0x4b189680)
+ 218 00f2 0E94 0000 		call __divsf3
+ 219 00f6 6093 0000 		sts lux,r22
+ 220 00fa 7093 0000 		sts (lux)+1,r23
+ 221 00fe 8093 0000 		sts (lux)+2,r24
+ 222 0102 9093 0000 		sts (lux)+3,r25
+ 223               	/* epilogue start */
+ 224               	.LM23:
+ 225 0106 1F91      		pop r17
+ 226 0108 0F91      		pop r16
+ 227 010a FF90      		pop r15
+ 228 010c EF90      		pop r14
+ 229 010e DF90      		pop r13
+ 230 0110 CF90      		pop r12
+ 231 0112 BF90      		pop r11
+ 232 0114 AF90      		pop r10
+ 233 0116 0895      		ret
+ 234               	.LFE9:
+ 236               	.global	getLux
+ 238               	getLux:
+ 239               	.LFB10:
+ 240               	.LM24:
+ 241               	/* prologue: function */
+ 242               	/* frame size = 0 */
+ 243               	.LBB38:
+ 244               	.LBB39:
+ 245               	.LM25:
+ 246 0118 80EC      		ldi r24,lo8(-64)
+ 247 011a 87B9      		out 39-32,r24
+ 248               	.LM26:
+ 249 011c 87EA      		ldi r24,lo8(-89)
+ 250 011e 86B9      		out 38-32,r24
+ 251               	.LBE39:
+ 252               	.LBE38:
+ 253               	.LM27:
+ 254 0120 0E94 0000 		call readAdc
+ 255               	.LM28:
+ 256 0124 0E94 0000 		call getAvgADC
+ 257               	.LM29:
+ 258 0128 0E94 0000 		call readLux
+ 259 012c 6091 0000 		lds r22,lux
+ 260 0130 7091 0000 		lds r23,(lux)+1
+ 261 0134 8091 0000 		lds r24,(lux)+2
+ 262 0138 9091 0000 		lds r25,(lux)+3
+ 263 013c 0E94 0000 		call __fixsfsi
+ 264               	.LM30:
+ 265 0140 CB01      		movw r24,r22
+ 266               	/* epilogue start */
+ 267 0142 0895      		ret
+ 268               	.LFE10:
+ 270               	.global	amount
+ 271               	.global	amount
+ 272               		.section .bss
+ 275               	amount:
+ 276 0000 0000      		.skip 2,0
+ 277               	.global	lux
+ 278               	.global	lux
+ 281               	lux:
+ 282 0002 0000 0000 		.skip 4,0
+ 339               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 luxmeter.c
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:18     .text:00000000 initLuxmeter
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:36     .text:0000000a readAdc
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:63     .text:00000024 getAvgADC
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:275    .bss:00000000 amount
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:163    .text:0000007e readLux
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:281    .bss:00000002 lux
+C:\Users\Rasika\AppData\Local\Temp/ccQ9d8Fv.s:238    .text:00000118 getLux
+
+UNDEFINED SYMBOLS
+__udivmodhi4
+__floatunsisf
+__mulsf3
+__mulsi3
+__floatsisf
+__addsf3
+__divsf3
+__fixsfsi
+__do_clear_bss

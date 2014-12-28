@@ -1,0 +1,1065 @@
+   1               		.file	"system.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	pwm_init
+  18               	pwm_init:
+  19               	.LFB7:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 83B7      		in r24,83-32
+  25 0002 8A66      		ori r24,lo8(106)
+  26 0004 83BF      		out 83-32,r24
+  27               	.LM3:
+  28 0006 8EEF      		ldi r24,lo8(-2)
+  29 0008 8CBF      		out 92-32,r24
+  30               	.LM4:
+  31 000a BB9A      		sbi 55-32,3
+  32               	/* epilogue start */
+  33               	.LM5:
+  34 000c 0895      		ret
+  35               	.LFE7:
+  37               	.global	system_init
+  39               	system_init:
+  40               	.LFB8:
+  41               	.LM6:
+  42               	/* prologue: function */
+  43               	/* frame size = 0 */
+  44               	.LM7:
+  45 000e 80E3      		ldi r24,lo8(48)
+  46 0010 81BB      		out 49-32,r24
+  47               	.LM8:
+  48 0012 80E1      		ldi r24,lo8(16)
+  49 0014 82BB      		out 50-32,r24
+  50               	.LM9:
+  51 0016 81E0      		ldi r24,lo8(1)
+  52 0018 8ABB      		out 58-32,r24
+  53               	.LM10:
+  54 001a 8BBB      		out 59-32,r24
+  55               	.LM11:
+  56 001c 82E0      		ldi r24,lo8(2)
+  57 001e 87BB      		out 55-32,r24
+  58               	.LM12:
+  59 0020 88BB      		out 56-32,r24
+  60               	.LM13:
+  61 0022 8FE0      		ldi r24,lo8(15)
+  62 0024 85BF      		out 85-32,r24
+  63               	.LM14:
+  64 0026 80EC      		ldi r24,lo8(-64)
+  65 0028 8BBF      		out 91-32,r24
+  66               	/* epilogue start */
+  67               	.LM15:
+  68 002a 0895      		ret
+  69               	.LFE8:
+  71               	.global	green_on
+  73               	green_on:
+  74               	.LFB9:
+  75               	.LM16:
+  76               	/* prologue: function */
+  77               	/* frame size = 0 */
+  78               	.LM17:
+  79 002c 81E0      		ldi r24,lo8(1)
+  80 002e 8BBB      		out 59-32,r24
+  81               	/* epilogue start */
+  82               	.LM18:
+  83 0030 0895      		ret
+  84               	.LFE9:
+  86               	.global	green_off
+  88               	green_off:
+  89               	.LFB10:
+  90               	.LM19:
+  91               	/* prologue: function */
+  92               	/* frame size = 0 */
+  93               	.LM20:
+  94 0032 1BBA      		out 59-32,__zero_reg__
+  95               	/* epilogue start */
+  96               	.LM21:
+  97 0034 0895      		ret
+  98               	.LFE10:
+ 100               	.global	red_on
+ 102               	red_on:
+ 103               	.LFB11:
+ 104               	.LM22:
+ 105               	/* prologue: function */
+ 106               	/* frame size = 0 */
+ 107               	.LM23:
+ 108 0036 82E0      		ldi r24,lo8(2)
+ 109 0038 88BB      		out 56-32,r24
+ 110               	/* epilogue start */
+ 111               	.LM24:
+ 112 003a 0895      		ret
+ 113               	.LFE11:
+ 115               	.global	red_off
+ 117               	red_off:
+ 118               	.LFB12:
+ 119               	.LM25:
+ 120               	/* prologue: function */
+ 121               	/* frame size = 0 */
+ 122               	.LM26:
+ 123 003c 18BA      		out 56-32,__zero_reg__
+ 124               	/* epilogue start */
+ 125               	.LM27:
+ 126 003e 0895      		ret
+ 127               	.LFE12:
+ 129               	.global	sys_battery_on
+ 131               	sys_battery_on:
+ 132               	.LFB13:
+ 133               	.LM28:
+ 134               	/* prologue: function */
+ 135               	/* frame size = 0 */
+ 136               	.LM29:
+ 137 0040 82B3      		in r24,50-32
+ 138 0042 82BB      		out 50-32,r24
+ 139               	/* epilogue start */
+ 140               	.LM30:
+ 141 0044 0895      		ret
+ 142               	.LFE13:
+ 144               	.global	sys_battery_off
+ 146               	sys_battery_off:
+ 147               	.LFB14:
+ 148               	.LM31:
+ 149               	/* prologue: function */
+ 150               	/* frame size = 0 */
+ 151               	.LM32:
+ 152 0046 959A      		sbi 50-32,5
+ 153               	/* epilogue start */
+ 154               	.LM33:
+ 155 0048 0895      		ret
+ 156               	.LFE14:
+ 158               	.global	external_battery_on
+ 160               	external_battery_on:
+ 161               	.LFB15:
+ 162               	.LM34:
+ 163               	/* prologue: function */
+ 164               	/* frame size = 0 */
+ 165               	.LM35:
+ 166 004a 959A      		sbi 50-32,5
+ 167               	/* epilogue start */
+ 168               	.LM36:
+ 169 004c 0895      		ret
+ 170               	.LFE15:
+ 172               	.global	external_battery_off
+ 174               	external_battery_off:
+ 175               	.LFB16:
+ 176               	.LM37:
+ 177               	/* prologue: function */
+ 178               	/* frame size = 0 */
+ 179               	.LM38:
+ 180 004e 82B3      		in r24,50-32
+ 181 0050 8F6D      		ori r24,lo8(-33)
+ 182 0052 82BB      		out 50-32,r24
+ 183               	/* epilogue start */
+ 184               	.LM39:
+ 185 0054 0895      		ret
+ 186               	.LFE16:
+ 188               	.global	parasite_mode_on
+ 190               	parasite_mode_on:
+ 191               	.LFB17:
+ 192               	.LM40:
+ 193               	/* prologue: function */
+ 194               	/* frame size = 0 */
+ 195               	/* epilogue start */
+ 196               	.LM41:
+ 197 0056 0895      		ret
+ 198               	.LFE17:
+ 200               	.global	display_int
+ 202               	display_int:
+ 203               	.LFB26:
+ 204               	.LM42:
+ 205               	.LVL0:
+ 206 0058 0F93      		push r16
+ 207 005a 1F93      		push r17
+ 208 005c DF93      		push r29
+ 209 005e CF93      		push r28
+ 210 0060 CDB7      		in r28,__SP_L__
+ 211 0062 DEB7      		in r29,__SP_H__
+ 212 0064 2A97      		sbiw r28,10
+ 213 0066 0FB6      		in __tmp_reg__,__SREG__
+ 214 0068 F894      		cli
+ 215 006a DEBF      		out __SP_H__,r29
+ 216 006c 0FBE      		out __SREG__,__tmp_reg__
+ 217 006e CDBF      		out __SP_L__,r28
+ 218               	/* prologue: function */
+ 219               	/* frame size = 10 */
+ 220               	.LM43:
+ 221 0070 0E94 0000 		call __fixsfsi
+ 222               	.LVL1:
+ 223 0074 DC01      		movw r26,r24
+ 224 0076 CB01      		movw r24,r22
+ 225 0078 8E01      		movw r16,r28
+ 226 007a 0F5F      		subi r16,lo8(-(1))
+ 227 007c 1F4F      		sbci r17,hi8(-(1))
+ 228 007e B801      		movw r22,r16
+ 229 0080 4AE0      		ldi r20,lo8(10)
+ 230 0082 50E0      		ldi r21,hi8(10)
+ 231 0084 0E94 0000 		call itoa
+ 232               	.LM44:
+ 233 0088 C801      		movw r24,r16
+ 234 008a 0E94 0000 		call lcd_puts
+ 235               	/* epilogue start */
+ 236               	.LM45:
+ 237 008e 2A96      		adiw r28,10
+ 238 0090 0FB6      		in __tmp_reg__,__SREG__
+ 239 0092 F894      		cli
+ 240 0094 DEBF      		out __SP_H__,r29
+ 241 0096 0FBE      		out __SREG__,__tmp_reg__
+ 242 0098 CDBF      		out __SP_L__,r28
+ 243 009a CF91      		pop r28
+ 244 009c DF91      		pop r29
+ 245 009e 1F91      		pop r17
+ 246 00a0 0F91      		pop r16
+ 247 00a2 0895      		ret
+ 248               	.LFE26:
+ 250               	.global	display_double
+ 252               	display_double:
+ 253               	.LFB25:
+ 254               	.LM46:
+ 255               	.LVL2:
+ 256 00a4 EF92      		push r14
+ 257 00a6 FF92      		push r15
+ 258 00a8 0F93      		push r16
+ 259 00aa 1F93      		push r17
+ 260 00ac DF93      		push r29
+ 261 00ae CF93      		push r28
+ 262 00b0 CDB7      		in r28,__SP_L__
+ 263 00b2 DEB7      		in r29,__SP_H__
+ 264 00b4 2A97      		sbiw r28,10
+ 265 00b6 0FB6      		in __tmp_reg__,__SREG__
+ 266 00b8 F894      		cli
+ 267 00ba DEBF      		out __SP_H__,r29
+ 268 00bc 0FBE      		out __SREG__,__tmp_reg__
+ 269 00be CDBF      		out __SP_L__,r28
+ 270               	/* prologue: function */
+ 271               	/* frame size = 10 */
+ 272               	.LM47:
+ 273 00c0 44E0      		ldi r20,lo8(4)
+ 274 00c2 22E0      		ldi r18,lo8(2)
+ 275 00c4 7E01      		movw r14,r28
+ 276 00c6 0894      		sec
+ 277 00c8 E11C      		adc r14,__zero_reg__
+ 278 00ca F11C      		adc r15,__zero_reg__
+ 279 00cc 8701      		movw r16,r14
+ 280 00ce 0E94 0000 		call dtostrf
+ 281               	.LVL3:
+ 282               	.LM48:
+ 283 00d2 C701      		movw r24,r14
+ 284 00d4 0E94 0000 		call lcd_puts
+ 285               	/* epilogue start */
+ 286               	.LM49:
+ 287 00d8 2A96      		adiw r28,10
+ 288 00da 0FB6      		in __tmp_reg__,__SREG__
+ 289 00dc F894      		cli
+ 290 00de DEBF      		out __SP_H__,r29
+ 291 00e0 0FBE      		out __SREG__,__tmp_reg__
+ 292 00e2 CDBF      		out __SP_L__,r28
+ 293 00e4 CF91      		pop r28
+ 294 00e6 DF91      		pop r29
+ 295 00e8 1F91      		pop r17
+ 296 00ea 0F91      		pop r16
+ 297 00ec FF90      		pop r15
+ 298 00ee EF90      		pop r14
+ 299 00f0 0895      		ret
+ 300               	.LFE25:
+ 302               	.global	display_Output_voltage
+ 304               	display_Output_voltage:
+ 305               	.LFB24:
+ 306               	.LM50:
+ 307 00f2 EF92      		push r14
+ 308 00f4 FF92      		push r15
+ 309 00f6 0F93      		push r16
+ 310 00f8 1F93      		push r17
+ 311 00fa DF93      		push r29
+ 312 00fc CF93      		push r28
+ 313 00fe CDB7      		in r28,__SP_L__
+ 314 0100 DEB7      		in r29,__SP_H__
+ 315 0102 2A97      		sbiw r28,10
+ 316 0104 0FB6      		in __tmp_reg__,__SREG__
+ 317 0106 F894      		cli
+ 318 0108 DEBF      		out __SP_H__,r29
+ 319 010a 0FBE      		out __SREG__,__tmp_reg__
+ 320 010c CDBF      		out __SP_L__,r28
+ 321               	/* prologue: function */
+ 322               	/* frame size = 10 */
+ 323               	.LM51:
+ 324 010e 0E94 0000 		call lcd_clrscr
+ 325               	.LM52:
+ 326 0112 0E94 0000 		call get_batry_voltage
+ 327               	.LM53:
+ 328 0116 44E0      		ldi r20,lo8(4)
+ 329 0118 22E0      		ldi r18,lo8(2)
+ 330 011a 7E01      		movw r14,r28
+ 331 011c 0894      		sec
+ 332 011e E11C      		adc r14,__zero_reg__
+ 333 0120 F11C      		adc r15,__zero_reg__
+ 334 0122 8701      		movw r16,r14
+ 335 0124 0E94 0000 		call dtostrf
+ 336               	.LM54:
+ 337 0128 C701      		movw r24,r14
+ 338 012a 0E94 0000 		call lcd_puts
+ 339               	/* epilogue start */
+ 340               	.LM55:
+ 341 012e 2A96      		adiw r28,10
+ 342 0130 0FB6      		in __tmp_reg__,__SREG__
+ 343 0132 F894      		cli
+ 344 0134 DEBF      		out __SP_H__,r29
+ 345 0136 0FBE      		out __SREG__,__tmp_reg__
+ 346 0138 CDBF      		out __SP_L__,r28
+ 347 013a CF91      		pop r28
+ 348 013c DF91      		pop r29
+ 349 013e 1F91      		pop r17
+ 350 0140 0F91      		pop r16
+ 351 0142 FF90      		pop r15
+ 352 0144 EF90      		pop r14
+ 353 0146 0895      		ret
+ 354               	.LFE24:
+ 356               	.global	regulate_output
+ 358               	regulate_output:
+ 359               	.LFB18:
+ 360               	.LM56:
+ 361               	.LVL4:
+ 362 0148 EF92      		push r14
+ 363 014a FF92      		push r15
+ 364 014c 0F93      		push r16
+ 365 014e 1F93      		push r17
+ 366 0150 CF93      		push r28
+ 367 0152 DF93      		push r29
+ 368               	/* prologue: function */
+ 369               	/* frame size = 0 */
+ 370 0154 7B01      		movw r14,r22
+ 371 0156 8C01      		movw r16,r24
+ 372               	.LM57:
+ 373 0158 0E94 0000 		call get_batry_voltage
+ 374               	.LVL5:
+ 375 015c 6093 0000 		sts volt_now,r22
+ 376 0160 7093 0000 		sts (volt_now)+1,r23
+ 377 0164 8093 0000 		sts (volt_now)+2,r24
+ 378 0168 9093 0000 		sts (volt_now)+3,r25
+ 379               	.LM58:
+ 380 016c 8FEF      		ldi r24,lo8(-1)
+ 381 016e 8CBF      		out 92-32,r24
+ 382               	.LBB30:
+ 383               	.LBB31:
+ 384               	.LBB32:
+ 385               	.LBB33:
+ 386               	.LM59:
+ 387 0170 C0E9      		ldi r28,lo8(400)
+ 388 0172 D1E0      		ldi r29,hi8(400)
+ 389               	.LVL6:
+ 390               	.L35:
+ 391               	.LBE33:
+ 392               	.LBE32:
+ 393               	.LBE31:
+ 394               	.LBE30:
+ 395               	.LM60:
+ 396 0174 6091 0000 		lds r22,volt_now
+ 397 0178 7091 0000 		lds r23,(volt_now)+1
+ 398 017c 8091 0000 		lds r24,(volt_now)+2
+ 399 0180 9091 0000 		lds r25,(volt_now)+3
+ 400 0184 A801      		movw r20,r16
+ 401 0186 9701      		movw r18,r14
+ 402 0188 0E94 0000 		call __gtsf2
+ 403               	.LVL7:
+ 404 018c 1816      		cp __zero_reg__,r24
+ 405 018e 04F4      		brge .L30
+ 406               	.LM61:
+ 407 0190 8CB7      		in r24,92-32
+ 408 0192 8F5F      		subi r24,lo8(-(1))
+ 409 0194 8CBF      		out 92-32,r24
+ 410               	.LM62:
+ 411 0196 0E94 0000 		call get_batry_voltage
+ 412 019a 6093 0000 		sts volt_now,r22
+ 413 019e 7093 0000 		sts (volt_now)+1,r23
+ 414 01a2 8093 0000 		sts (volt_now)+2,r24
+ 415 01a6 9093 0000 		sts (volt_now)+3,r25
+ 416               	.L30:
+ 417               	.LM63:
+ 418 01aa 6091 0000 		lds r22,volt_now
+ 419 01ae 7091 0000 		lds r23,(volt_now)+1
+ 420 01b2 8091 0000 		lds r24,(volt_now)+2
+ 421 01b6 9091 0000 		lds r25,(volt_now)+3
+ 422 01ba A801      		movw r20,r16
+ 423 01bc 9701      		movw r18,r14
+ 424 01be 0E94 0000 		call __ltsf2
+ 425 01c2 8823      		tst r24
+ 426 01c4 04F4      		brge .L32
+ 427               	.LM64:
+ 428 01c6 8CB7      		in r24,92-32
+ 429 01c8 8150      		subi r24,lo8(-(-1))
+ 430 01ca 8CBF      		out 92-32,r24
+ 431               	.LM65:
+ 432 01cc 0E94 0000 		call get_batry_voltage
+ 433 01d0 6093 0000 		sts volt_now,r22
+ 434 01d4 7093 0000 		sts (volt_now)+1,r23
+ 435 01d8 8093 0000 		sts (volt_now)+2,r24
+ 436 01dc 9093 0000 		sts (volt_now)+3,r25
+ 437               	.L32:
+ 438 01e0 88EE      		ldi r24,lo8(1000)
+ 439 01e2 93E0      		ldi r25,hi8(1000)
+ 440               	.LVL8:
+ 441               	.L34:
+ 442               	.LBB37:
+ 443               	.LBB36:
+ 444               	.LBB35:
+ 445               	.LBB34:
+ 446               	.LM66:
+ 447 01e4 FE01      		movw r30,r28
+ 448               	/* #APP */
+ 449               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 450 01e6 3197      		1: sbiw r30,1
+ 451 01e8 01F4      		brne 1b
+ 452               	 ;  0 "" 2
+ 453               	/* #NOAPP */
+ 454               	.LBE34:
+ 455               	.LBE35:
+ 456               	.LM67:
+ 457 01ea 0197      		sbiw r24,1
+ 458               	.LM68:
+ 459 01ec 01F4      		brne .+2
+ 460 01ee 00C0      		rjmp .L35
+ 461 01f0 00C0      		rjmp .L34
+ 462               	.LBE36:
+ 463               	.LBE37:
+ 464               	.LFE18:
+ 466               	.global	get_input_power
+ 468               	get_input_power:
+ 469               	.LFB23:
+ 470               	.LM69:
+ 471 01f2 AF92      		push r10
+ 472 01f4 BF92      		push r11
+ 473 01f6 CF92      		push r12
+ 474 01f8 DF92      		push r13
+ 475 01fa EF92      		push r14
+ 476 01fc FF92      		push r15
+ 477 01fe 0F93      		push r16
+ 478 0200 1F93      		push r17
+ 479               	/* prologue: function */
+ 480               	/* frame size = 0 */
+ 481               	.LM70:
+ 482 0202 0E94 0000 		call get_supply_voltage
+ 483 0206 5B01      		movw r10,r22
+ 484 0208 6C01      		movw r12,r24
+ 485               	.LVL9:
+ 486               	.LM71:
+ 487 020a 0E94 0000 		call get_cs2_voltage
+ 488 020e 6093 0000 		sts cS2_voltage,r22
+ 489 0212 7093 0000 		sts (cS2_voltage)+1,r23
+ 490 0216 8093 0000 		sts (cS2_voltage)+2,r24
+ 491 021a 9093 0000 		sts (cS2_voltage)+3,r25
+ 492               	.LM72:
+ 493 021e 20E0      		ldi r18,lo8(0x40a00000)
+ 494 0220 30E0      		ldi r19,hi8(0x40a00000)
+ 495 0222 40EA      		ldi r20,hlo8(0x40a00000)
+ 496 0224 50E4      		ldi r21,hhi8(0x40a00000)
+ 497 0226 0E94 0000 		call acs712_getcurrent
+ 498 022a 7B01      		movw r14,r22
+ 499 022c 8C01      		movw r16,r24
+ 500               	.LVL10:
+ 501               	.LM73:
+ 502 022e 20E0      		ldi r18,lo8(0x0)
+ 503 0230 30E0      		ldi r19,hi8(0x0)
+ 504 0232 40E0      		ldi r20,hlo8(0x0)
+ 505 0234 50E0      		ldi r21,hhi8(0x0)
+ 506 0236 0E94 0000 		call __ltsf2
+ 507 023a 8823      		tst r24
+ 508 023c 04F4      		brge .L41
+ 509 023e 17FB      		bst r17,7
+ 510 0240 1095      		com r17
+ 511 0242 17F9      		bld r17,7
+ 512 0244 1095      		com r17
+ 513               	.L41:
+ 514 0246 C601      		movw r24,r12
+ 515 0248 B501      		movw r22,r10
+ 516 024a A801      		movw r20,r16
+ 517 024c 9701      		movw r18,r14
+ 518 024e 0E94 0000 		call __mulsf3
+ 519               	/* epilogue start */
+ 520               	.LM74:
+ 521 0252 1F91      		pop r17
+ 522 0254 0F91      		pop r16
+ 523 0256 FF90      		pop r15
+ 524 0258 EF90      		pop r14
+ 525               	.LVL11:
+ 526 025a DF90      		pop r13
+ 527 025c CF90      		pop r12
+ 528 025e BF90      		pop r11
+ 529 0260 AF90      		pop r10
+ 530               	.LVL12:
+ 531 0262 0895      		ret
+ 532               	.LFE23:
+ 534               	.global	get_output_power
+ 536               	get_output_power:
+ 537               	.LFB22:
+ 538               	.LM75:
+ 539 0264 EF92      		push r14
+ 540 0266 FF92      		push r15
+ 541 0268 0F93      		push r16
+ 542 026a 1F93      		push r17
+ 543               	/* prologue: function */
+ 544               	/* frame size = 0 */
+ 545               	.LM76:
+ 546 026c 0E94 0000 		call get_batry_voltage
+ 547 0270 6093 0000 		sts volt_now,r22
+ 548 0274 7093 0000 		sts (volt_now)+1,r23
+ 549 0278 8093 0000 		sts (volt_now)+2,r24
+ 550 027c 9093 0000 		sts (volt_now)+3,r25
+ 551               	.LM77:
+ 552 0280 0E94 0000 		call get_cs1_voltage
+ 553 0284 6093 0000 		sts cS1_voltage,r22
+ 554 0288 7093 0000 		sts (cS1_voltage)+1,r23
+ 555 028c 8093 0000 		sts (cS1_voltage)+2,r24
+ 556 0290 9093 0000 		sts (cS1_voltage)+3,r25
+ 557               	.LM78:
+ 558 0294 20E0      		ldi r18,lo8(0x40a00000)
+ 559 0296 30E0      		ldi r19,hi8(0x40a00000)
+ 560 0298 40EA      		ldi r20,hlo8(0x40a00000)
+ 561 029a 50E4      		ldi r21,hhi8(0x40a00000)
+ 562 029c 0E94 0000 		call acs712_getcurrent
+ 563 02a0 7B01      		movw r14,r22
+ 564 02a2 8C01      		movw r16,r24
+ 565 02a4 6093 0000 		sts out_current,r22
+ 566 02a8 7093 0000 		sts (out_current)+1,r23
+ 567 02ac 8093 0000 		sts (out_current)+2,r24
+ 568 02b0 9093 0000 		sts (out_current)+3,r25
+ 569               	.LM79:
+ 570 02b4 20E0      		ldi r18,lo8(0x0)
+ 571 02b6 30E0      		ldi r19,hi8(0x0)
+ 572 02b8 40E0      		ldi r20,hlo8(0x0)
+ 573 02ba 50E0      		ldi r21,hhi8(0x0)
+ 574 02bc 0E94 0000 		call __ltsf2
+ 575 02c0 8823      		tst r24
+ 576 02c2 04F4      		brge .L46
+ 577 02c4 D801      		movw r26,r16
+ 578 02c6 C701      		movw r24,r14
+ 579 02c8 B058      		subi r27,0x80
+ 580 02ca 8093 0000 		sts out_current,r24
+ 581 02ce 9093 0000 		sts (out_current)+1,r25
+ 582 02d2 A093 0000 		sts (out_current)+2,r26
+ 583 02d6 B093 0000 		sts (out_current)+3,r27
+ 584               	.L46:
+ 585 02da 6091 0000 		lds r22,volt_now
+ 586 02de 7091 0000 		lds r23,(volt_now)+1
+ 587 02e2 8091 0000 		lds r24,(volt_now)+2
+ 588 02e6 9091 0000 		lds r25,(volt_now)+3
+ 589 02ea 2091 0000 		lds r18,out_current
+ 590 02ee 3091 0000 		lds r19,(out_current)+1
+ 591 02f2 4091 0000 		lds r20,(out_current)+2
+ 592 02f6 5091 0000 		lds r21,(out_current)+3
+ 593 02fa 0E94 0000 		call __mulsf3
+ 594               	/* epilogue start */
+ 595               	.LM80:
+ 596 02fe 1F91      		pop r17
+ 597 0300 0F91      		pop r16
+ 598 0302 FF90      		pop r15
+ 599 0304 EF90      		pop r14
+ 600 0306 0895      		ret
+ 601               	.LFE22:
+ 603               	.global	get_output_current
+ 605               	get_output_current:
+ 606               	.LFB20:
+ 607               	.LM81:
+ 608 0308 EF92      		push r14
+ 609 030a FF92      		push r15
+ 610 030c 0F93      		push r16
+ 611 030e 1F93      		push r17
+ 612               	/* prologue: function */
+ 613               	/* frame size = 0 */
+ 614               	.LM82:
+ 615 0310 0E94 0000 		call get_cs1_voltage
+ 616 0314 6093 0000 		sts cS1_voltage,r22
+ 617 0318 7093 0000 		sts (cS1_voltage)+1,r23
+ 618 031c 8093 0000 		sts (cS1_voltage)+2,r24
+ 619 0320 9093 0000 		sts (cS1_voltage)+3,r25
+ 620               	.LM83:
+ 621 0324 20E0      		ldi r18,lo8(0x40a00000)
+ 622 0326 30E0      		ldi r19,hi8(0x40a00000)
+ 623 0328 40EA      		ldi r20,hlo8(0x40a00000)
+ 624 032a 50E4      		ldi r21,hhi8(0x40a00000)
+ 625 032c 0E94 0000 		call acs712_getcurrent
+ 626 0330 7B01      		movw r14,r22
+ 627 0332 8C01      		movw r16,r24
+ 628 0334 6093 0000 		sts out_current,r22
+ 629 0338 7093 0000 		sts (out_current)+1,r23
+ 630 033c 8093 0000 		sts (out_current)+2,r24
+ 631 0340 9093 0000 		sts (out_current)+3,r25
+ 632               	.LM84:
+ 633 0344 20E0      		ldi r18,lo8(0x0)
+ 634 0346 30E0      		ldi r19,hi8(0x0)
+ 635 0348 40E0      		ldi r20,hlo8(0x0)
+ 636 034a 50E0      		ldi r21,hhi8(0x0)
+ 637 034c 0E94 0000 		call __ltsf2
+ 638 0350 8823      		tst r24
+ 639 0352 04F4      		brge .L51
+ 640 0354 D801      		movw r26,r16
+ 641 0356 C701      		movw r24,r14
+ 642 0358 B058      		subi r27,0x80
+ 643 035a 8093 0000 		sts out_current,r24
+ 644 035e 9093 0000 		sts (out_current)+1,r25
+ 645 0362 A093 0000 		sts (out_current)+2,r26
+ 646 0366 B093 0000 		sts (out_current)+3,r27
+ 647               	.L51:
+ 648               	.LM85:
+ 649 036a 2091 0000 		lds r18,out_current
+ 650 036e 3091 0000 		lds r19,out_current+1
+ 651 0372 4091 0000 		lds r20,out_current+2
+ 652 0376 5091 0000 		lds r21,out_current+3
+ 653 037a B901      		movw r22,r18
+ 654 037c CA01      		movw r24,r20
+ 655               	/* epilogue start */
+ 656 037e 1F91      		pop r17
+ 657 0380 0F91      		pop r16
+ 658 0382 FF90      		pop r15
+ 659 0384 EF90      		pop r14
+ 660 0386 0895      		ret
+ 661               	.LFE20:
+ 663               		.data
+ 664               	.LC0:
+ 665 0000 6368 6172 		.string	"charge complete"
+ 665      6765 2063 
+ 665      6F6D 706C 
+ 665      6574 6500 
+ 666               		.text
+ 667               	.global	MPPT_out
+ 669               	MPPT_out:
+ 670               	.LFB19:
+ 671               	.LM86:
+ 672 0388 EF92      		push r14
+ 673 038a FF92      		push r15
+ 674 038c 0F93      		push r16
+ 675 038e 1F93      		push r17
+ 676               	/* prologue: function */
+ 677               	/* frame size = 0 */
+ 678               	.LM87:
+ 679 0390 8AEF      		ldi r24,lo8(-6)
+ 680 0392 8CBF      		out 92-32,r24
+ 681               	.LM88:
+ 682 0394 80E0      		ldi r24,lo8(0x0)
+ 683 0396 90E0      		ldi r25,hi8(0x0)
+ 684 0398 A0E0      		ldi r26,hlo8(0x0)
+ 685 039a B0E0      		ldi r27,hhi8(0x0)
+ 686 039c 8093 0000 		sts out_power,r24
+ 687 03a0 9093 0000 		sts (out_power)+1,r25
+ 688 03a4 A093 0000 		sts (out_power)+2,r26
+ 689 03a8 B093 0000 		sts (out_power)+3,r27
+ 690 03ac 00C0      		rjmp .L67
+ 691               	.LVL13:
+ 692               	.L57:
+ 693               	.LM89:
+ 694 03ae 0E94 0000 		call get_output_power
+ 695 03b2 6093 0000 		sts out_power,r22
+ 696 03b6 7093 0000 		sts (out_power)+1,r23
+ 697 03ba 8093 0000 		sts (out_power)+2,r24
+ 698 03be 9093 0000 		sts (out_power)+3,r25
+ 699               	.LM90:
+ 700 03c2 8CB7      		in r24,92-32
+ 701 03c4 8150      		subi r24,lo8(-(-1))
+ 702 03c6 8CBF      		out 92-32,r24
+ 703               	.L67:
+ 704               	.LM91:
+ 705 03c8 0E94 0000 		call get_output_power
+ 706 03cc 7B01      		movw r14,r22
+ 707 03ce 8C01      		movw r16,r24
+ 708               	.L65:
+ 709               	.LM92:
+ 710 03d0 C801      		movw r24,r16
+ 711 03d2 B701      		movw r22,r14
+ 712 03d4 2091 0000 		lds r18,out_power
+ 713 03d8 3091 0000 		lds r19,(out_power)+1
+ 714 03dc 4091 0000 		lds r20,(out_power)+2
+ 715 03e0 5091 0000 		lds r21,(out_power)+3
+ 716 03e4 0E94 0000 		call __subsf3
+ 717 03e8 20E0      		ldi r18,lo8(0x0)
+ 718 03ea 30E0      		ldi r19,hi8(0x0)
+ 719 03ec 40E0      		ldi r20,hlo8(0x0)
+ 720 03ee 50E0      		ldi r21,hhi8(0x0)
+ 721 03f0 0E94 0000 		call __gtsf2
+ 722 03f4 1816      		cp __zero_reg__,r24
+ 723 03f6 04F0      		brlt .L57
+ 724 03f8 00C0      		rjmp .L66
+ 725               	.L59:
+ 726               	.LM93:
+ 727 03fa 0E94 0000 		call get_output_power
+ 728 03fe 6093 0000 		sts out_power,r22
+ 729 0402 7093 0000 		sts (out_power)+1,r23
+ 730 0406 8093 0000 		sts (out_power)+2,r24
+ 731 040a 9093 0000 		sts (out_power)+3,r25
+ 732               	.LM94:
+ 733 040e 8CB7      		in r24,92-32
+ 734 0410 8F5F      		subi r24,lo8(-(1))
+ 735 0412 8CBF      		out 92-32,r24
+ 736               	.LM95:
+ 737 0414 0E94 0000 		call get_output_power
+ 738 0418 7B01      		movw r14,r22
+ 739 041a 8C01      		movw r16,r24
+ 740               	.L66:
+ 741               	.LM96:
+ 742 041c C801      		movw r24,r16
+ 743 041e B701      		movw r22,r14
+ 744 0420 2091 0000 		lds r18,out_power
+ 745 0424 3091 0000 		lds r19,(out_power)+1
+ 746 0428 4091 0000 		lds r20,(out_power)+2
+ 747 042c 5091 0000 		lds r21,(out_power)+3
+ 748 0430 0E94 0000 		call __subsf3
+ 749 0434 20E0      		ldi r18,lo8(0x0)
+ 750 0436 30E0      		ldi r19,hi8(0x0)
+ 751 0438 40E0      		ldi r20,hlo8(0x0)
+ 752 043a 50E0      		ldi r21,hhi8(0x0)
+ 753 043c 0E94 0000 		call __ltsf2
+ 754 0440 87FD      		sbrc r24,7
+ 755 0442 00C0      		rjmp .L59
+ 756               	.LM97:
+ 757 0444 0E94 0000 		call get_output_current
+ 758 0448 20E0      		ldi r18,lo8(0x3f000000)
+ 759 044a 30E0      		ldi r19,hi8(0x3f000000)
+ 760 044c 40E0      		ldi r20,hlo8(0x3f000000)
+ 761 044e 5FE3      		ldi r21,hhi8(0x3f000000)
+ 762 0450 0E94 0000 		call __ltsf2
+ 763 0454 8823      		tst r24
+ 764 0456 04F0      		brlt .+2
+ 765 0458 00C0      		rjmp .L65
+ 766               	.LM98:
+ 767 045a 0E94 0000 		call lcd_clrscr
+ 768               	.LM99:
+ 769 045e 80E0      		ldi r24,lo8(.LC0)
+ 770 0460 90E0      		ldi r25,hi8(.LC0)
+ 771 0462 0E94 0000 		call lcd_puts
+ 772 0466 80E2      		ldi r24,lo8(20000)
+ 773 0468 9EE4      		ldi r25,hi8(20000)
+ 774               	.LVL14:
+ 775               	.LBB38:
+ 776               	.LBB39:
+ 777               	.LBB40:
+ 778               	.LBB41:
+ 779               	.LM100:
+ 780 046a 20E9      		ldi r18,lo8(400)
+ 781 046c 31E0      		ldi r19,hi8(400)
+ 782               	.L61:
+ 783 046e F901      		movw r30,r18
+ 784               	.LVL15:
+ 785               	/* #APP */
+ 786               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 787 0470 3197      		1: sbiw r30,1
+ 788 0472 01F4      		brne 1b
+ 789               	 ;  0 "" 2
+ 790               	/* #NOAPP */
+ 791               	.LBE41:
+ 792               	.LBE40:
+ 793               	.LM101:
+ 794 0474 0197      		sbiw r24,1
+ 795               	.LM102:
+ 796 0476 01F4      		brne .L61
+ 797               	.LBE39:
+ 798               	.LBE38:
+ 799               	.LBB42:
+ 800               	.LBB43:
+ 801               	.LM103:
+ 802 0478 82B3      		in r24,50-32
+ 803               	.LVL16:
+ 804 047a 8F6D      		ori r24,lo8(-33)
+ 805 047c 82BB      		out 50-32,r24
+ 806               	/* epilogue start */
+ 807               	.LBE43:
+ 808               	.LBE42:
+ 809               	.LM104:
+ 810 047e 1F91      		pop r17
+ 811 0480 0F91      		pop r16
+ 812 0482 FF90      		pop r15
+ 813 0484 EF90      		pop r14
+ 814               	.LVL17:
+ 815 0486 0895      		ret
+ 816               	.LFE19:
+ 818               		.data
+ 819               	.LC1:
+ 820 0010 3132 5620 		.string	"12V batery found"
+ 820      6261 7465 
+ 820      7279 2066 
+ 820      6F75 6E64 
+ 820      00
+ 821               	.LC2:
+ 822 0021 4368 6172 		.string	"Charging Started"
+ 822      6769 6E67 
+ 822      2053 7461 
+ 822      7274 6564 
+ 822      00
+ 823               	.LC3:
+ 824 0032 3956 2062 		.string	"9V batery found"
+ 824      6174 6572 
+ 824      7920 666F 
+ 824      756E 6400 
+ 825               	.LC4:
+ 826 0042 3656 2062 		.string	"6V batery found"
+ 826      6174 6572 
+ 826      7920 666F 
+ 826      756E 6400 
+ 827               		.text
+ 828               	.global	detect_battery
+ 830               	detect_battery:
+ 831               	.LFB21:
+ 832               	.LM105:
+ 833 0488 EF92      		push r14
+ 834 048a FF92      		push r15
+ 835 048c 0F93      		push r16
+ 836 048e 1F93      		push r17
+ 837               	/* prologue: function */
+ 838               	/* frame size = 0 */
+ 839               	.LBB44:
+ 840               	.LBB45:
+ 841               	.LM106:
+ 842 0490 82B3      		in r24,50-32
+ 843 0492 8F6D      		ori r24,lo8(-33)
+ 844 0494 82BB      		out 50-32,r24
+ 845               	.LBE45:
+ 846               	.LBE44:
+ 847               	.LM107:
+ 848 0496 0E94 0000 		call get_batry_voltage
+ 849 049a 7B01      		movw r14,r22
+ 850 049c 8C01      		movw r16,r24
+ 851 049e 6093 0000 		sts volt_now,r22
+ 852 04a2 7093 0000 		sts (volt_now)+1,r23
+ 853 04a6 8093 0000 		sts (volt_now)+2,r24
+ 854 04aa 9093 0000 		sts (volt_now)+3,r25
+ 855               	.LM108:
+ 856 04ae 20E0      		ldi r18,lo8(0x41280000)
+ 857 04b0 30E0      		ldi r19,hi8(0x41280000)
+ 858 04b2 48E2      		ldi r20,hlo8(0x41280000)
+ 859 04b4 51E4      		ldi r21,hhi8(0x41280000)
+ 860 04b6 0E94 0000 		call __gtsf2
+ 861 04ba 1816      		cp __zero_reg__,r24
+ 862 04bc 04F4      		brge .L69
+ 863 04be C801      		movw r24,r16
+ 864 04c0 B701      		movw r22,r14
+ 865 04c2 20E0      		ldi r18,lo8(0x41480000)
+ 866 04c4 30E0      		ldi r19,hi8(0x41480000)
+ 867 04c6 48E4      		ldi r20,hlo8(0x41480000)
+ 868 04c8 51E4      		ldi r21,hhi8(0x41480000)
+ 869 04ca 0E94 0000 		call __ltsf2
+ 870 04ce 8823      		tst r24
+ 871 04d0 04F4      		brge .L69
+ 872               	.LM109:
+ 873 04d2 80E0      		ldi r24,lo8(0x41400000)
+ 874 04d4 90E0      		ldi r25,hi8(0x41400000)
+ 875 04d6 A0E4      		ldi r26,hlo8(0x41400000)
+ 876 04d8 B1E4      		ldi r27,hhi8(0x41400000)
+ 877 04da 8093 0000 		sts battery_type,r24
+ 878 04de 9093 0000 		sts (battery_type)+1,r25
+ 879 04e2 A093 0000 		sts (battery_type)+2,r26
+ 880 04e6 B093 0000 		sts (battery_type)+3,r27
+ 881               	.LM110:
+ 882 04ea 0E94 0000 		call lcd_clrscr
+ 883               	.LM111:
+ 884 04ee 80E0      		ldi r24,lo8(.LC1)
+ 885 04f0 90E0      		ldi r25,hi8(.LC1)
+ 886 04f2 0E94 0000 		call lcd_puts
+ 887               	.LM112:
+ 888 04f6 80E0      		ldi r24,lo8(0)
+ 889 04f8 61E0      		ldi r22,lo8(1)
+ 890 04fa 0E94 0000 		call lcd_gotoxy
+ 891               	.LM113:
+ 892 04fe 80E0      		ldi r24,lo8(.LC2)
+ 893 0500 90E0      		ldi r25,hi8(.LC2)
+ 894 0502 0E94 0000 		call lcd_puts
+ 895               	.L69:
+ 896               	.LM114:
+ 897 0506 E090 0000 		lds r14,volt_now
+ 898 050a F090 0000 		lds r15,(volt_now)+1
+ 899 050e 0091 0000 		lds r16,(volt_now)+2
+ 900 0512 1091 0000 		lds r17,(volt_now)+3
+ 901 0516 C801      		movw r24,r16
+ 902 0518 B701      		movw r22,r14
+ 903 051a 20E0      		ldi r18,lo8(0x41000000)
+ 904 051c 30E0      		ldi r19,hi8(0x41000000)
+ 905 051e 40E0      		ldi r20,hlo8(0x41000000)
+ 906 0520 51E4      		ldi r21,hhi8(0x41000000)
+ 907 0522 0E94 0000 		call __gtsf2
+ 908 0526 1816      		cp __zero_reg__,r24
+ 909 0528 04F4      		brge .L72
+ 910 052a C801      		movw r24,r16
+ 911 052c B701      		movw r22,r14
+ 912 052e 20E0      		ldi r18,lo8(0x41180000)
+ 913 0530 30E0      		ldi r19,hi8(0x41180000)
+ 914 0532 48E1      		ldi r20,hlo8(0x41180000)
+ 915 0534 51E4      		ldi r21,hhi8(0x41180000)
+ 916 0536 0E94 0000 		call __ltsf2
+ 917 053a 8823      		tst r24
+ 918 053c 04F4      		brge .L72
+ 919               	.LM115:
+ 920 053e 80E0      		ldi r24,lo8(0x41100000)
+ 921 0540 90E0      		ldi r25,hi8(0x41100000)
+ 922 0542 A0E1      		ldi r26,hlo8(0x41100000)
+ 923 0544 B1E4      		ldi r27,hhi8(0x41100000)
+ 924 0546 8093 0000 		sts battery_type,r24
+ 925 054a 9093 0000 		sts (battery_type)+1,r25
+ 926 054e A093 0000 		sts (battery_type)+2,r26
+ 927 0552 B093 0000 		sts (battery_type)+3,r27
+ 928               	.LM116:
+ 929 0556 0E94 0000 		call lcd_clrscr
+ 930               	.LM117:
+ 931 055a 80E0      		ldi r24,lo8(.LC3)
+ 932 055c 90E0      		ldi r25,hi8(.LC3)
+ 933 055e 0E94 0000 		call lcd_puts
+ 934               	.LM118:
+ 935 0562 80E0      		ldi r24,lo8(0)
+ 936 0564 61E0      		ldi r22,lo8(1)
+ 937 0566 0E94 0000 		call lcd_gotoxy
+ 938               	.LM119:
+ 939 056a 80E0      		ldi r24,lo8(.LC2)
+ 940 056c 90E0      		ldi r25,hi8(.LC2)
+ 941 056e 0E94 0000 		call lcd_puts
+ 942               	.L72:
+ 943               	.LM120:
+ 944 0572 E090 0000 		lds r14,volt_now
+ 945 0576 F090 0000 		lds r15,(volt_now)+1
+ 946 057a 0091 0000 		lds r16,(volt_now)+2
+ 947 057e 1091 0000 		lds r17,(volt_now)+3
+ 948 0582 C801      		movw r24,r16
+ 949 0584 B701      		movw r22,r14
+ 950 0586 20E0      		ldi r18,lo8(0x40900000)
+ 951 0588 30E0      		ldi r19,hi8(0x40900000)
+ 952 058a 40E9      		ldi r20,hlo8(0x40900000)
+ 953 058c 50E4      		ldi r21,hhi8(0x40900000)
+ 954 058e 0E94 0000 		call __gtsf2
+ 955 0592 1816      		cp __zero_reg__,r24
+ 956 0594 04F4      		brge .L75
+ 957 0596 C801      		movw r24,r16
+ 958 0598 B701      		movw r22,r14
+ 959 059a 20E0      		ldi r18,lo8(0x40d00000)
+ 960 059c 30E0      		ldi r19,hi8(0x40d00000)
+ 961 059e 40ED      		ldi r20,hlo8(0x40d00000)
+ 962 05a0 50E4      		ldi r21,hhi8(0x40d00000)
+ 963 05a2 0E94 0000 		call __ltsf2
+ 964 05a6 8823      		tst r24
+ 965 05a8 04F4      		brge .L75
+ 966               	.LM121:
+ 967 05aa 80E0      		ldi r24,lo8(0x40c00000)
+ 968 05ac 90E0      		ldi r25,hi8(0x40c00000)
+ 969 05ae A0EC      		ldi r26,hlo8(0x40c00000)
+ 970 05b0 B0E4      		ldi r27,hhi8(0x40c00000)
+ 971 05b2 8093 0000 		sts battery_type,r24
+ 972 05b6 9093 0000 		sts (battery_type)+1,r25
+ 973 05ba A093 0000 		sts (battery_type)+2,r26
+ 974 05be B093 0000 		sts (battery_type)+3,r27
+ 975               	.LM122:
+ 976 05c2 0E94 0000 		call lcd_clrscr
+ 977               	.LM123:
+ 978 05c6 80E0      		ldi r24,lo8(.LC4)
+ 979 05c8 90E0      		ldi r25,hi8(.LC4)
+ 980 05ca 0E94 0000 		call lcd_puts
+ 981               	.LM124:
+ 982 05ce 80E0      		ldi r24,lo8(0)
+ 983 05d0 61E0      		ldi r22,lo8(1)
+ 984 05d2 0E94 0000 		call lcd_gotoxy
+ 985               	.LM125:
+ 986 05d6 80E0      		ldi r24,lo8(.LC2)
+ 987 05d8 90E0      		ldi r25,hi8(.LC2)
+ 988 05da 0E94 0000 		call lcd_puts
+ 989               	.L75:
+ 990               	.LBB46:
+ 991               	.LBB47:
+ 992               	.LM126:
+ 993 05de 959A      		sbi 50-32,5
+ 994 05e0 80E2      		ldi r24,lo8(20000)
+ 995 05e2 9EE4      		ldi r25,hi8(20000)
+ 996               	.LVL18:
+ 997               	.LBE47:
+ 998               	.LBE46:
+ 999               	.LBB48:
+ 1000               	.LBB49:
+ 1001               	.LBB50:
+ 1002               	.LBB51:
+ 1003               	.LM127:
+ 1004 05e4 20E9      		ldi r18,lo8(400)
+ 1005 05e6 31E0      		ldi r19,hi8(400)
+ 1006               	.L78:
+ 1007 05e8 F901      		movw r30,r18
+ 1008               	.LVL19:
+ 1009               	/* #APP */
+ 1010               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 1011 05ea 3197      		1: sbiw r30,1
+ 1012 05ec 01F4      		brne 1b
+ 1013               	 ;  0 "" 2
+ 1014               	/* #NOAPP */
+ 1015               	.LBE51:
+ 1016               	.LBE50:
+ 1017               	.LM128:
+ 1018 05ee 0197      		sbiw r24,1
+ 1019               	.LM129:
+ 1020 05f0 01F4      		brne .L78
+ 1021               	/* epilogue start */
+ 1022               	.LBE49:
+ 1023               	.LBE48:
+ 1024               	.LM130:
+ 1025 05f2 1F91      		pop r17
+ 1026 05f4 0F91      		pop r16
+ 1027 05f6 FF90      		pop r15
+ 1028 05f8 EF90      		pop r14
+ 1029 05fa 0895      		ret
+ 1030               	.LFE21:
+ 1032               	.global	battery_type
+ 1033               	.global	battery_type
+ 1034               		.section .bss
+ 1037               	battery_type:
+ 1038 0000 0000 0000 		.skip 4,0
+ 1039               		.comm volt_now,4,1
+ 1040               		.comm cS1_voltage,4,1
+ 1041               		.comm cS2_voltage,4,1
+ 1042               		.comm out_current,4,1
+ 1043               		.comm out_power,4,1
+ 1220               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 system.c
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:18     .text:00000000 pwm_init
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:39     .text:0000000e system_init
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:73     .text:0000002c green_on
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:88     .text:00000032 green_off
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:102    .text:00000036 red_on
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:117    .text:0000003c red_off
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:131    .text:00000040 sys_battery_on
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:146    .text:00000046 sys_battery_off
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:160    .text:0000004a external_battery_on
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:174    .text:0000004e external_battery_off
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:190    .text:00000056 parasite_mode_on
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:202    .text:00000058 display_int
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:252    .text:000000a4 display_double
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:304    .text:000000f2 display_Output_voltage
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:358    .text:00000148 regulate_output
+                            *COM*:00000004 volt_now
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:468    .text:000001f2 get_input_power
+                            *COM*:00000004 cS2_voltage
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:536    .text:00000264 get_output_power
+                            *COM*:00000004 cS1_voltage
+                            *COM*:00000004 out_current
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:605    .text:00000308 get_output_current
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:669    .text:00000388 MPPT_out
+                            *COM*:00000004 out_power
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:830    .text:00000488 detect_battery
+C:\Users\Rasika\AppData\Local\Temp/cc5EK4XK.s:1037   .bss:00000000 battery_type
+
+UNDEFINED SYMBOLS
+__fixsfsi
+itoa
+lcd_puts
+dtostrf
+lcd_clrscr
+get_batry_voltage
+__gtsf2
+__ltsf2
+get_supply_voltage
+get_cs2_voltage
+acs712_getcurrent
+__mulsf3
+get_cs1_voltage
+__subsf3
+lcd_gotoxy
+__do_copy_data
+__do_clear_bss

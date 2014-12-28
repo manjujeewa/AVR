@@ -1,0 +1,133 @@
+   1               		.file	"SPI_routines.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	spi_init
+  12               	spi_init:
+  13               	.LFB0:
+  14               		.file 1 "SPI_routines.c"
+   1:SPI_routines.c **** //**************************************************************
+   2:SPI_routines.c **** // ****** FUNCTIONS FOR SPI COMMUNICATION *******
+   3:SPI_routines.c **** //**************************************************************
+   4:SPI_routines.c **** //Controller		: ATmega32 (Clock: 8 Mhz-internal)
+   5:SPI_routines.c **** //Compiler			: AVR-GCC (winAVR with AVRStudio-4)
+   6:SPI_routines.c **** //Project Version	: DL_1.0
+   7:SPI_routines.c **** //Author			: CC Dharmani, Chennai (India)
+   8:SPI_routines.c **** //			  		  www.dharmanitech.com
+   9:SPI_routines.c **** //Date				: 10 May 2011
+  10:SPI_routines.c **** //**************************************************************
+  11:SPI_routines.c **** 
+  12:SPI_routines.c **** #include <avr/io.h>
+  13:SPI_routines.c **** #include "SPI_routines.h"
+  14:SPI_routines.c **** 
+  15:SPI_routines.c **** //SPI initialize for SD card
+  16:SPI_routines.c **** //clock rate: 125Khz
+  17:SPI_routines.c **** void spi_init(void)
+  18:SPI_routines.c **** {
+  15               		.loc 1 18 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  19:SPI_routines.c **** SPCR = 0x52; //setup SPI: Master mode, MSB first, SCK phase low, SCK idle low
+  21               		.loc 1 19 0
+  22 0000 82E5      		ldi r24,lo8(82)
+  23 0002 8DB9      		out 0xd,r24
+  20:SPI_routines.c **** SPSR = 0x00;
+  24               		.loc 1 20 0
+  25 0004 1EB8      		out 0xe,__zero_reg__
+  26 0006 0895      		ret
+  27               		.cfi_endproc
+  28               	.LFE0:
+  30               	.global	SPI_transmit
+  32               	SPI_transmit:
+  33               	.LFB1:
+  21:SPI_routines.c **** }
+  22:SPI_routines.c **** 
+  23:SPI_routines.c **** unsigned char SPI_transmit(unsigned char data)
+  24:SPI_routines.c **** {
+  34               		.loc 1 24 0
+  35               		.cfi_startproc
+  36               	.LVL0:
+  37               	/* prologue: function */
+  38               	/* frame size = 0 */
+  39               	/* stack size = 0 */
+  40               	.L__stack_usage = 0
+  25:SPI_routines.c **** // Start transmission
+  26:SPI_routines.c **** SPDR = data;
+  41               		.loc 1 26 0
+  42 0008 8FB9      		out 0xf,r24
+  43               	.L4:
+  27:SPI_routines.c **** 
+  28:SPI_routines.c **** // Wait for transmission complete
+  29:SPI_routines.c **** while(!(SPSR & (1<<SPIF)));
+  44               		.loc 1 29 0 discriminator 1
+  45 000a 779B      		sbis 0xe,7
+  46 000c 00C0      		rjmp .L4
+  30:SPI_routines.c **** data = SPDR;
+  47               		.loc 1 30 0
+  48 000e 8FB1      		in r24,0xf
+  49               	.LVL1:
+  31:SPI_routines.c **** 
+  32:SPI_routines.c **** return(data);
+  33:SPI_routines.c **** }
+  50               		.loc 1 33 0
+  51 0010 0895      		ret
+  52               		.cfi_endproc
+  53               	.LFE1:
+  55               	.global	SPI_receive
+  57               	SPI_receive:
+  58               	.LFB2:
+  34:SPI_routines.c **** 
+  35:SPI_routines.c **** unsigned char SPI_receive(void)
+  36:SPI_routines.c **** {
+  59               		.loc 1 36 0
+  60               		.cfi_startproc
+  61               	/* prologue: function */
+  62               	/* frame size = 0 */
+  63               	/* stack size = 0 */
+  64               	.L__stack_usage = 0
+  37:SPI_routines.c **** unsigned char data;
+  38:SPI_routines.c **** // Wait for reception complete
+  39:SPI_routines.c **** 
+  40:SPI_routines.c **** SPDR = 0xff;
+  65               		.loc 1 40 0
+  66 0012 8FEF      		ldi r24,lo8(-1)
+  67 0014 8FB9      		out 0xf,r24
+  68               	.L8:
+  41:SPI_routines.c **** while(!(SPSR & (1<<SPIF)));
+  69               		.loc 1 41 0 discriminator 1
+  70 0016 779B      		sbis 0xe,7
+  71 0018 00C0      		rjmp .L8
+  42:SPI_routines.c **** data = SPDR;
+  72               		.loc 1 42 0
+  73 001a 8FB1      		in r24,0xf
+  74               	.LVL2:
+  43:SPI_routines.c **** 
+  44:SPI_routines.c **** // Return data register
+  45:SPI_routines.c **** return data;
+  46:SPI_routines.c **** }
+  75               		.loc 1 46 0
+  76 001c 0895      		ret
+  77               		.cfi_endproc
+  78               	.LFE2:
+  80               	.Letext0:
+  81               		.file 2 "/usr/lib/avr/include/stdint.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 SPI_routines.c
+     /tmp/ccXKkyGX.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccXKkyGX.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccXKkyGX.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccXKkyGX.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccXKkyGX.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccXKkyGX.s:12     .text:0000000000000000 spi_init
+     /tmp/ccXKkyGX.s:32     .text:0000000000000008 SPI_transmit
+     /tmp/ccXKkyGX.s:57     .text:0000000000000012 SPI_receive
+
+NO UNDEFINED SYMBOLS

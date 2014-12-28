@@ -1,0 +1,118 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	_init_usart
+  18               	_init_usart:
+  19               	.LFB2:
+  20               	.LM1:
+  21               	.LVL0:
+  22               	/* prologue: function */
+  23               	/* frame size = 0 */
+  24               	.LM2:
+  25 0000 10BC      		out 64-32,__zero_reg__
+  26               	.LM3:
+  27 0002 89B9      		out 41-32,r24
+  28               	.LM4:
+  29 0004 88E1      		ldi r24,lo8(24)
+  30               	.LVL1:
+  31 0006 8AB9      		out 42-32,r24
+  32               	.LM5:
+  33 0008 86E8      		ldi r24,lo8(-122)
+  34 000a 80BD      		out 64-32,r24
+  35               	/* epilogue start */
+  36               	.LM6:
+  37 000c 0895      		ret
+  38               	.LFE2:
+  40               	.global	usart_receive
+  42               	usart_receive:
+  43               	.LFB3:
+  44               	.LM7:
+  45               	/* prologue: function */
+  46               	/* frame size = 0 */
+  47               	.L4:
+  48               	.LM8:
+  49 000e 5F9B      		sbis 43-32,7
+  50 0010 00C0      		rjmp .L4
+  51               	.LM9:
+  52 0012 8CB1      		in r24,44-32
+  53               	.LVL2:
+  54               	.LVL3:
+  55               	/* epilogue start */
+  56               	.LM10:
+  57 0014 0895      		ret
+  58               	.LFE3:
+  60               	.global	usart_transmit
+  62               	usart_transmit:
+  63               	.LFB4:
+  64               	.LM11:
+  65               	/* prologue: function */
+  66               	/* frame size = 0 */
+  67               	.LVL4:
+  68               	.L8:
+  69               	.LM12:
+  70 0016 5D9B      		sbis 43-32,5
+  71 0018 00C0      		rjmp .L8
+  72               	.LM13:
+  73 001a 8CB9      		out 44-32,r24
+  74               	/* epilogue start */
+  75               	.LM14:
+  76 001c 0895      		ret
+  77               	.LFE4:
+  79               	.global	main
+  81               	main:
+  82               	.LFB5:
+  83               	.LM15:
+  84               	/* prologue: function */
+  85               	/* frame size = 0 */
+  86               	.LM16:
+  87 001e 8FE0      		ldi r24,lo8(15)
+  88 0020 81BB      		out 49-32,r24
+  89               	.LBB6:
+  90               	.LBB7:
+  91               	.LM17:
+  92 0022 10BC      		out 64-32,__zero_reg__
+  93               	.LM18:
+  94 0024 86E0      		ldi r24,lo8(6)
+  95 0026 89B9      		out 41-32,r24
+  96               	.LM19:
+  97 0028 88E1      		ldi r24,lo8(24)
+  98 002a 8AB9      		out 42-32,r24
+  99               	.LM20:
+ 100 002c 86E8      		ldi r24,lo8(-122)
+ 101 002e 80BD      		out 64-32,r24
+ 102               	.LBE7:
+ 103               	.LBE6:
+ 104               	.LBB8:
+ 105               	.LBB9:
+ 106               	.LM21:
+ 107 0030 87E3      		ldi r24,lo8(55)
+ 108               	.L16:
+ 109               	.LM22:
+ 110 0032 5D9B      		sbis 43-32,5
+ 111 0034 00C0      		rjmp .L16
+ 112               	.LM23:
+ 113 0036 8CB9      		out 44-32,r24
+ 114 0038 00C0      		rjmp .L16
+ 115               	.LBE9:
+ 116               	.LBE8:
+ 117               	.LFE5:
+ 167               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:18     .text:00000000 _init_usart
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:42     .text:0000000e usart_receive
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:62     .text:00000016 usart_transmit
+C:\Users\Rasika\AppData\Local\Temp/cc8Y4zVw.s:81     .text:0000001e main
+
+NO UNDEFINED SYMBOLS

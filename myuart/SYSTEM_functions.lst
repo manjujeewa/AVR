@@ -1,0 +1,121 @@
+   1               		.file	"SYSTEM_functions.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	port_init
+  18               	port_init:
+  19               	.LFB6:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 1BBA      		out 59-32,__zero_reg__
+  25               	.LM3:
+  26 0002 1ABA      		out 58-32,__zero_reg__
+  27               	.LM4:
+  28 0004 18BA      		out 56-32,__zero_reg__
+  29               	.LM5:
+  30 0006 8FEB      		ldi r24,lo8(-65)
+  31 0008 87BB      		out 55-32,r24
+  32               	.LM6:
+  33 000a 80E8      		ldi r24,lo8(-128)
+  34 000c 85BB      		out 53-32,r24
+  35               	.LM7:
+  36 000e 80E2      		ldi r24,lo8(32)
+  37 0010 84BB      		out 52-32,r24
+  38               	.LM8:
+  39 0012 84E0      		ldi r24,lo8(4)
+  40 0014 81BB      		out 49-32,r24
+  41               	.LM9:
+  42 0016 12BA      		out 50-32,__zero_reg__
+  43               	/* epilogue start */
+  44               	.LM10:
+  45 0018 0895      		ret
+  46               	.LFE6:
+  48               	.global	blinkRedLED
+  50               	blinkRedLED:
+  51               	.LFB7:
+  52               	.LM11:
+  53               	/* prologue: function */
+  54               	/* frame size = 0 */
+  55               	.LM12:
+  56 001a 84E0      		ldi r24,lo8(4)
+  57 001c 81BB      		out 49-32,r24
+  58               	.LM13:
+  59 001e 12BA      		out 50-32,__zero_reg__
+  60               	.LM14:
+  61 0020 44E0      		ldi r20,lo8(4)
+  62               	.LBB12:
+  63               	.LBB13:
+  64               	.LBB14:
+  65               	.LBB15:
+  66               	.LM15:
+  67 0022 20E9      		ldi r18,lo8(400)
+  68 0024 31E0      		ldi r19,hi8(400)
+  69               	.LVL0:
+  70               	.L5:
+  71               	.LBE15:
+  72               	.LBE14:
+  73               	.LBE13:
+  74               	.LBE12:
+  75               	.LM16:
+  76 0026 82B3      		in r24,50-32
+  77               	.LVL1:
+  78 0028 8427      		eor r24,r20
+  79 002a 82BB      		out 50-32,r24
+  80 002c 88E8      		ldi r24,lo8(5000)
+  81 002e 93E1      		ldi r25,hi8(5000)
+  82               	.LVL2:
+  83               	.L4:
+  84               	.LBB19:
+  85               	.LBB18:
+  86               	.LBB17:
+  87               	.LBB16:
+  88               	.LM17:
+  89 0030 F901      		movw r30,r18
+  90               	/* #APP */
+  91               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+  92 0032 3197      		1: sbiw r30,1
+  93 0034 01F4      		brne 1b
+  94               	 ;  0 "" 2
+  95               	/* #NOAPP */
+  96               	.LBE16:
+  97               	.LBE17:
+  98               	.LM18:
+  99 0036 0197      		sbiw r24,1
+ 100               	.LM19:
+ 101 0038 01F4      		brne .L4
+ 102 003a 00C0      		rjmp .L5
+ 103               	.LBE18:
+ 104               	.LBE19:
+ 105               	.LFE7:
+ 107               	.global	numberToChar
+ 109               	numberToChar:
+ 110               	.LFB8:
+ 111               	.LM20:
+ 112               	.LVL3:
+ 113               	/* prologue: function */
+ 114               	/* frame size = 0 */
+ 115               	.LVL4:
+ 116               	/* epilogue start */
+ 117               	.LM21:
+ 118 003c 0895      		ret
+ 119               	.LFE8:
+ 161               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 SYSTEM_functions.c
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:18     .text:00000000 port_init
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:50     .text:0000001a blinkRedLED
+C:\Users\Rasika\AppData\Local\Temp/ccTggawR.s:109    .text:0000003c numberToChar
+
+NO UNDEFINED SYMBOLS

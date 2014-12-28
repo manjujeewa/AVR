@@ -1,0 +1,20 @@
+==================================================
+dc motor
+==================================================
+= Copyright (c) Davide Gironi, 2012              =
+= http://davidegironi.blogspot.it/               =
+==================================================
+
+
+This libray implements a way to control in direction a dc motor.
+Setup parameters in dcmotor.h
+
+
+Devel Notes
+-----------
+This library was developed on Eclipse, built with avr-gcc on Atmega8 @ 1MHz.
+
+
+License
+-------
+Please refer to LICENSE file for licensing information.

@@ -1,0 +1,2120 @@
+   1               		.file	"RTC_routines.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	RTC_setStartAddress
+  12               	RTC_setStartAddress:
+  13               	.LFB1:
+  14               		.file 1 "RTC_routines.c"
+   1:RTC_routines.c **** //*************************************************************
+   2:RTC_routines.c **** //*** FUNCTIONS FOR EEPROM READ/WRITE ON I2C COMMUNICATION  ***
+   3:RTC_routines.c **** //*************************************************************
+   4:RTC_routines.c **** //Controller		: ATmega32 (Clock: 8 Mhz-internal)
+   5:RTC_routines.c **** //Compiler			: AVR-GCC (winAVR with AVRStudio-4)
+   6:RTC_routines.c **** //Project Version	: DL_1.0
+   7:RTC_routines.c **** //Author			: CC Dharmani, Chennai (India)
+   8:RTC_routines.c **** //			  		  www.dharmanitech.com
+   9:RTC_routines.c **** //Date				: 10 May 2011
+  10:RTC_routines.c **** //*************************************************************
+  11:RTC_routines.c **** 
+  12:RTC_routines.c **** #include <avr/io.h>
+  13:RTC_routines.c **** #include <avr/pgmspace.h>
+  14:RTC_routines.c **** #include "RTC_routines.h"
+  15:RTC_routines.c **** #include "UART_routines.h"
+  16:RTC_routines.c **** #include "i2c_routines.h"
+  17:RTC_routines.c **** 
+  18:RTC_routines.c **** 
+  19:RTC_routines.c **** 
+  20:RTC_routines.c **** //***************************************************************************
+  21:RTC_routines.c **** //Function to set initial address of the RTC for subsequent reading / writing
+  22:RTC_routines.c **** //***************************************************************************
+  23:RTC_routines.c **** unsigned char RTC_setStartAddress(void)
+  24:RTC_routines.c **** {
+  15               		.loc 1 24 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  25:RTC_routines.c ****    unsigned char errorStatus;
+  26:RTC_routines.c ****    
+  27:RTC_routines.c ****    errorStatus = i2c_start();
+  21               		.loc 1 27 0
+  22 0000 0E94 0000 		call i2c_start
+  23               	.LVL0:
+  28:RTC_routines.c ****    if(errorStatus == 1)
+  24               		.loc 1 28 0
+  25 0004 8130      		cpi r24,lo8(1)
+  26 0006 01F4      		brne .L2
+  27               	.L4:
+  29:RTC_routines.c ****    {
+  30:RTC_routines.c ****      //transmitString_F(PSTR("RTC start1 failed.."));
+  31:RTC_routines.c ****    	 i2c_stop();
+  28               		.loc 1 31 0
+  29 0008 0E94 0000 		call i2c_stop
+  30               	.LVL1:
+  32:RTC_routines.c **** 	 return 1;
+  31               		.loc 1 32 0
+  32 000c 81E0      		ldi r24,lo8(1)
+  33 000e 0895      		ret
+  34               	.LVL2:
+  35               	.L2:
+  33:RTC_routines.c ****    } 
+  34:RTC_routines.c ****    
+  35:RTC_routines.c ****    errorStatus = i2c_sendAddress(DS1307_W);
+  36               		.loc 1 35 0
+  37 0010 80ED      		ldi r24,lo8(-48)
+  38               	.LVL3:
+  39 0012 0E94 0000 		call i2c_sendAddress
+  40               	.LVL4:
+  36:RTC_routines.c ****    
+  37:RTC_routines.c ****    if(errorStatus == 1)
+  41               		.loc 1 37 0
+  42 0016 8130      		cpi r24,lo8(1)
+  43 0018 01F0      		breq .L4
+  38:RTC_routines.c ****    {
+  39:RTC_routines.c ****      //transmitString_F(PSTR("RTC sendAddress1 failed.."));
+  40:RTC_routines.c **** 	 i2c_stop();
+  41:RTC_routines.c **** 	 return 1;
+  42:RTC_routines.c ****    } 
+  43:RTC_routines.c ****    
+  44:RTC_routines.c ****    errorStatus = i2c_sendData(0x00);
+  44               		.loc 1 44 0
+  45 001a 80E0      		ldi r24,0
+  46               	.LVL5:
+  47 001c 0E94 0000 		call i2c_sendData
+  48               	.LVL6:
+  45:RTC_routines.c ****    if(errorStatus == 1)
+  49               		.loc 1 45 0
+  50 0020 8130      		cpi r24,lo8(1)
+  51 0022 01F0      		breq .L4
+  46:RTC_routines.c ****    {
+  47:RTC_routines.c ****      //transmitString_F(PSTR("RTC write-2 failed.."));
+  48:RTC_routines.c **** 	 i2c_stop();
+  49:RTC_routines.c **** 	 return 1;
+  50:RTC_routines.c ****    } 
+  51:RTC_routines.c **** 
+  52:RTC_routines.c ****    i2c_stop();
+  52               		.loc 1 52 0
+  53 0024 0E94 0000 		call i2c_stop
+  54               	.LVL7:
+  53:RTC_routines.c ****    return 0;
+  55               		.loc 1 53 0
+  56 0028 80E0      		ldi r24,0
+  54:RTC_routines.c **** }
+  57               		.loc 1 54 0
+  58 002a 0895      		ret
+  59               		.cfi_endproc
+  60               	.LFE1:
+  62               	.global	RTC_read
+  64               	RTC_read:
+  65               	.LFB2:
+  55:RTC_routines.c **** 
+  56:RTC_routines.c **** //***********************************************************************
+  57:RTC_routines.c **** //Function to read RTC registers and store them in buffer rtc_register[]
+  58:RTC_routines.c **** //***********************************************************************    
+  59:RTC_routines.c **** unsigned char RTC_read(void)
+  60:RTC_routines.c **** {
+  66               		.loc 1 60 0
+  67               		.cfi_startproc
+  68 002c 1F93      		push r17
+  69               	.LCFI0:
+  70               		.cfi_def_cfa_offset 3
+  71               		.cfi_offset 17, -2
+  72 002e CF93      		push r28
+  73               	.LCFI1:
+  74               		.cfi_def_cfa_offset 4
+  75               		.cfi_offset 28, -3
+  76 0030 DF93      		push r29
+  77               	.LCFI2:
+  78               		.cfi_def_cfa_offset 5
+  79               		.cfi_offset 29, -4
+  80               	/* prologue: function */
+  81               	/* frame size = 0 */
+  82               	/* stack size = 3 */
+  83               	.L__stack_usage = 3
+  61:RTC_routines.c **** 
+  62:RTC_routines.c ****   unsigned char errorStatus, i, data;
+  63:RTC_routines.c ****   
+  64:RTC_routines.c ****   errorStatus = i2c_start();
+  84               		.loc 1 64 0
+  85 0032 0E94 0000 		call i2c_start
+  86               	.LVL8:
+  65:RTC_routines.c ****    if(errorStatus == 1)
+  87               		.loc 1 65 0
+  88 0036 8130      		cpi r24,lo8(1)
+  89 0038 01F0      		breq .L34
+  66:RTC_routines.c ****    {
+  67:RTC_routines.c ****      //transmitString_F(PSTR("RTC start1 failed.."));
+  68:RTC_routines.c ****    	 i2c_stop();
+  69:RTC_routines.c **** 	 return 1;
+  70:RTC_routines.c ****    } 
+  71:RTC_routines.c ****    
+  72:RTC_routines.c ****    errorStatus = i2c_sendAddress(DS1307_W);
+  90               		.loc 1 72 0
+  91 003a 80ED      		ldi r24,lo8(-48)
+  92               	.LVL9:
+  93 003c 0E94 0000 		call i2c_sendAddress
+  94               	.LVL10:
+  73:RTC_routines.c ****    
+  74:RTC_routines.c ****    if(errorStatus == 1)
+  95               		.loc 1 74 0
+  96 0040 8130      		cpi r24,lo8(1)
+  97 0042 01F0      		breq .L34
+  75:RTC_routines.c ****    {
+  76:RTC_routines.c ****      //transmitString_F(PSTR("RTC sendAddress1 failed.."));
+  77:RTC_routines.c **** 	 i2c_stop();
+  78:RTC_routines.c **** 	 return 1;
+  79:RTC_routines.c ****    } 
+  80:RTC_routines.c ****    
+  81:RTC_routines.c ****    errorStatus = i2c_sendData(0x00);
+  98               		.loc 1 81 0
+  99 0044 80E0      		ldi r24,0
+ 100               	.LVL11:
+ 101 0046 0E94 0000 		call i2c_sendData
+ 102               	.LVL12:
+  82:RTC_routines.c ****    if(errorStatus == 1)
+ 103               		.loc 1 82 0
+ 104 004a 8130      		cpi r24,lo8(1)
+ 105 004c 01F0      		breq .L34
+  83:RTC_routines.c ****    {
+  84:RTC_routines.c ****      //transmitString_F(PSTR("RTC write-1 failed.."));
+  85:RTC_routines.c **** 	 i2c_stop();
+  86:RTC_routines.c **** 	 return 1;
+  87:RTC_routines.c ****    } 
+  88:RTC_routines.c **** 
+  89:RTC_routines.c ****     errorStatus = i2c_repeatStart();
+ 106               		.loc 1 89 0
+ 107 004e 0E94 0000 		call i2c_repeatStart
+ 108               	.LVL13:
+  90:RTC_routines.c ****    if(errorStatus == 1)
+ 109               		.loc 1 90 0
+ 110 0052 8130      		cpi r24,lo8(1)
+ 111 0054 01F0      		breq .L34
+  91:RTC_routines.c ****    {
+  92:RTC_routines.c ****      //transmitString_F(PSTR("RTC repeat start failed.."));
+  93:RTC_routines.c ****    	 i2c_stop();
+  94:RTC_routines.c **** 	 return 1;
+  95:RTC_routines.c ****    } 
+  96:RTC_routines.c ****    
+  97:RTC_routines.c ****     errorStatus = i2c_sendAddress(DS1307_R);
+ 112               		.loc 1 97 0
+ 113 0056 81ED      		ldi r24,lo8(-47)
+ 114               	.LVL14:
+ 115 0058 0E94 0000 		call i2c_sendAddress
+ 116               	.LVL15:
+  98:RTC_routines.c ****    
+  99:RTC_routines.c ****    if(errorStatus == 1)
+ 117               		.loc 1 99 0
+ 118 005c 8130      		cpi r24,lo8(1)
+ 119 005e 01F0      		breq .L34
+ 120 0060 C0E0      		ldi r28,lo8(rtc_register)
+ 121 0062 D0E0      		ldi r29,hi8(rtc_register)
+ 122 0064 10E0      		ldi r17,0
+ 123               	.LVL16:
+ 124               	.L21:
+ 125               	.LBB4:
+ 126               	.LBB5:
+ 100:RTC_routines.c ****    {
+ 101:RTC_routines.c ****      //transmitString_F(PSTR("RTC sendAddress2 failed.."));
+ 102:RTC_routines.c **** 	 i2c_stop();
+ 103:RTC_routines.c **** 	 return 1;
+ 104:RTC_routines.c ****    } 
+ 105:RTC_routines.c ****  
+ 106:RTC_routines.c ****     for(i=0;i<7;i++)
+ 107:RTC_routines.c ****    {
+ 108:RTC_routines.c ****       if(i == 6)  	 //no Acknowledge after receiving the last byte
+ 127               		.loc 1 108 0
+ 128 0066 1630      		cpi r17,lo8(6)
+ 129 0068 01F4      		brne .L16
+ 109:RTC_routines.c **** 	   	  data = i2c_receiveData_NACK();
+ 130               		.loc 1 109 0
+ 131 006a 0E94 0000 		call i2c_receiveData_NACK
+ 132               	.LVL17:
+ 133 006e 00C0      		rjmp .L17
+ 134               	.LVL18:
+ 135               	.L16:
+ 110:RTC_routines.c **** 	  else
+ 111:RTC_routines.c **** 	  	  data = i2c_receiveData_ACK();
+ 136               		.loc 1 111 0
+ 137 0070 0E94 0000 		call i2c_receiveData_ACK
+ 138               	.LVL19:
+ 139               	.L17:
+ 112:RTC_routines.c **** 		  
+ 113:RTC_routines.c ****    	  if(data == ERROR_CODE)
+ 140               		.loc 1 113 0
+ 141 0074 8E37      		cpi r24,lo8(126)
+ 142 0076 01F4      		brne .L18
+ 143               	.LVL20:
+ 144               	.L34:
+ 114:RTC_routines.c ****    	  {
+ 115:RTC_routines.c ****        		//transmitString_F(PSTR("RTC receive failed.."));
+ 116:RTC_routines.c **** 			i2c_stop();
+ 145               		.loc 1 116 0
+ 146 0078 0E94 0000 		call i2c_stop
+ 147               	.LVL21:
+ 117:RTC_routines.c **** 	   		return 1;
+ 148               		.loc 1 117 0
+ 149 007c 81E0      		ldi r24,lo8(1)
+ 150 007e 00C0      		rjmp .L14
+ 151               	.LVL22:
+ 152               	.L18:
+ 118:RTC_routines.c ****    	  }
+ 119:RTC_routines.c **** 	  
+ 120:RTC_routines.c **** 	  rtc_register[i] = data;
+ 153               		.loc 1 120 0
+ 154 0080 8993      		st Y+,r24
+ 106:RTC_routines.c ****     for(i=0;i<7;i++)
+ 155               		.loc 1 106 0
+ 156 0082 1F5F      		subi r17,lo8(-(1))
+ 157               	.LVL23:
+ 158 0084 1730      		cpi r17,lo8(7)
+ 159 0086 01F4      		brne .L21
+ 121:RTC_routines.c **** 	}
+ 122:RTC_routines.c **** 	
+ 123:RTC_routines.c **** 	i2c_stop();
+ 160               		.loc 1 123 0
+ 161 0088 0E94 0000 		call i2c_stop
+ 162               	.LVL24:
+ 124:RTC_routines.c **** 	return 0;
+ 163               		.loc 1 124 0
+ 164 008c 80E0      		ldi r24,0
+ 165               	.LVL25:
+ 166               	.L14:
+ 167               	/* epilogue start */
+ 168               	.LBE5:
+ 169               	.LBE4:
+ 125:RTC_routines.c **** }	  
+ 170               		.loc 1 125 0
+ 171 008e DF91      		pop r29
+ 172 0090 CF91      		pop r28
+ 173 0092 1F91      		pop r17
+ 174 0094 0895      		ret
+ 175               		.cfi_endproc
+ 176               	.LFE2:
+ 178               	.global	RTC_getTime
+ 180               	RTC_getTime:
+ 181               	.LFB3:
+ 126:RTC_routines.c **** 
+ 127:RTC_routines.c **** //******************************************************************
+ 128:RTC_routines.c **** //Function to form time string for sending it to LCD & UART
+ 129:RTC_routines.c **** //****************************************************************** 
+ 130:RTC_routines.c **** unsigned char RTC_getTime(void)
+ 131:RTC_routines.c **** {
+ 182               		.loc 1 131 0
+ 183               		.cfi_startproc
+ 184               	/* prologue: function */
+ 185               	/* frame size = 0 */
+ 186               	/* stack size = 0 */
+ 187               	.L__stack_usage = 0
+ 132:RTC_routines.c ****    unsigned char error;
+ 133:RTC_routines.c ****    error = RTC_read();
+ 188               		.loc 1 133 0
+ 189 0096 0E94 0000 		call RTC_read
+ 190               	.LVL26:
+ 134:RTC_routines.c ****    if(error) return 1;
+ 191               		.loc 1 134 0
+ 192 009a 8111      		cpse r24,__zero_reg__
+ 193 009c 00C0      		rjmp .L37
+ 135:RTC_routines.c **** 
+ 136:RTC_routines.c ****    RTC_read();
+ 194               		.loc 1 136 0
+ 195 009e 0E94 0000 		call RTC_read
+ 196               	.LVL27:
+ 137:RTC_routines.c ****    time[8] = 0x00;	  //NULL
+ 197               		.loc 1 137 0
+ 198 00a2 1092 0000 		sts time+8,__zero_reg__
+ 138:RTC_routines.c ****    time[7] = (SECONDS & 0x0f) | 0x30;		 //seconds(1's)
+ 199               		.loc 1 138 0
+ 200 00a6 8091 0000 		lds r24,rtc_register
+ 201 00aa 982F      		mov r25,r24
+ 202 00ac 9F70      		andi r25,lo8(15)
+ 203 00ae 9063      		ori r25,lo8(48)
+ 204 00b0 9093 0000 		sts time+7,r25
+ 139:RTC_routines.c ****    time[6] = ((SECONDS & 0x70) >> 4) | 0x30; //seconds(10's)
+ 205               		.loc 1 139 0
+ 206 00b4 8077      		andi r24,lo8(112)
+ 207 00b6 8295      		swap r24
+ 208 00b8 8F70      		andi r24,lo8(15)
+ 209 00ba 8063      		ori r24,lo8(48)
+ 210 00bc 8093 0000 		sts time+6,r24
+ 140:RTC_routines.c ****    time[5] = ':';
+ 211               		.loc 1 140 0
+ 212 00c0 2AE3      		ldi r18,lo8(58)
+ 213 00c2 2093 0000 		sts time+5,r18
+ 141:RTC_routines.c ****    
+ 142:RTC_routines.c ****    time[4] = (MINUTES & 0x0f) | 0x30;
+ 214               		.loc 1 142 0
+ 215 00c6 8091 0000 		lds r24,rtc_register+1
+ 216 00ca 982F      		mov r25,r24
+ 217 00cc 9F70      		andi r25,lo8(15)
+ 218 00ce 9063      		ori r25,lo8(48)
+ 219 00d0 9093 0000 		sts time+4,r25
+ 143:RTC_routines.c ****    time[3] = ((MINUTES & 0x70) >> 4) | 0x30;
+ 220               		.loc 1 143 0
+ 221 00d4 8077      		andi r24,lo8(112)
+ 222 00d6 8295      		swap r24
+ 223 00d8 8F70      		andi r24,lo8(15)
+ 224 00da 8063      		ori r24,lo8(48)
+ 225 00dc 8093 0000 		sts time+3,r24
+ 144:RTC_routines.c ****    time[2] = ':'; 
+ 226               		.loc 1 144 0
+ 227 00e0 2093 0000 		sts time+2,r18
+ 145:RTC_routines.c ****    
+ 146:RTC_routines.c ****    time[1] = (HOURS & 0x0f) | 0x30;	
+ 228               		.loc 1 146 0
+ 229 00e4 8091 0000 		lds r24,rtc_register+2
+ 230 00e8 982F      		mov r25,r24
+ 231 00ea 9F70      		andi r25,lo8(15)
+ 232 00ec 9063      		ori r25,lo8(48)
+ 233 00ee 9093 0000 		sts time+1,r25
+ 147:RTC_routines.c ****    time[0] = ((HOURS & 0x30) >> 4) | 0x30;
+ 234               		.loc 1 147 0
+ 235 00f2 8073      		andi r24,lo8(48)
+ 236 00f4 8295      		swap r24
+ 237 00f6 8F70      		andi r24,lo8(15)
+ 238 00f8 8063      		ori r24,lo8(48)
+ 239 00fa 8093 0000 		sts time,r24
+ 148:RTC_routines.c **** 
+ 149:RTC_routines.c ****    return 0;
+ 240               		.loc 1 149 0
+ 241 00fe 80E0      		ldi r24,0
+ 242 0100 0895      		ret
+ 243               	.LVL28:
+ 244               	.L37:
+ 134:RTC_routines.c ****    if(error) return 1;
+ 245               		.loc 1 134 0
+ 246 0102 81E0      		ldi r24,lo8(1)
+ 247               	.LVL29:
+ 150:RTC_routines.c **** }
+ 248               		.loc 1 150 0
+ 249 0104 0895      		ret
+ 250               		.cfi_endproc
+ 251               	.LFE3:
+ 253               	.global	RTC_getDate
+ 255               	RTC_getDate:
+ 256               	.LFB4:
+ 151:RTC_routines.c **** 
+ 152:RTC_routines.c **** //******************************************************************
+ 153:RTC_routines.c **** //Function to form date string for sending it to LCD & UART
+ 154:RTC_routines.c **** //****************************************************************** 
+ 155:RTC_routines.c **** unsigned char RTC_getDate(void)
+ 156:RTC_routines.c **** {
+ 257               		.loc 1 156 0
+ 258               		.cfi_startproc
+ 259               	/* prologue: function */
+ 260               	/* frame size = 0 */
+ 261               	/* stack size = 0 */
+ 262               	.L__stack_usage = 0
+ 157:RTC_routines.c ****   unsigned char error;
+ 158:RTC_routines.c ****   error = RTC_read();
+ 263               		.loc 1 158 0
+ 264 0106 0E94 0000 		call RTC_read
+ 265               	.LVL30:
+ 159:RTC_routines.c ****   if(error) return 1;
+ 266               		.loc 1 159 0
+ 267 010a 8111      		cpse r24,__zero_reg__
+ 268 010c 00C0      		rjmp .L40
+ 160:RTC_routines.c **** 
+ 161:RTC_routines.c ****   date[10] = 0x00;  //NULL
+ 269               		.loc 1 161 0
+ 270 010e 1092 0000 		sts date+10,__zero_reg__
+ 162:RTC_routines.c ****   date[9] = (YEAR & 0x0f) | 0x30;
+ 271               		.loc 1 162 0
+ 272 0112 8091 0000 		lds r24,rtc_register+6
+ 273               	.LVL31:
+ 274 0116 982F      		mov r25,r24
+ 275 0118 9F70      		andi r25,lo8(15)
+ 276 011a 9063      		ori r25,lo8(48)
+ 277 011c 9093 0000 		sts date+9,r25
+ 163:RTC_routines.c ****   date[8] = ((YEAR & 0xf0) >> 4) | 0x30;
+ 278               		.loc 1 163 0
+ 279 0120 8295      		swap r24
+ 280 0122 8F70      		andi r24,lo8(15)
+ 281 0124 8063      		ori r24,lo8(48)
+ 282 0126 8093 0000 		sts date+8,r24
+ 164:RTC_routines.c ****   date[7] = '0';
+ 283               		.loc 1 164 0
+ 284 012a 80E3      		ldi r24,lo8(48)
+ 285 012c 8093 0000 		sts date+7,r24
+ 165:RTC_routines.c ****   date[6] = '2';
+ 286               		.loc 1 165 0
+ 287 0130 82E3      		ldi r24,lo8(50)
+ 288 0132 8093 0000 		sts date+6,r24
+ 166:RTC_routines.c ****   date[5] = '/';
+ 289               		.loc 1 166 0
+ 290 0136 9FE2      		ldi r25,lo8(47)
+ 291 0138 9093 0000 		sts date+5,r25
+ 167:RTC_routines.c ****   date[4] = (MONTH & 0x0f) | 0x30;
+ 292               		.loc 1 167 0
+ 293 013c 2091 0000 		lds r18,rtc_register+5
+ 294 0140 822F      		mov r24,r18
+ 295 0142 8F70      		andi r24,lo8(15)
+ 296 0144 8063      		ori r24,lo8(48)
+ 297 0146 8093 0000 		sts date+4,r24
+ 168:RTC_routines.c ****   date[3] = ((MONTH & 0x10) >> 4) | 0x30;
+ 298               		.loc 1 168 0
+ 299 014a 2295      		swap r18
+ 300 014c 2170      		andi r18,1
+ 301 014e 2063      		ori r18,lo8(48)
+ 302 0150 2093 0000 		sts date+3,r18
+ 169:RTC_routines.c ****   date[2] = '/';
+ 303               		.loc 1 169 0
+ 304 0154 9093 0000 		sts date+2,r25
+ 170:RTC_routines.c ****   date[1] = (DATE & 0x0f) | 0x30;
+ 305               		.loc 1 170 0
+ 306 0158 8091 0000 		lds r24,rtc_register+4
+ 307 015c 982F      		mov r25,r24
+ 308 015e 9F70      		andi r25,lo8(15)
+ 309 0160 9063      		ori r25,lo8(48)
+ 310 0162 9093 0000 		sts date+1,r25
+ 171:RTC_routines.c ****   date[0] = ((DATE & 0x30) >> 4) | 0x30;
+ 311               		.loc 1 171 0
+ 312 0166 8073      		andi r24,lo8(48)
+ 313 0168 8295      		swap r24
+ 314 016a 8F70      		andi r24,lo8(15)
+ 315 016c 8063      		ori r24,lo8(48)
+ 316 016e 8093 0000 		sts date,r24
+ 172:RTC_routines.c ****   return 0;
+ 317               		.loc 1 172 0
+ 318 0172 80E0      		ldi r24,0
+ 319 0174 0895      		ret
+ 320               	.LVL32:
+ 321               	.L40:
+ 159:RTC_routines.c ****   if(error) return 1;
+ 322               		.loc 1 159 0
+ 323 0176 81E0      		ldi r24,lo8(1)
+ 324               	.LVL33:
+ 173:RTC_routines.c **** }  
+ 325               		.loc 1 173 0
+ 326 0178 0895      		ret
+ 327               		.cfi_endproc
+ 328               	.LFE4:
+ 330               	.global	RTC_displayTime
+ 332               	RTC_displayTime:
+ 333               	.LFB5:
+ 174:RTC_routines.c ****   
+ 175:RTC_routines.c **** //******************************************************************
+ 176:RTC_routines.c **** //Function to display time on LCD and send it to PC (thru UART)
+ 177:RTC_routines.c **** //****************************************************************** 
+ 178:RTC_routines.c **** unsigned char RTC_displayTime(void)
+ 179:RTC_routines.c **** {
+ 334               		.loc 1 179 0
+ 335               		.cfi_startproc
+ 336               	/* prologue: function */
+ 337               	/* frame size = 0 */
+ 338               	/* stack size = 0 */
+ 339               	.L__stack_usage = 0
+ 180:RTC_routines.c ****   unsigned char error;
+ 181:RTC_routines.c ****   error = RTC_getTime();
+ 340               		.loc 1 181 0
+ 341 017a 0E94 0000 		call RTC_getTime
+ 342               	.LVL34:
+ 182:RTC_routines.c ****   if(error) return 1;
+ 343               		.loc 1 182 0
+ 344 017e 8111      		cpse r24,__zero_reg__
+ 345 0180 00C0      		rjmp .L43
+ 183:RTC_routines.c ****   
+ 184:RTC_routines.c ****   TX_NEWLINE;
+ 346               		.loc 1 184 0
+ 347 0182 8DE0      		ldi r24,lo8(13)
+ 348               	.LVL35:
+ 349 0184 0E94 0000 		call transmitByte
+ 350               	.LVL36:
+ 351 0188 8AE0      		ldi r24,lo8(10)
+ 352 018a 0E94 0000 		call transmitByte
+ 353               	.LVL37:
+ 185:RTC_routines.c ****   transmitString_F(PSTR("Time:"));
+ 354               		.loc 1 185 0
+ 355 018e 80E0      		ldi r24,lo8(__c.1741)
+ 356 0190 90E0      		ldi r25,hi8(__c.1741)
+ 357 0192 0E94 0000 		call transmitString_F
+ 358               	.LVL38:
+ 186:RTC_routines.c ****   transmitString(time);
+ 359               		.loc 1 186 0
+ 360 0196 80E0      		ldi r24,lo8(time)
+ 361 0198 90E0      		ldi r25,hi8(time)
+ 362 019a 0E94 0000 		call transmitString
+ 363               	.LVL39:
+ 187:RTC_routines.c **** 
+ 188:RTC_routines.c ****   return 0;
+ 364               		.loc 1 188 0
+ 365 019e 80E0      		ldi r24,0
+ 366 01a0 0895      		ret
+ 367               	.LVL40:
+ 368               	.L43:
+ 182:RTC_routines.c ****   if(error) return 1;
+ 369               		.loc 1 182 0
+ 370 01a2 81E0      		ldi r24,lo8(1)
+ 371               	.LVL41:
+ 189:RTC_routines.c **** }
+ 372               		.loc 1 189 0
+ 373 01a4 0895      		ret
+ 374               		.cfi_endproc
+ 375               	.LFE5:
+ 377               	.global	RTC_displayDay
+ 379               	RTC_displayDay:
+ 380               	.LFB7:
+ 190:RTC_routines.c **** 
+ 191:RTC_routines.c **** //******************************************************************
+ 192:RTC_routines.c **** //Function to display date on LCD and send it to PC (UART)
+ 193:RTC_routines.c **** //****************************************************************** 
+ 194:RTC_routines.c **** unsigned char RTC_displayDate(void)
+ 195:RTC_routines.c **** {
+ 196:RTC_routines.c ****   unsigned char error;
+ 197:RTC_routines.c ****   error = RTC_getDate();
+ 198:RTC_routines.c ****   if(error) return 1;
+ 199:RTC_routines.c ****   
+ 200:RTC_routines.c ****   TX_NEWLINE;
+ 201:RTC_routines.c ****   transmitString_F(PSTR("Date:")); 
+ 202:RTC_routines.c ****   transmitString(date);  
+ 203:RTC_routines.c ****   RTC_displayDay();  
+ 204:RTC_routines.c ****   
+ 205:RTC_routines.c ****   return 0; 
+ 206:RTC_routines.c **** }
+ 207:RTC_routines.c **** 
+ 208:RTC_routines.c **** //******************************************************************
+ 209:RTC_routines.c **** //Function to get the string for day 
+ 210:RTC_routines.c **** //****************************************************************** 
+ 211:RTC_routines.c **** void RTC_displayDay(void)
+ 212:RTC_routines.c **** {
+ 381               		.loc 1 212 0
+ 382               		.cfi_startproc
+ 383               	/* prologue: function */
+ 384               	/* frame size = 0 */
+ 385               	/* stack size = 0 */
+ 386               	.L__stack_usage = 0
+ 213:RTC_routines.c ****   transmitString_F(PSTR("    Day: "));
+ 387               		.loc 1 213 0
+ 388 01a6 80E0      		ldi r24,lo8(__c.1752)
+ 389 01a8 90E0      		ldi r25,hi8(__c.1752)
+ 390 01aa 0E94 0000 		call transmitString_F
+ 391               	.LVL42:
+ 214:RTC_routines.c ****   
+ 215:RTC_routines.c ****   switch(DAY)
+ 392               		.loc 1 215 0
+ 393 01ae 8091 0000 		lds r24,rtc_register+3
+ 394 01b2 90E0      		ldi r25,0
+ 395 01b4 8730      		cpi r24,7
+ 396 01b6 9105      		cpc r25,__zero_reg__
+ 397 01b8 00F4      		brsh .L45
+ 398 01ba FC01      		movw r30,r24
+ 399 01bc E050      		subi r30,lo8(-(gs(.L47)))
+ 400 01be F040      		sbci r31,hi8(-(gs(.L47)))
+ 401 01c0 0C94 0000 		jmp __tablejump2__
+ 402               		.section	.progmem.gcc_sw_table,"a",@progbits
+ 403               		.p2align	1
+ 404               	.L47:
+ 405 0000 0000      		.word gs(.L46)
+ 406 0002 0000      		.word gs(.L48)
+ 407 0004 0000      		.word gs(.L49)
+ 408 0006 0000      		.word gs(.L50)
+ 409 0008 0000      		.word gs(.L51)
+ 410 000a 0000      		.word gs(.L52)
+ 411 000c 0000      		.word gs(.L53)
+ 412               		.text
+ 413               	.L46:
+ 216:RTC_routines.c ****   {
+ 217:RTC_routines.c ****    case 0:transmitString_F(PSTR("Sunday"));
+ 414               		.loc 1 217 0
+ 415 01c4 80E0      		ldi r24,lo8(__c.1755)
+ 416 01c6 90E0      		ldi r25,hi8(__c.1755)
+ 417 01c8 00C0      		rjmp .L54
+ 418               	.L48:
+ 218:RTC_routines.c ****           break; 
+ 219:RTC_routines.c ****    case 1:transmitString_F(PSTR("Monday"));
+ 419               		.loc 1 219 0
+ 420 01ca 80E0      		ldi r24,lo8(__c.1759)
+ 421 01cc 90E0      		ldi r25,hi8(__c.1759)
+ 422 01ce 00C0      		rjmp .L54
+ 423               	.L49:
+ 220:RTC_routines.c ****           break; 
+ 221:RTC_routines.c ****    case 2:transmitString_F(PSTR("Tuesday"));
+ 424               		.loc 1 221 0
+ 425 01d0 80E0      		ldi r24,lo8(__c.1762)
+ 426 01d2 90E0      		ldi r25,hi8(__c.1762)
+ 427 01d4 00C0      		rjmp .L54
+ 428               	.L50:
+ 222:RTC_routines.c ****           break; 
+ 223:RTC_routines.c ****    case 3:transmitString_F(PSTR("Wednesday"));
+ 429               		.loc 1 223 0
+ 430 01d6 80E0      		ldi r24,lo8(__c.1765)
+ 431 01d8 90E0      		ldi r25,hi8(__c.1765)
+ 432 01da 00C0      		rjmp .L54
+ 433               	.L51:
+ 224:RTC_routines.c ****           break; 
+ 225:RTC_routines.c ****    case 4:transmitString_F(PSTR("Thursday"));
+ 434               		.loc 1 225 0
+ 435 01dc 80E0      		ldi r24,lo8(__c.1768)
+ 436 01de 90E0      		ldi r25,hi8(__c.1768)
+ 437 01e0 00C0      		rjmp .L54
+ 438               	.L52:
+ 226:RTC_routines.c ****           break; 		  
+ 227:RTC_routines.c ****    case 5:transmitString_F(PSTR("Friday"));
+ 439               		.loc 1 227 0
+ 440 01e2 80E0      		ldi r24,lo8(__c.1771)
+ 441 01e4 90E0      		ldi r25,hi8(__c.1771)
+ 442 01e6 00C0      		rjmp .L54
+ 443               	.L53:
+ 228:RTC_routines.c ****           break; 		  
+ 229:RTC_routines.c ****    case 6:transmitString_F(PSTR("Saturday"));
+ 444               		.loc 1 229 0
+ 445 01e8 80E0      		ldi r24,lo8(__c.1774)
+ 446 01ea 90E0      		ldi r25,hi8(__c.1774)
+ 447 01ec 00C0      		rjmp .L54
+ 448               	.L45:
+ 230:RTC_routines.c ****           break; 
+ 231:RTC_routines.c ****    default:	transmitString_F(PSTR("Unknown"));  
+ 449               		.loc 1 231 0
+ 450 01ee 80E0      		ldi r24,lo8(__c.1777)
+ 451 01f0 90E0      		ldi r25,hi8(__c.1777)
+ 452               	.L54:
+ 453 01f2 0C94 0000 		jmp transmitString_F
+ 454               	.LVL43:
+ 455               		.cfi_endproc
+ 456               	.LFE7:
+ 458               	.global	RTC_displayDate
+ 460               	RTC_displayDate:
+ 461               	.LFB6:
+ 195:RTC_routines.c **** {
+ 462               		.loc 1 195 0
+ 463               		.cfi_startproc
+ 464               	/* prologue: function */
+ 465               	/* frame size = 0 */
+ 466               	/* stack size = 0 */
+ 467               	.L__stack_usage = 0
+ 197:RTC_routines.c ****   error = RTC_getDate();
+ 468               		.loc 1 197 0
+ 469 01f6 0E94 0000 		call RTC_getDate
+ 470               	.LVL44:
+ 198:RTC_routines.c ****   if(error) return 1;
+ 471               		.loc 1 198 0
+ 472 01fa 8111      		cpse r24,__zero_reg__
+ 473 01fc 00C0      		rjmp .L57
+ 200:RTC_routines.c ****   TX_NEWLINE;
+ 474               		.loc 1 200 0
+ 475 01fe 8DE0      		ldi r24,lo8(13)
+ 476               	.LVL45:
+ 477 0200 0E94 0000 		call transmitByte
+ 478               	.LVL46:
+ 479 0204 8AE0      		ldi r24,lo8(10)
+ 480 0206 0E94 0000 		call transmitByte
+ 481               	.LVL47:
+ 201:RTC_routines.c ****   transmitString_F(PSTR("Date:")); 
+ 482               		.loc 1 201 0
+ 483 020a 80E0      		ldi r24,lo8(__c.1747)
+ 484 020c 90E0      		ldi r25,hi8(__c.1747)
+ 485 020e 0E94 0000 		call transmitString_F
+ 486               	.LVL48:
+ 202:RTC_routines.c ****   transmitString(date);  
+ 487               		.loc 1 202 0
+ 488 0212 80E0      		ldi r24,lo8(date)
+ 489 0214 90E0      		ldi r25,hi8(date)
+ 490 0216 0E94 0000 		call transmitString
+ 491               	.LVL49:
+ 203:RTC_routines.c ****   RTC_displayDay();  
+ 492               		.loc 1 203 0
+ 493 021a 0E94 0000 		call RTC_displayDay
+ 494               	.LVL50:
+ 205:RTC_routines.c ****   return 0; 
+ 495               		.loc 1 205 0
+ 496 021e 80E0      		ldi r24,0
+ 497 0220 0895      		ret
+ 498               	.LVL51:
+ 499               	.L57:
+ 198:RTC_routines.c ****   if(error) return 1;
+ 500               		.loc 1 198 0
+ 501 0222 81E0      		ldi r24,lo8(1)
+ 502               	.LVL52:
+ 206:RTC_routines.c **** }
+ 503               		.loc 1 206 0
+ 504 0224 0895      		ret
+ 505               		.cfi_endproc
+ 506               	.LFE6:
+ 508               	.global	RTC_updateRegisters
+ 510               	RTC_updateRegisters:
+ 511               	.LFB8:
+ 232:RTC_routines.c ****   }
+ 233:RTC_routines.c **** }	  		  
+ 234:RTC_routines.c **** 		  		     	  
+ 235:RTC_routines.c **** //******************************************************************
+ 236:RTC_routines.c **** //Function to update buffer rtc_register[] for next writing to RTC
+ 237:RTC_routines.c **** //****************************************************************** 
+ 238:RTC_routines.c **** void RTC_updateRegisters(void)
+ 239:RTC_routines.c **** {
+ 512               		.loc 1 239 0
+ 513               		.cfi_startproc
+ 514               	/* prologue: function */
+ 515               	/* frame size = 0 */
+ 516               	/* stack size = 0 */
+ 517               	.L__stack_usage = 0
+ 240:RTC_routines.c ****   SECONDS = ((time[6] & 0x07) << 4) | (time[7] & 0x0f);
+ 518               		.loc 1 240 0
+ 519 0226 2091 0000 		lds r18,time+6
+ 520 022a 2770      		andi r18,lo8(7)
+ 521 022c 80E1      		ldi r24,lo8(16)
+ 522 022e 289F      		mul r18,r24
+ 523 0230 9001      		movw r18,r0
+ 524 0232 1124      		clr __zero_reg__
+ 525 0234 3091 0000 		lds r19,time+7
+ 526 0238 3F70      		andi r19,lo8(15)
+ 527 023a 322B      		or r19,r18
+ 528 023c 3093 0000 		sts rtc_register,r19
+ 241:RTC_routines.c ****   MINUTES = ((time[3] & 0x07) << 4) | (time[4] & 0x0f);
+ 529               		.loc 1 241 0
+ 530 0240 2091 0000 		lds r18,time+3
+ 531 0244 2770      		andi r18,lo8(7)
+ 532 0246 80E1      		ldi r24,lo8(16)
+ 533 0248 289F      		mul r18,r24
+ 534 024a 9001      		movw r18,r0
+ 535 024c 1124      		clr __zero_reg__
+ 536 024e 3091 0000 		lds r19,time+4
+ 537 0252 3F70      		andi r19,lo8(15)
+ 538 0254 322B      		or r19,r18
+ 539 0256 3093 0000 		sts rtc_register+1,r19
+ 242:RTC_routines.c ****   HOURS = ((time[0] & 0x03) << 4) | (time[1] & 0x0f);  
+ 540               		.loc 1 242 0
+ 541 025a 2091 0000 		lds r18,time
+ 542 025e 2370      		andi r18,lo8(3)
+ 543 0260 80E1      		ldi r24,lo8(16)
+ 544 0262 289F      		mul r18,r24
+ 545 0264 9001      		movw r18,r0
+ 546 0266 1124      		clr __zero_reg__
+ 547 0268 3091 0000 		lds r19,time+1
+ 548 026c 3F70      		andi r19,lo8(15)
+ 549 026e 322B      		or r19,r18
+ 550 0270 3093 0000 		sts rtc_register+2,r19
+ 243:RTC_routines.c ****   DAY = date[10];
+ 551               		.loc 1 243 0
+ 552 0274 2091 0000 		lds r18,date+10
+ 553 0278 2093 0000 		sts rtc_register+3,r18
+ 244:RTC_routines.c ****   DATE = ((date[0] & 0x03) << 4) | (date[1] & 0x0f);
+ 554               		.loc 1 244 0
+ 555 027c 2091 0000 		lds r18,date
+ 556 0280 2370      		andi r18,lo8(3)
+ 557 0282 80E1      		ldi r24,lo8(16)
+ 558 0284 289F      		mul r18,r24
+ 559 0286 9001      		movw r18,r0
+ 560 0288 1124      		clr __zero_reg__
+ 561 028a 3091 0000 		lds r19,date+1
+ 562 028e 3F70      		andi r19,lo8(15)
+ 563 0290 322B      		or r19,r18
+ 564 0292 3093 0000 		sts rtc_register+4,r19
+ 245:RTC_routines.c ****   MONTH = ((date[3] & 0x01) << 4) | (date[4] & 0x0f);
+ 565               		.loc 1 245 0
+ 566 0296 2091 0000 		lds r18,date+3
+ 567 029a 822F      		mov r24,r18
+ 568 029c 8170      		andi r24,1
+ 569 029e 90E0      		ldi r25,0
+ 570 02a0 24E0      		ldi r18,4
+ 571               		1:
+ 572 02a2 880F      		lsl r24
+ 573 02a4 991F      		rol r25
+ 574 02a6 2A95      		dec r18
+ 575 02a8 01F4      		brne 1b
+ 576 02aa 9091 0000 		lds r25,date+4
+ 577 02ae 9F70      		andi r25,lo8(15)
+ 578 02b0 982B      		or r25,r24
+ 579 02b2 9093 0000 		sts rtc_register+5,r25
+ 246:RTC_routines.c ****   YEAR = ((date[8] & 0x0f) << 4) | (date[9] & 0x0f);
+ 580               		.loc 1 246 0
+ 581 02b6 8091 0000 		lds r24,date+8
+ 582 02ba 20E1      		ldi r18,lo8(16)
+ 583 02bc 829F      		mul r24,r18
+ 584 02be C001      		movw r24,r0
+ 585 02c0 1124      		clr __zero_reg__
+ 586 02c2 9091 0000 		lds r25,date+9
+ 587 02c6 9F70      		andi r25,lo8(15)
+ 588 02c8 982B      		or r25,r24
+ 589 02ca 9093 0000 		sts rtc_register+6,r25
+ 590 02ce 0895      		ret
+ 591               		.cfi_endproc
+ 592               	.LFE8:
+ 594               	.global	RTC_writeTime
+ 596               	RTC_writeTime:
+ 597               	.LFB9:
+ 247:RTC_routines.c **** }  
+ 248:RTC_routines.c **** 
+ 249:RTC_routines.c **** 
+ 250:RTC_routines.c **** //******************************************************************
+ 251:RTC_routines.c **** //Function to write new time in the RTC 
+ 252:RTC_routines.c **** //******************************************************************   
+ 253:RTC_routines.c **** unsigned char RTC_writeTime(void)
+ 254:RTC_routines.c **** {
+ 598               		.loc 1 254 0
+ 599               		.cfi_startproc
+ 600 02d0 CF93      		push r28
+ 601               	.LCFI3:
+ 602               		.cfi_def_cfa_offset 3
+ 603               		.cfi_offset 28, -2
+ 604 02d2 DF93      		push r29
+ 605               	.LCFI4:
+ 606               		.cfi_def_cfa_offset 4
+ 607               		.cfi_offset 29, -3
+ 608               	/* prologue: function */
+ 609               	/* frame size = 0 */
+ 610               	/* stack size = 2 */
+ 611               	.L__stack_usage = 2
+ 255:RTC_routines.c ****   unsigned char errorStatus, i;
+ 256:RTC_routines.c ****   
+ 257:RTC_routines.c ****    errorStatus = i2c_start();
+ 612               		.loc 1 257 0
+ 613 02d4 0E94 0000 		call i2c_start
+ 614               	.LVL53:
+ 258:RTC_routines.c ****    if(errorStatus == 1)
+ 615               		.loc 1 258 0
+ 616 02d8 8130      		cpi r24,lo8(1)
+ 617 02da 01F4      		brne .L60
+ 618               	.L62:
+ 259:RTC_routines.c ****    {
+ 260:RTC_routines.c ****      //transmitString_F(PSTR("RTC start1 failed.."));
+ 261:RTC_routines.c ****    	 i2c_stop();
+ 619               		.loc 1 261 0
+ 620 02dc 0E94 0000 		call i2c_stop
+ 621               	.LVL54:
+ 262:RTC_routines.c **** 	 return(1);
+ 622               		.loc 1 262 0
+ 623 02e0 81E0      		ldi r24,lo8(1)
+ 624 02e2 00C0      		rjmp .L61
+ 625               	.LVL55:
+ 626               	.L60:
+ 263:RTC_routines.c ****    } 
+ 264:RTC_routines.c ****    
+ 265:RTC_routines.c ****    errorStatus = i2c_sendAddress(DS1307_W);
+ 627               		.loc 1 265 0
+ 628 02e4 80ED      		ldi r24,lo8(-48)
+ 629               	.LVL56:
+ 630 02e6 0E94 0000 		call i2c_sendAddress
+ 631               	.LVL57:
+ 266:RTC_routines.c ****    
+ 267:RTC_routines.c ****    if(errorStatus == 1)
+ 632               		.loc 1 267 0
+ 633 02ea 8130      		cpi r24,lo8(1)
+ 634 02ec 01F0      		breq .L62
+ 268:RTC_routines.c ****    {
+ 269:RTC_routines.c ****      //transmitString_F(PSTR("RTC sendAddress1 failed.."));
+ 270:RTC_routines.c **** 	 i2c_stop();
+ 271:RTC_routines.c **** 	 return(1);
+ 272:RTC_routines.c ****    } 
+ 273:RTC_routines.c ****    
+ 274:RTC_routines.c ****    errorStatus = i2c_sendData(0x00);
+ 635               		.loc 1 274 0
+ 636 02ee 80E0      		ldi r24,0
+ 637               	.LVL58:
+ 638 02f0 0E94 0000 		call i2c_sendData
+ 639               	.LVL59:
+ 275:RTC_routines.c ****    if(errorStatus == 1)
+ 640               		.loc 1 275 0
+ 641 02f4 8130      		cpi r24,lo8(1)
+ 642 02f6 01F0      		breq .L62
+ 643 02f8 C0E0      		ldi r28,lo8(rtc_register)
+ 644 02fa D0E0      		ldi r29,hi8(rtc_register)
+ 645               	.LVL60:
+ 646               	.L64:
+ 276:RTC_routines.c ****    {
+ 277:RTC_routines.c ****      //transmitString_F(PSTR("RTC write-1 failed.."));
+ 278:RTC_routines.c **** 	 i2c_stop();
+ 279:RTC_routines.c **** 	 return(1);
+ 280:RTC_routines.c ****    } 
+ 281:RTC_routines.c **** 
+ 282:RTC_routines.c ****     for(i=0;i<3;i++)
+ 283:RTC_routines.c ****     {
+ 284:RTC_routines.c **** 	  errorStatus = i2c_sendData(rtc_register[i]);  
+ 647               		.loc 1 284 0
+ 648 02fc 8991      		ld r24,Y+
+ 649               	.LVL61:
+ 650 02fe 0E94 0000 		call i2c_sendData
+ 651               	.LVL62:
+ 285:RTC_routines.c ****    	  if(errorStatus == 1)
+ 652               		.loc 1 285 0
+ 653 0302 8130      		cpi r24,lo8(1)
+ 654 0304 01F0      		breq .L62
+ 655               	.LVL63:
+ 282:RTC_routines.c ****     for(i=0;i<3;i++)
+ 656               		.loc 1 282 0
+ 657 0306 80E0      		ldi r24,hi8(rtc_register+3)
+ 658 0308 C030      		cpi r28,lo8(rtc_register+3)
+ 659 030a D807      		cpc r29,r24
+ 660               	.LVL64:
+ 661 030c 01F4      		brne .L64
+ 286:RTC_routines.c ****    	  {
+ 287:RTC_routines.c ****        		//transmitString_F(PSTR("RTC write time failed.."));
+ 288:RTC_routines.c **** 			i2c_stop();
+ 289:RTC_routines.c **** 	   		return(1);
+ 290:RTC_routines.c ****    	  }
+ 291:RTC_routines.c ****     }
+ 292:RTC_routines.c **** 	
+ 293:RTC_routines.c **** 	i2c_stop();
+ 662               		.loc 1 293 0
+ 663 030e 0E94 0000 		call i2c_stop
+ 664               	.LVL65:
+ 294:RTC_routines.c **** 	return(0);
+ 665               		.loc 1 294 0
+ 666 0312 80E0      		ldi r24,0
+ 667               	.LVL66:
+ 668               	.L61:
+ 669               	/* epilogue start */
+ 295:RTC_routines.c **** }
+ 670               		.loc 1 295 0
+ 671 0314 DF91      		pop r29
+ 672 0316 CF91      		pop r28
+ 673 0318 0895      		ret
+ 674               		.cfi_endproc
+ 675               	.LFE9:
+ 677               	.global	RTC_writeDate
+ 679               	RTC_writeDate:
+ 680               	.LFB10:
+ 296:RTC_routines.c **** 
+ 297:RTC_routines.c **** 
+ 298:RTC_routines.c **** //******************************************************************
+ 299:RTC_routines.c **** //Function to write new date in the RTC
+ 300:RTC_routines.c **** //******************************************************************   
+ 301:RTC_routines.c **** unsigned char RTC_writeDate(void)
+ 302:RTC_routines.c **** {
+ 681               		.loc 1 302 0
+ 682               		.cfi_startproc
+ 683 031a CF93      		push r28
+ 684               	.LCFI5:
+ 685               		.cfi_def_cfa_offset 3
+ 686               		.cfi_offset 28, -2
+ 687 031c DF93      		push r29
+ 688               	.LCFI6:
+ 689               		.cfi_def_cfa_offset 4
+ 690               		.cfi_offset 29, -3
+ 691               	/* prologue: function */
+ 692               	/* frame size = 0 */
+ 693               	/* stack size = 2 */
+ 694               	.L__stack_usage = 2
+ 303:RTC_routines.c ****   unsigned char errorStatus, i;
+ 304:RTC_routines.c ****   
+ 305:RTC_routines.c ****    errorStatus = i2c_start();
+ 695               		.loc 1 305 0
+ 696 031e 0E94 0000 		call i2c_start
+ 697               	.LVL67:
+ 306:RTC_routines.c ****    if(errorStatus == 1)
+ 698               		.loc 1 306 0
+ 699 0322 8130      		cpi r24,lo8(1)
+ 700 0324 01F4      		brne .L75
+ 701               	.L77:
+ 307:RTC_routines.c ****    {
+ 308:RTC_routines.c ****      //transmitString_F(PSTR("RTC start1 failed.."));
+ 309:RTC_routines.c ****    	 i2c_stop();
+ 702               		.loc 1 309 0
+ 703 0326 0E94 0000 		call i2c_stop
+ 704               	.LVL68:
+ 310:RTC_routines.c **** 	 return(1);
+ 705               		.loc 1 310 0
+ 706 032a 81E0      		ldi r24,lo8(1)
+ 707 032c 00C0      		rjmp .L76
+ 708               	.LVL69:
+ 709               	.L75:
+ 311:RTC_routines.c ****    } 
+ 312:RTC_routines.c ****    
+ 313:RTC_routines.c ****    errorStatus = i2c_sendAddress(DS1307_W);
+ 710               		.loc 1 313 0
+ 711 032e 80ED      		ldi r24,lo8(-48)
+ 712               	.LVL70:
+ 713 0330 0E94 0000 		call i2c_sendAddress
+ 714               	.LVL71:
+ 314:RTC_routines.c ****    
+ 315:RTC_routines.c ****    if(errorStatus == 1)
+ 715               		.loc 1 315 0
+ 716 0334 8130      		cpi r24,lo8(1)
+ 717 0336 01F0      		breq .L77
+ 316:RTC_routines.c ****    {
+ 317:RTC_routines.c ****      //transmitString_F(PSTR("RTC sendAddress1 failed.."));
+ 318:RTC_routines.c **** 	 i2c_stop();
+ 319:RTC_routines.c **** 	 return(1);
+ 320:RTC_routines.c ****    } 
+ 321:RTC_routines.c ****    
+ 322:RTC_routines.c ****    errorStatus = i2c_sendData(0x03);
+ 718               		.loc 1 322 0
+ 719 0338 83E0      		ldi r24,lo8(3)
+ 720               	.LVL72:
+ 721 033a 0E94 0000 		call i2c_sendData
+ 722               	.LVL73:
+ 323:RTC_routines.c ****    if(errorStatus == 1)
+ 723               		.loc 1 323 0
+ 724 033e 8130      		cpi r24,lo8(1)
+ 725 0340 01F0      		breq .L77
+ 726 0342 C0E0      		ldi r28,lo8(rtc_register+3)
+ 727 0344 D0E0      		ldi r29,hi8(rtc_register+3)
+ 728               	.LVL74:
+ 729               	.L79:
+ 324:RTC_routines.c ****    {
+ 325:RTC_routines.c ****      //transmitString_F(PSTR("RTC write-1 failed.."));
+ 326:RTC_routines.c **** 	 i2c_stop();
+ 327:RTC_routines.c **** 	 return(1);
+ 328:RTC_routines.c ****    } 
+ 329:RTC_routines.c **** 
+ 330:RTC_routines.c ****     for(i=3;i<7;i++)
+ 331:RTC_routines.c ****     {
+ 332:RTC_routines.c **** 	  errorStatus = i2c_sendData(rtc_register[i]);  
+ 730               		.loc 1 332 0
+ 731 0346 8991      		ld r24,Y+
+ 732               	.LVL75:
+ 733 0348 0E94 0000 		call i2c_sendData
+ 734               	.LVL76:
+ 333:RTC_routines.c ****    	  if(errorStatus == 1)
+ 735               		.loc 1 333 0
+ 736 034c 8130      		cpi r24,lo8(1)
+ 737 034e 01F0      		breq .L77
+ 738               	.LVL77:
+ 330:RTC_routines.c ****     for(i=3;i<7;i++)
+ 739               		.loc 1 330 0
+ 740 0350 80E0      		ldi r24,hi8(rtc_register+7)
+ 741 0352 C030      		cpi r28,lo8(rtc_register+7)
+ 742 0354 D807      		cpc r29,r24
+ 743               	.LVL78:
+ 744 0356 01F4      		brne .L79
+ 334:RTC_routines.c ****    	  {
+ 335:RTC_routines.c ****        		//transmitString_F(PSTR("RTC write date failed.."));
+ 336:RTC_routines.c **** 			i2c_stop();
+ 337:RTC_routines.c **** 	   		return(1);
+ 338:RTC_routines.c ****    	  }
+ 339:RTC_routines.c ****     }
+ 340:RTC_routines.c **** 	
+ 341:RTC_routines.c **** 	i2c_stop();
+ 745               		.loc 1 341 0
+ 746 0358 0E94 0000 		call i2c_stop
+ 747               	.LVL79:
+ 342:RTC_routines.c **** 	return(0);
+ 748               		.loc 1 342 0
+ 749 035c 80E0      		ldi r24,0
+ 750               	.LVL80:
+ 751               	.L76:
+ 752               	/* epilogue start */
+ 343:RTC_routines.c **** }
+ 753               		.loc 1 343 0
+ 754 035e DF91      		pop r29
+ 755 0360 CF91      		pop r28
+ 756 0362 0895      		ret
+ 757               		.cfi_endproc
+ 758               	.LFE10:
+ 760               	.global	RTC_updateTime
+ 762               	RTC_updateTime:
+ 763               	.LFB11:
+ 344:RTC_routines.c ****   
+ 345:RTC_routines.c **** //******************************************************************
+ 346:RTC_routines.c **** //Function to update RTC time by entering it at hyper terminal
+ 347:RTC_routines.c **** //******************************************************************   
+ 348:RTC_routines.c **** unsigned char RTC_updateTime(void)
+ 349:RTC_routines.c **** {
+ 764               		.loc 1 349 0
+ 765               		.cfi_startproc
+ 766 0364 CF93      		push r28
+ 767               	.LCFI7:
+ 768               		.cfi_def_cfa_offset 3
+ 769               		.cfi_offset 28, -2
+ 770               	/* prologue: function */
+ 771               	/* frame size = 0 */
+ 772               	/* stack size = 1 */
+ 773               	.L__stack_usage = 1
+ 350:RTC_routines.c ****   unsigned char data;
+ 351:RTC_routines.c ****   TX_NEWLINE;
+ 774               		.loc 1 351 0
+ 775 0366 8DE0      		ldi r24,lo8(13)
+ 776 0368 0E94 0000 		call transmitByte
+ 777               	.LVL81:
+ 778 036c 8AE0      		ldi r24,lo8(10)
+ 779 036e 0E94 0000 		call transmitByte
+ 780               	.LVL82:
+ 352:RTC_routines.c ****   transmitString_F(PSTR("Enter Time in 24h format(hh:mm:ss):")); 
+ 781               		.loc 1 352 0
+ 782 0372 80E0      		ldi r24,lo8(__c.1802)
+ 783 0374 90E0      		ldi r25,hi8(__c.1802)
+ 784 0376 0E94 0000 		call transmitString_F
+ 785               	.LVL83:
+ 353:RTC_routines.c ****   
+ 354:RTC_routines.c ****     data = receiveByte(); 	   	  	  				//receive hours
+ 786               		.loc 1 354 0
+ 787 037a 0E94 0000 		call receiveByte
+ 788               	.LVL84:
+ 789 037e C82F      		mov r28,r24
+ 790               	.LVL85:
+ 355:RTC_routines.c **** 	transmitByte(data);
+ 791               		.loc 1 355 0
+ 792 0380 0E94 0000 		call transmitByte
+ 793               	.LVL86:
+ 356:RTC_routines.c **** 	if(data < 0x30 || data > 0x32)
+ 794               		.loc 1 356 0
+ 795 0384 80ED      		ldi r24,lo8(-48)
+ 796 0386 8C0F      		add r24,r28
+ 797 0388 8330      		cpi r24,lo8(3)
+ 798 038a 00F0      		brlo .+2
+ 799 038c 00C0      		rjmp .L90
+ 357:RTC_routines.c **** 	   goto TIME_ERROR;
+ 358:RTC_routines.c **** 	   
+ 359:RTC_routines.c **** 	time[0]= data;
+ 800               		.loc 1 359 0
+ 801 038e C093 0000 		sts time,r28
+ 360:RTC_routines.c **** 	 
+ 361:RTC_routines.c **** 	data = receiveByte();
+ 802               		.loc 1 361 0
+ 803 0392 0E94 0000 		call receiveByte
+ 804               	.LVL87:
+ 805 0396 C82F      		mov r28,r24
+ 806               	.LVL88:
+ 362:RTC_routines.c **** 	transmitByte(data);
+ 807               		.loc 1 362 0
+ 808 0398 0E94 0000 		call transmitByte
+ 809               	.LVL89:
+ 363:RTC_routines.c **** 	if(data < 0x30 || data > 0x39)
+ 810               		.loc 1 363 0
+ 811 039c 80ED      		ldi r24,lo8(-48)
+ 812 039e 8C0F      		add r24,r28
+ 813 03a0 8A30      		cpi r24,lo8(10)
+ 814 03a2 00F0      		brlo .+2
+ 815 03a4 00C0      		rjmp .L90
+ 364:RTC_routines.c **** 	   goto TIME_ERROR;
+ 365:RTC_routines.c **** 	 
+ 366:RTC_routines.c **** 	time[1]= data;
+ 816               		.loc 1 366 0
+ 817 03a6 C093 0000 		sts time+1,r28
+ 367:RTC_routines.c **** 	
+ 368:RTC_routines.c **** 	transmitByte(':');
+ 818               		.loc 1 368 0
+ 819 03aa 8AE3      		ldi r24,lo8(58)
+ 820 03ac 0E94 0000 		call transmitByte
+ 821               	.LVL90:
+ 369:RTC_routines.c **** 	
+ 370:RTC_routines.c **** 	if(((time[1] & 0x0f) + ((time[0] & 0x03)*10)) > 23)
+ 822               		.loc 1 370 0
+ 823 03b0 8091 0000 		lds r24,time
+ 824 03b4 8370      		andi r24,lo8(3)
+ 825 03b6 2091 0000 		lds r18,time+1
+ 826 03ba 2F70      		andi r18,lo8(15)
+ 827 03bc 3AE0      		ldi r19,lo8(10)
+ 828 03be 839F      		mul r24,r19
+ 829 03c0 C001      		movw r24,r0
+ 830 03c2 1124      		clr __zero_reg__
+ 831 03c4 820F      		add r24,r18
+ 832 03c6 911D      		adc r25,__zero_reg__
+ 833 03c8 4897      		sbiw r24,24
+ 834 03ca 04F0      		brlt .+2
+ 835 03cc 00C0      		rjmp .L90
+ 371:RTC_routines.c **** 	   goto TIME_ERROR;
+ 372:RTC_routines.c **** 	 
+ 373:RTC_routines.c **** 	 data = receiveByte();			   			  //receive minutes
+ 836               		.loc 1 373 0
+ 837 03ce 0E94 0000 		call receiveByte
+ 838               	.LVL91:
+ 839 03d2 C82F      		mov r28,r24
+ 840               	.LVL92:
+ 374:RTC_routines.c **** 	 transmitByte(data);
+ 841               		.loc 1 374 0
+ 842 03d4 0E94 0000 		call transmitByte
+ 843               	.LVL93:
+ 375:RTC_routines.c **** 	if(data < 0x30 || data > 0x35)
+ 844               		.loc 1 375 0
+ 845 03d8 80ED      		ldi r24,lo8(-48)
+ 846 03da 8C0F      		add r24,r28
+ 847 03dc 8630      		cpi r24,lo8(6)
+ 848 03de 00F4      		brsh .L90
+ 376:RTC_routines.c **** 	   goto TIME_ERROR;
+ 377:RTC_routines.c **** 	   
+ 378:RTC_routines.c **** 	time[3]= data; 
+ 849               		.loc 1 378 0
+ 850 03e0 C093 0000 		sts time+3,r28
+ 379:RTC_routines.c **** 	
+ 380:RTC_routines.c **** 	data = receiveByte();
+ 851               		.loc 1 380 0
+ 852 03e4 0E94 0000 		call receiveByte
+ 853               	.LVL94:
+ 854 03e8 C82F      		mov r28,r24
+ 855               	.LVL95:
+ 381:RTC_routines.c **** 	transmitByte(data);
+ 856               		.loc 1 381 0
+ 857 03ea 0E94 0000 		call transmitByte
+ 858               	.LVL96:
+ 382:RTC_routines.c **** 	if(data < 0x30 || data > 0x39)
+ 859               		.loc 1 382 0
+ 860 03ee 80ED      		ldi r24,lo8(-48)
+ 861 03f0 8C0F      		add r24,r28
+ 862 03f2 8A30      		cpi r24,lo8(10)
+ 863 03f4 00F4      		brsh .L90
+ 383:RTC_routines.c **** 	   goto TIME_ERROR;
+ 384:RTC_routines.c **** 	   
+ 385:RTC_routines.c **** 	time[4]= data; 
+ 864               		.loc 1 385 0
+ 865 03f6 C093 0000 		sts time+4,r28
+ 386:RTC_routines.c **** 	
+ 387:RTC_routines.c **** 	transmitByte(':');
+ 866               		.loc 1 387 0
+ 867 03fa 8AE3      		ldi r24,lo8(58)
+ 868 03fc 0E94 0000 		call transmitByte
+ 869               	.LVL97:
+ 388:RTC_routines.c **** 	
+ 389:RTC_routines.c **** 	 data = receiveByte();			   			  //receive seconds
+ 870               		.loc 1 389 0
+ 871 0400 0E94 0000 		call receiveByte
+ 872               	.LVL98:
+ 873 0404 C82F      		mov r28,r24
+ 874               	.LVL99:
+ 390:RTC_routines.c **** 	 transmitByte(data);
+ 875               		.loc 1 390 0
+ 876 0406 0E94 0000 		call transmitByte
+ 877               	.LVL100:
+ 391:RTC_routines.c **** 	if(data < 0x30 || data > 0x35)
+ 878               		.loc 1 391 0
+ 879 040a 80ED      		ldi r24,lo8(-48)
+ 880 040c 8C0F      		add r24,r28
+ 881 040e 8630      		cpi r24,lo8(6)
+ 882 0410 00F4      		brsh .L90
+ 392:RTC_routines.c **** 	   goto TIME_ERROR;
+ 393:RTC_routines.c **** 	   
+ 394:RTC_routines.c **** 	time[6]= data; 
+ 883               		.loc 1 394 0
+ 884 0412 C093 0000 		sts time+6,r28
+ 395:RTC_routines.c **** 	
+ 396:RTC_routines.c **** 	data = receiveByte();
+ 885               		.loc 1 396 0
+ 886 0416 0E94 0000 		call receiveByte
+ 887               	.LVL101:
+ 888 041a C82F      		mov r28,r24
+ 889               	.LVL102:
+ 397:RTC_routines.c **** 	transmitByte(data);
+ 890               		.loc 1 397 0
+ 891 041c 0E94 0000 		call transmitByte
+ 892               	.LVL103:
+ 398:RTC_routines.c **** 	if(data < 0x30 || data > 0x39)
+ 893               		.loc 1 398 0
+ 894 0420 80ED      		ldi r24,lo8(-48)
+ 895 0422 8C0F      		add r24,r28
+ 896 0424 8A30      		cpi r24,lo8(10)
+ 897 0426 00F4      		brsh .L90
+ 399:RTC_routines.c **** 	   goto TIME_ERROR;
+ 400:RTC_routines.c **** 	   
+ 401:RTC_routines.c **** 	time[7]= data; 
+ 898               		.loc 1 401 0
+ 899 0428 C093 0000 		sts time+7,r28
+ 402:RTC_routines.c **** 	
+ 403:RTC_routines.c **** 	 	  
+ 404:RTC_routines.c ****   RTC_updateRegisters(); 
+ 900               		.loc 1 404 0
+ 901 042c 0E94 0000 		call RTC_updateRegisters
+ 902               	.LVL104:
+ 405:RTC_routines.c ****   data = RTC_writeTime();
+ 903               		.loc 1 405 0
+ 904 0430 0E94 0000 		call RTC_writeTime
+ 905               	.LVL105:
+ 906 0434 C82F      		mov r28,r24
+ 907               	.LVL106:
+ 406:RTC_routines.c **** 
+ 407:RTC_routines.c ****   TX_NEWLINE;
+ 908               		.loc 1 407 0
+ 909 0436 8DE0      		ldi r24,lo8(13)
+ 910               	.LVL107:
+ 911 0438 0E94 0000 		call transmitByte
+ 912               	.LVL108:
+ 913 043c 8AE0      		ldi r24,lo8(10)
+ 914 043e 0E94 0000 		call transmitByte
+ 915               	.LVL109:
+ 408:RTC_routines.c ****   if(data == 0)
+ 916               		.loc 1 408 0
+ 917 0442 C111      		cpse r28,__zero_reg__
+ 918 0444 00C0      		rjmp .L91
+ 409:RTC_routines.c ****   {     
+ 410:RTC_routines.c ****   	 transmitString_F(PSTR("Time Updated sucessfully!")); 
+ 919               		.loc 1 410 0
+ 920 0446 80E0      		ldi r24,lo8(__c.1805)
+ 921 0448 90E0      		ldi r25,hi8(__c.1805)
+ 922 044a 0E94 0000 		call transmitString_F
+ 923               	.LVL110:
+ 411:RTC_routines.c **** 	 return 0;
+ 924               		.loc 1 411 0
+ 925 044e 80E0      		ldi r24,0
+ 926 0450 00C0      		rjmp .L92
+ 927               	.L91:
+ 412:RTC_routines.c ****   }	
+ 413:RTC_routines.c ****   else 
+ 414:RTC_routines.c ****   { 
+ 415:RTC_routines.c ****      transmitString_F(PSTR("Time Update Failed.."));
+ 928               		.loc 1 415 0
+ 929 0452 80E0      		ldi r24,lo8(__c.1807)
+ 930 0454 90E0      		ldi r25,hi8(__c.1807)
+ 931 0456 00C0      		rjmp .L93
+ 932               	.L90:
+ 933               	.LDL1:
+ 416:RTC_routines.c **** 	 return 1;
+ 417:RTC_routines.c ****   }
+ 418:RTC_routines.c **** TIME_ERROR:
+ 419:RTC_routines.c **** 
+ 420:RTC_routines.c ****   TX_NEWLINE;
+ 934               		.loc 1 420 0
+ 935 0458 8DE0      		ldi r24,lo8(13)
+ 936 045a 0E94 0000 		call transmitByte
+ 937               	.LVL111:
+ 938 045e 8AE0      		ldi r24,lo8(10)
+ 939 0460 0E94 0000 		call transmitByte
+ 940               	.LVL112:
+ 421:RTC_routines.c ****   transmitString_F(PSTR("Invalid Entry..")); 
+ 941               		.loc 1 421 0
+ 942 0464 80E0      		ldi r24,lo8(__c.1809)
+ 943 0466 90E0      		ldi r25,hi8(__c.1809)
+ 944               	.L93:
+ 945 0468 0E94 0000 		call transmitString_F
+ 946               	.LVL113:
+ 422:RTC_routines.c ****   return 1;
+ 947               		.loc 1 422 0
+ 948 046c 81E0      		ldi r24,lo8(1)
+ 949               	.L92:
+ 950               	/* epilogue start */
+ 423:RTC_routines.c **** }  
+ 951               		.loc 1 423 0
+ 952 046e CF91      		pop r28
+ 953               	.LVL114:
+ 954 0470 0895      		ret
+ 955               		.cfi_endproc
+ 956               	.LFE11:
+ 958               	.global	RTC_updateDate
+ 960               	RTC_updateDate:
+ 961               	.LFB12:
+ 424:RTC_routines.c ****   
+ 425:RTC_routines.c ****   
+ 426:RTC_routines.c **** //******************************************************************
+ 427:RTC_routines.c **** //Function to update RTC date by entering it at hyper terminal
+ 428:RTC_routines.c **** //******************************************************************   
+ 429:RTC_routines.c **** unsigned char RTC_updateDate(void)
+ 430:RTC_routines.c **** {
+ 962               		.loc 1 430 0
+ 963               		.cfi_startproc
+ 964 0472 CF93      		push r28
+ 965               	.LCFI8:
+ 966               		.cfi_def_cfa_offset 3
+ 967               		.cfi_offset 28, -2
+ 968 0474 DF93      		push r29
+ 969               	.LCFI9:
+ 970               		.cfi_def_cfa_offset 4
+ 971               		.cfi_offset 29, -3
+ 972               	/* prologue: function */
+ 973               	/* frame size = 0 */
+ 974               	/* stack size = 2 */
+ 975               	.L__stack_usage = 2
+ 431:RTC_routines.c ****   unsigned char data;
+ 432:RTC_routines.c ****   TX_NEWLINE;
+ 976               		.loc 1 432 0
+ 977 0476 8DE0      		ldi r24,lo8(13)
+ 978 0478 0E94 0000 		call transmitByte
+ 979               	.LVL115:
+ 980 047c 8AE0      		ldi r24,lo8(10)
+ 981 047e 0E94 0000 		call transmitByte
+ 982               	.LVL116:
+ 433:RTC_routines.c ****   transmitString_F(PSTR("Enter Date (dd/mm/yy):")); 
+ 983               		.loc 1 433 0
+ 984 0482 80E0      		ldi r24,lo8(__c.1815)
+ 985 0484 90E0      		ldi r25,hi8(__c.1815)
+ 986 0486 0E94 0000 		call transmitString_F
+ 987               	.LVL117:
+ 434:RTC_routines.c ****   
+ 435:RTC_routines.c ****     data = receiveByte(); 	   				  		//receive date
+ 988               		.loc 1 435 0
+ 989 048a 0E94 0000 		call receiveByte
+ 990               	.LVL118:
+ 991 048e C82F      		mov r28,r24
+ 992               	.LVL119:
+ 436:RTC_routines.c **** 	transmitByte(data); 	   	  	  				
+ 993               		.loc 1 436 0
+ 994 0490 0E94 0000 		call transmitByte
+ 995               	.LVL120:
+ 437:RTC_routines.c **** 	if(data < 0x30 || data > 0x33)
+ 996               		.loc 1 437 0
+ 997 0494 80ED      		ldi r24,lo8(-48)
+ 998 0496 8C0F      		add r24,r28
+ 999 0498 8430      		cpi r24,lo8(4)
+ 1000 049a 00F0      		brlo .+2
+ 1001 049c 00C0      		rjmp .L95
+ 438:RTC_routines.c **** 	   goto DATE_ERROR;
+ 439:RTC_routines.c **** 	   
+ 440:RTC_routines.c **** 	date[0]= data;
+ 1002               		.loc 1 440 0
+ 1003 049e C093 0000 		sts date,r28
+ 441:RTC_routines.c **** 	 
+ 442:RTC_routines.c **** 	data = receiveByte();
+ 1004               		.loc 1 442 0
+ 1005 04a2 0E94 0000 		call receiveByte
+ 1006               	.LVL121:
+ 1007 04a6 C82F      		mov r28,r24
+ 1008               	.LVL122:
+ 443:RTC_routines.c **** 	transmitByte(data);
+ 1009               		.loc 1 443 0
+ 1010 04a8 0E94 0000 		call transmitByte
+ 1011               	.LVL123:
+ 444:RTC_routines.c **** 	if(data < 0x30 || data > 0x39)
+ 1012               		.loc 1 444 0
+ 1013 04ac 80ED      		ldi r24,lo8(-48)
+ 1014 04ae 8C0F      		add r24,r28
+ 1015 04b0 8A30      		cpi r24,lo8(10)
+ 1016 04b2 00F0      		brlo .+2
+ 1017 04b4 00C0      		rjmp .L95
+ 445:RTC_routines.c **** 	   goto DATE_ERROR;
+ 446:RTC_routines.c **** 	   
+ 447:RTC_routines.c **** 	date[1]= data;
+ 1018               		.loc 1 447 0
+ 1019 04b6 C093 0000 		sts date+1,r28
+ 448:RTC_routines.c **** 	
+ 449:RTC_routines.c **** 	if(((date[1] & 0x0f) + ((date[0] & 0x03)*10)) > 31)
+ 1020               		.loc 1 449 0
+ 1021 04ba 2091 0000 		lds r18,date
+ 1022 04be 2370      		andi r18,lo8(3)
+ 1023 04c0 CF70      		andi r28,lo8(15)
+ 1024               	.LVL124:
+ 1025 04c2 8AE0      		ldi r24,lo8(10)
+ 1026 04c4 289F      		mul r18,r24
+ 1027 04c6 9001      		movw r18,r0
+ 1028 04c8 1124      		clr __zero_reg__
+ 1029 04ca 2C0F      		add r18,r28
+ 1030 04cc 311D      		adc r19,__zero_reg__
+ 1031 04ce 2032      		cpi r18,32
+ 1032 04d0 3105      		cpc r19,__zero_reg__
+ 1033 04d2 04F0      		brlt .+2
+ 1034 04d4 00C0      		rjmp .L95
+ 450:RTC_routines.c **** 	   goto DATE_ERROR;
+ 451:RTC_routines.c ****     transmitByte('/');
+ 1035               		.loc 1 451 0
+ 1036 04d6 8FE2      		ldi r24,lo8(47)
+ 1037 04d8 0E94 0000 		call transmitByte
+ 1038               	.LVL125:
+ 452:RTC_routines.c **** 	
+ 453:RTC_routines.c **** 	date[2] = '/';
+ 1039               		.loc 1 453 0
+ 1040 04dc DFE2      		ldi r29,lo8(47)
+ 1041 04de D093 0000 		sts date+2,r29
+ 454:RTC_routines.c **** 	   
+ 455:RTC_routines.c **** 	
+ 456:RTC_routines.c **** 	data = receiveByte();			   			  //receive month
+ 1042               		.loc 1 456 0
+ 1043 04e2 0E94 0000 		call receiveByte
+ 1044               	.LVL126:
+ 1045 04e6 C82F      		mov r28,r24
+ 1046               	.LVL127:
+ 457:RTC_routines.c **** 	transmitByte(data);
+ 1047               		.loc 1 457 0
+ 1048 04e8 0E94 0000 		call transmitByte
+ 1049               	.LVL128:
+ 458:RTC_routines.c **** 	if(data < 0x30 || data > 0x31)
+ 1050               		.loc 1 458 0
+ 1051 04ec 80ED      		ldi r24,lo8(-48)
+ 1052 04ee 8C0F      		add r24,r28
+ 1053 04f0 8230      		cpi r24,lo8(2)
+ 1054 04f2 00F0      		brlo .+2
+ 1055 04f4 00C0      		rjmp .L95
+ 459:RTC_routines.c **** 	  goto DATE_ERROR;
+ 460:RTC_routines.c **** 	  
+ 461:RTC_routines.c **** 	date[3]= data; 
+ 1056               		.loc 1 461 0
+ 1057 04f6 C093 0000 		sts date+3,r28
+ 462:RTC_routines.c **** 	
+ 463:RTC_routines.c **** 	data = receiveByte();
+ 1058               		.loc 1 463 0
+ 1059 04fa 0E94 0000 		call receiveByte
+ 1060               	.LVL129:
+ 1061 04fe C82F      		mov r28,r24
+ 1062               	.LVL130:
+ 464:RTC_routines.c **** 	transmitByte(data);
+ 1063               		.loc 1 464 0
+ 1064 0500 0E94 0000 		call transmitByte
+ 1065               	.LVL131:
+ 465:RTC_routines.c **** 	if(data < 0x30 || data > 0x39)
+ 1066               		.loc 1 465 0
+ 1067 0504 80ED      		ldi r24,lo8(-48)
+ 1068 0506 8C0F      		add r24,r28
+ 1069 0508 8A30      		cpi r24,lo8(10)
+ 1070 050a 00F0      		brlo .+2
+ 1071 050c 00C0      		rjmp .L95
+ 466:RTC_routines.c **** 	  goto DATE_ERROR;
+ 467:RTC_routines.c **** 	  
+ 468:RTC_routines.c **** 	date[4] = data; 
+ 1072               		.loc 1 468 0
+ 1073 050e C093 0000 		sts date+4,r28
+ 469:RTC_routines.c **** 	
+ 470:RTC_routines.c **** 	if(((date[4] & 0x0f) + ((date[3] & 0x03)*10)) > 12)
+ 1074               		.loc 1 470 0
+ 1075 0512 2091 0000 		lds r18,date+3
+ 1076 0516 2370      		andi r18,lo8(3)
+ 1077 0518 CF70      		andi r28,lo8(15)
+ 1078               	.LVL132:
+ 1079 051a 8AE0      		ldi r24,lo8(10)
+ 1080 051c 289F      		mul r18,r24
+ 1081 051e 9001      		movw r18,r0
+ 1082 0520 1124      		clr __zero_reg__
+ 1083 0522 2C0F      		add r18,r28
+ 1084 0524 311D      		adc r19,__zero_reg__
+ 1085 0526 2D30      		cpi r18,13
+ 1086 0528 3105      		cpc r19,__zero_reg__
+ 1087 052a 04F0      		brlt .+2
+ 1088 052c 00C0      		rjmp .L95
+ 471:RTC_routines.c **** 	   goto DATE_ERROR;
+ 472:RTC_routines.c **** 	transmitByte('/');
+ 1089               		.loc 1 472 0
+ 1090 052e 8FE2      		ldi r24,lo8(47)
+ 1091 0530 0E94 0000 		call transmitByte
+ 1092               	.LVL133:
+ 473:RTC_routines.c **** 	   
+ 474:RTC_routines.c **** 	
+ 475:RTC_routines.c **** 	date[5] = '/';
+ 1093               		.loc 1 475 0
+ 1094 0534 D093 0000 		sts date+5,r29
+ 476:RTC_routines.c **** 	
+ 477:RTC_routines.c **** 	date[6] = '2'; 	   	   	  	  //year is 20xx
+ 1095               		.loc 1 477 0
+ 1096 0538 82E3      		ldi r24,lo8(50)
+ 1097 053a 8093 0000 		sts date+6,r24
+ 478:RTC_routines.c **** 	date[7] = '0';
+ 1098               		.loc 1 478 0
+ 1099 053e 80E3      		ldi r24,lo8(48)
+ 1100 0540 8093 0000 		sts date+7,r24
+ 479:RTC_routines.c **** 	
+ 480:RTC_routines.c **** 	data = receiveByte();			   			 
+ 1101               		.loc 1 480 0
+ 1102 0544 0E94 0000 		call receiveByte
+ 1103               	.LVL134:
+ 1104 0548 C82F      		mov r28,r24
+ 1105               	.LVL135:
+ 481:RTC_routines.c **** 	transmitByte(data);
+ 1106               		.loc 1 481 0
+ 1107 054a 0E94 0000 		call transmitByte
+ 1108               	.LVL136:
+ 482:RTC_routines.c **** 	if(data < 0x30 || data > 0x39)
+ 1109               		.loc 1 482 0
+ 1110 054e 80ED      		ldi r24,lo8(-48)
+ 1111 0550 8C0F      		add r24,r28
+ 1112 0552 8A30      		cpi r24,lo8(10)
+ 1113 0554 00F4      		brsh .L95
+ 483:RTC_routines.c **** 	   goto DATE_ERROR;
+ 484:RTC_routines.c **** 	   
+ 485:RTC_routines.c **** 	date[8]= data; 
+ 1114               		.loc 1 485 0
+ 1115 0556 C093 0000 		sts date+8,r28
+ 486:RTC_routines.c **** 	
+ 487:RTC_routines.c **** 	data = receiveByte();
+ 1116               		.loc 1 487 0
+ 1117 055a 0E94 0000 		call receiveByte
+ 1118               	.LVL137:
+ 1119 055e C82F      		mov r28,r24
+ 1120               	.LVL138:
+ 488:RTC_routines.c **** 	transmitByte(data);
+ 1121               		.loc 1 488 0
+ 1122 0560 0E94 0000 		call transmitByte
+ 1123               	.LVL139:
+ 489:RTC_routines.c **** 	if(data < 0x30 || data > 0x39)
+ 1124               		.loc 1 489 0
+ 1125 0564 80ED      		ldi r24,lo8(-48)
+ 1126 0566 8C0F      		add r24,r28
+ 1127 0568 8A30      		cpi r24,lo8(10)
+ 1128 056a 00F4      		brsh .L95
+ 490:RTC_routines.c **** 	   goto DATE_ERROR;
+ 491:RTC_routines.c **** 	   
+ 492:RTC_routines.c **** 	date[9]= data; 
+ 1129               		.loc 1 492 0
+ 1130 056c C093 0000 		sts date+9,r28
+ 493:RTC_routines.c **** 	
+ 494:RTC_routines.c **** 	TX_NEWLINE;
+ 1131               		.loc 1 494 0
+ 1132 0570 8DE0      		ldi r24,lo8(13)
+ 1133 0572 0E94 0000 		call transmitByte
+ 1134               	.LVL140:
+ 1135 0576 8AE0      		ldi r24,lo8(10)
+ 1136 0578 0E94 0000 		call transmitByte
+ 1137               	.LVL141:
+ 495:RTC_routines.c ****     transmitString_F(PSTR("Enter Day (Sunday:0, Monday:1...) (0-6):")); 
+ 1138               		.loc 1 495 0
+ 1139 057c 80E0      		ldi r24,lo8(__c.1818)
+ 1140 057e 90E0      		ldi r25,hi8(__c.1818)
+ 1141 0580 0E94 0000 		call transmitString_F
+ 1142               	.LVL142:
+ 496:RTC_routines.c **** 	
+ 497:RTC_routines.c **** 	data = receiveByte();				   //receive Day of the week
+ 1143               		.loc 1 497 0
+ 1144 0584 0E94 0000 		call receiveByte
+ 1145               	.LVL143:
+ 1146 0588 C82F      		mov r28,r24
+ 1147               	.LVL144:
+ 498:RTC_routines.c **** 	transmitByte(data);
+ 1148               		.loc 1 498 0
+ 1149 058a 0E94 0000 		call transmitByte
+ 1150               	.LVL145:
+ 499:RTC_routines.c **** 	if(data < 0x30 || data > 0x36)
+ 1151               		.loc 1 499 0
+ 1152 058e 80ED      		ldi r24,lo8(-48)
+ 1153 0590 8C0F      		add r24,r28
+ 1154 0592 8730      		cpi r24,lo8(7)
+ 1155 0594 00F4      		brsh .L95
+ 500:RTC_routines.c **** 	   goto DATE_ERROR;
+ 501:RTC_routines.c **** 	   
+ 502:RTC_routines.c **** 	date[10] = data & 0x0f;
+ 1156               		.loc 1 502 0
+ 1157 0596 CF70      		andi r28,lo8(15)
+ 1158               	.LVL146:
+ 1159 0598 C093 0000 		sts date+10,r28
+ 503:RTC_routines.c **** 		 	  
+ 504:RTC_routines.c ****   RTC_updateRegisters(); 
+ 1160               		.loc 1 504 0
+ 1161 059c 0E94 0000 		call RTC_updateRegisters
+ 1162               	.LVL147:
+ 505:RTC_routines.c ****   data = RTC_writeDate();
+ 1163               		.loc 1 505 0
+ 1164 05a0 0E94 0000 		call RTC_writeDate
+ 1165               	.LVL148:
+ 1166 05a4 C82F      		mov r28,r24
+ 1167               	.LVL149:
+ 506:RTC_routines.c **** 
+ 507:RTC_routines.c ****   TX_NEWLINE;
+ 1168               		.loc 1 507 0
+ 1169 05a6 8DE0      		ldi r24,lo8(13)
+ 1170               	.LVL150:
+ 1171 05a8 0E94 0000 		call transmitByte
+ 1172               	.LVL151:
+ 1173 05ac 8AE0      		ldi r24,lo8(10)
+ 1174 05ae 0E94 0000 		call transmitByte
+ 1175               	.LVL152:
+ 508:RTC_routines.c ****   if(data == 0)
+ 1176               		.loc 1 508 0
+ 1177 05b2 C111      		cpse r28,__zero_reg__
+ 1178 05b4 00C0      		rjmp .L96
+ 509:RTC_routines.c ****   {
+ 510:RTC_routines.c ****      
+ 511:RTC_routines.c ****   	 transmitString_F(PSTR("Date Updated sucessfully!")); 
+ 1179               		.loc 1 511 0
+ 1180 05b6 80E0      		ldi r24,lo8(__c.1820)
+ 1181 05b8 90E0      		ldi r25,hi8(__c.1820)
+ 1182 05ba 0E94 0000 		call transmitString_F
+ 1183               	.LVL153:
+ 512:RTC_routines.c **** 	 return 0;
+ 1184               		.loc 1 512 0
+ 1185 05be 80E0      		ldi r24,0
+ 1186 05c0 00C0      		rjmp .L97
+ 1187               	.L96:
+ 513:RTC_routines.c ****   }	  
+ 514:RTC_routines.c ****   else
+ 515:RTC_routines.c ****   {
+ 516:RTC_routines.c ****      transmitString_F(PSTR("Date Update Failed.."));
+ 1188               		.loc 1 516 0
+ 1189 05c2 80E0      		ldi r24,lo8(__c.1822)
+ 1190 05c4 90E0      		ldi r25,hi8(__c.1822)
+ 1191 05c6 00C0      		rjmp .L98
+ 1192               	.LVL154:
+ 1193               	.L95:
+ 1194               	.LDL2:
+ 517:RTC_routines.c ****      return 1;
+ 518:RTC_routines.c ****   }
+ 519:RTC_routines.c **** 
+ 520:RTC_routines.c ****   DATE_ERROR:
+ 521:RTC_routines.c **** 
+ 522:RTC_routines.c ****   TX_NEWLINE;
+ 1195               		.loc 1 522 0
+ 1196 05c8 8DE0      		ldi r24,lo8(13)
+ 1197 05ca 0E94 0000 		call transmitByte
+ 1198               	.LVL155:
+ 1199 05ce 8AE0      		ldi r24,lo8(10)
+ 1200 05d0 0E94 0000 		call transmitByte
+ 1201               	.LVL156:
+ 523:RTC_routines.c ****   transmitString_F(PSTR("Invalid Entry..")); 
+ 1202               		.loc 1 523 0
+ 1203 05d4 80E0      		ldi r24,lo8(__c.1824)
+ 1204 05d6 90E0      		ldi r25,hi8(__c.1824)
+ 1205               	.L98:
+ 1206 05d8 0E94 0000 		call transmitString_F
+ 1207               	.LVL157:
+ 524:RTC_routines.c ****   return 1;
+ 1208               		.loc 1 524 0
+ 1209 05dc 81E0      		ldi r24,lo8(1)
+ 1210               	.L97:
+ 1211               	/* epilogue start */
+ 525:RTC_routines.c **** }  
+ 1212               		.loc 1 525 0
+ 1213 05de DF91      		pop r29
+ 1214 05e0 CF91      		pop r28
+ 1215 05e2 0895      		ret
+ 1216               		.cfi_endproc
+ 1217               	.LFE12:
+ 1219               	.global	getDateTime_FAT
+ 1221               	getDateTime_FAT:
+ 1222               	.LFB13:
+ 526:RTC_routines.c **** 
+ 527:RTC_routines.c **** 
+ 528:RTC_routines.c **** 
+ 529:RTC_routines.c **** //******************************************************************
+ 530:RTC_routines.c **** //Function to get RTC date & time in FAT32 format
+ 531:RTC_routines.c **** //******************************************************************   
+ 532:RTC_routines.c **** unsigned char getDateTime_FAT(void)
+ 533:RTC_routines.c **** {
+ 1223               		.loc 1 533 0
+ 1224               		.cfi_startproc
+ 1225               	/* prologue: function */
+ 1226               	/* frame size = 0 */
+ 1227               	/* stack size = 0 */
+ 1228               	.L__stack_usage = 0
+ 534:RTC_routines.c ****   
+ 535:RTC_routines.c ****    unsigned char mth, dt, hr, min, sec, error; 
+ 536:RTC_routines.c ****    unsigned int yr;
+ 537:RTC_routines.c **** 
+ 538:RTC_routines.c ****    error = RTC_read();
+ 1229               		.loc 1 538 0
+ 1230 05e4 0E94 0000 		call RTC_read
+ 1231               	.LVL158:
+ 539:RTC_routines.c ****    if(error) return 1;
+ 1232               		.loc 1 539 0
+ 1233 05e8 8111      		cpse r24,__zero_reg__
+ 1234 05ea 00C0      		rjmp .L101
+ 540:RTC_routines.c **** 
+ 541:RTC_routines.c ****    yr = (YEAR & 0xf0) >> 4;
+ 1235               		.loc 1 541 0
+ 1236 05ec 8091 0000 		lds r24,rtc_register+6
+ 1237               	.LVL159:
+ 1238 05f0 682F      		mov r22,r24
+ 1239 05f2 6295      		swap r22
+ 1240 05f4 6F70      		andi r22,lo8(15)
+ 1241               	.LVL160:
+ 542:RTC_routines.c ****    yr = (yr * 10)+(YEAR & 0x0f);
+ 1242               		.loc 1 542 0
+ 1243 05f6 8F70      		andi r24,lo8(15)
+ 1244               	.LVL161:
+ 1245 05f8 90E0      		ldi r25,0
+ 1246 05fa 4496      		adiw r24,20
+ 1247               	.LVL162:
+ 543:RTC_routines.c ****    yr = yr+2000;
+ 544:RTC_routines.c ****    yr = yr - 1980;
+ 545:RTC_routines.c **** 
+ 546:RTC_routines.c ****    dateFAT = yr;
+ 547:RTC_routines.c **** 
+ 548:RTC_routines.c ****    mth = (MONTH & 0xf0) >> 4;
+ 1248               		.loc 1 548 0
+ 1249 05fc 3091 0000 		lds r19,rtc_register+5
+ 1250               	.LVL163:
+ 1251 0600 532F      		mov r21,r19
+ 1252 0602 5295      		swap r21
+ 1253 0604 5F70      		andi r21,lo8(15)
+ 1254               	.LVL164:
+ 549:RTC_routines.c ****    mth = (mth * 10)+(MONTH & 0x0f);
+ 550:RTC_routines.c **** 
+ 551:RTC_routines.c ****    dateFAT = (dateFAT << 4) | mth;
+ 552:RTC_routines.c **** 
+ 553:RTC_routines.c ****    dt = (DATE & 0xf0) >> 4;
+ 1255               		.loc 1 553 0
+ 1256 0606 2091 0000 		lds r18,rtc_register+4
+ 1257               	.LVL165:
+ 1258 060a 422F      		mov r20,r18
+ 1259 060c 4295      		swap r20
+ 1260 060e 4F70      		andi r20,lo8(15)
+ 1261               	.LVL166:
+ 544:RTC_routines.c ****    yr = yr - 1980;
+ 1262               		.loc 1 544 0
+ 1263 0610 7AE0      		ldi r23,lo8(10)
+ 1264 0612 679F      		mul r22,r23
+ 1265 0614 800D      		add r24,r0
+ 1266 0616 911D      		adc r25,r1
+ 1267 0618 1124      		clr __zero_reg__
+ 1268               	.LVL167:
+ 551:RTC_routines.c ****    dateFAT = (dateFAT << 4) | mth;
+ 1269               		.loc 1 551 0
+ 1270 061a 64E0      		ldi r22,4
+ 1271               		1:
+ 1272 061c 880F      		lsl r24
+ 1273 061e 991F      		rol r25
+ 1274 0620 6A95      		dec r22
+ 1275 0622 01F4      		brne 1b
+ 549:RTC_routines.c ****    mth = (mth * 10)+(MONTH & 0x0f);
+ 1276               		.loc 1 549 0
+ 1277 0624 3F70      		andi r19,lo8(15)
+ 1278               	.LVL168:
+ 1279 0626 6AE0      		ldi r22,lo8(10)
+ 1280 0628 569F      		mul r21,r22
+ 1281 062a 300D      		add r19,r0
+ 1282 062c 1124      		clr __zero_reg__
+ 551:RTC_routines.c ****    dateFAT = (dateFAT << 4) | mth;
+ 1283               		.loc 1 551 0
+ 1284 062e 832B      		or r24,r19
+ 554:RTC_routines.c ****    dt = (dt * 10)+(DATE & 0x0f);
+ 555:RTC_routines.c **** 
+ 556:RTC_routines.c ****    dateFAT = (dateFAT << 5) | dt;
+ 1285               		.loc 1 556 0
+ 1286 0630 75E0      		ldi r23,5
+ 1287               		1:
+ 1288 0632 880F      		lsl r24
+ 1289 0634 991F      		rol r25
+ 1290 0636 7A95      		dec r23
+ 1291 0638 01F4      		brne 1b
+ 554:RTC_routines.c ****    dt = (dt * 10)+(DATE & 0x0f);
+ 1292               		.loc 1 554 0
+ 1293 063a 2F70      		andi r18,lo8(15)
+ 1294               	.LVL169:
+ 1295 063c 7AE0      		ldi r23,lo8(10)
+ 1296 063e 479F      		mul r20,r23
+ 1297 0640 200D      		add r18,r0
+ 1298 0642 1124      		clr __zero_reg__
+ 1299               		.loc 1 556 0
+ 1300 0644 822B      		or r24,r18
+ 1301 0646 9093 0000 		sts dateFAT+1,r25
+ 1302 064a 8093 0000 		sts dateFAT,r24
+ 557:RTC_routines.c **** 
+ 558:RTC_routines.c **** 
+ 559:RTC_routines.c ****    hr = (HOURS & 0xf0) >> 4;
+ 1303               		.loc 1 559 0
+ 1304 064e 8091 0000 		lds r24,rtc_register+2
+ 1305               	.LVL170:
+ 1306 0652 982F      		mov r25,r24
+ 1307 0654 9295      		swap r25
+ 1308 0656 9F70      		andi r25,lo8(15)
+ 1309               	.LVL171:
+ 560:RTC_routines.c ****    hr = (hr * 10)+(HOURS & 0x0f);
+ 561:RTC_routines.c **** 
+ 562:RTC_routines.c ****    timeFAT = hr;
+ 563:RTC_routines.c **** 
+ 564:RTC_routines.c ****    min = (MINUTES & 0xf0) >> 4;
+ 1310               		.loc 1 564 0
+ 1311 0658 3091 0000 		lds r19,rtc_register+1
+ 1312               	.LVL172:
+ 1313 065c 432F      		mov r20,r19
+ 1314               	.LVL173:
+ 1315 065e 4295      		swap r20
+ 1316 0660 4F70      		andi r20,lo8(15)
+ 1317               	.LVL174:
+ 565:RTC_routines.c ****    min = (min * 10)+(MINUTES & 0x0f);
+ 566:RTC_routines.c **** 
+ 567:RTC_routines.c ****    timeFAT = (timeFAT << 6) | min;
+ 568:RTC_routines.c **** 
+ 569:RTC_routines.c ****    sec = (SECONDS & 0xf0) >> 4;
+ 1318               		.loc 1 569 0
+ 1319 0662 2091 0000 		lds r18,rtc_register
+ 1320               	.LVL175:
+ 1321 0666 522F      		mov r21,r18
+ 1322               	.LVL176:
+ 1323 0668 5295      		swap r21
+ 1324 066a 5F70      		andi r21,lo8(15)
+ 570:RTC_routines.c ****    sec = (sec * 10)+(SECONDS & 0x0f);
+ 1325               		.loc 1 570 0
+ 1326 066c 2F70      		andi r18,lo8(15)
+ 1327               	.LVL177:
+ 1328 066e 6AE0      		ldi r22,lo8(10)
+ 1329 0670 569F      		mul r21,r22
+ 1330 0672 200D      		add r18,r0
+ 1331 0674 1124      		clr __zero_reg__
+ 1332               	.LVL178:
+ 560:RTC_routines.c ****    hr = (hr * 10)+(HOURS & 0x0f);
+ 1333               		.loc 1 560 0
+ 1334 0676 8F70      		andi r24,lo8(15)
+ 1335               	.LVL179:
+ 1336 0678 7AE0      		ldi r23,lo8(10)
+ 1337 067a 979F      		mul r25,r23
+ 1338 067c 800D      		add r24,r0
+ 1339 067e 1124      		clr __zero_reg__
+ 567:RTC_routines.c ****    timeFAT = (timeFAT << 6) | min;
+ 1340               		.loc 1 567 0
+ 1341 0680 50E4      		ldi r21,lo8(64)
+ 1342 0682 859F      		mul r24,r21
+ 1343 0684 C001      		movw r24,r0
+ 1344 0686 1124      		clr __zero_reg__
+ 565:RTC_routines.c ****    min = (min * 10)+(MINUTES & 0x0f);
+ 1345               		.loc 1 565 0
+ 1346 0688 3F70      		andi r19,lo8(15)
+ 1347               	.LVL180:
+ 1348 068a 6AE0      		ldi r22,lo8(10)
+ 1349 068c 469F      		mul r20,r22
+ 1350 068e 300D      		add r19,r0
+ 1351 0690 1124      		clr __zero_reg__
+ 567:RTC_routines.c ****    timeFAT = (timeFAT << 6) | min;
+ 1352               		.loc 1 567 0
+ 1353 0692 832B      		or r24,r19
+ 571:RTC_routines.c ****    sec = sec / 2;    //FAT32 fromat accepts dates with 2sec resolution (e.g. value 5 => 10sec)
+ 572:RTC_routines.c **** 
+ 573:RTC_routines.c ****    timeFAT = (timeFAT << 5) | sec;
+ 1354               		.loc 1 573 0
+ 1355 0694 E5E0      		ldi r30,5
+ 1356               		1:
+ 1357 0696 880F      		lsl r24
+ 1358 0698 991F      		rol r25
+ 1359 069a EA95      		dec r30
+ 1360 069c 01F4      		brne 1b
+ 571:RTC_routines.c ****    sec = sec / 2;    //FAT32 fromat accepts dates with 2sec resolution (e.g. value 5 => 10sec)
+ 1361               		.loc 1 571 0
+ 1362 069e 2695      		lsr r18
+ 1363               	.LVL181:
+ 1364               		.loc 1 573 0
+ 1365 06a0 822B      		or r24,r18
+ 1366 06a2 9093 0000 		sts timeFAT+1,r25
+ 1367 06a6 8093 0000 		sts timeFAT,r24
+ 574:RTC_routines.c **** 
+ 575:RTC_routines.c ****    
+ 576:RTC_routines.c ****    return 0;
+ 1368               		.loc 1 576 0
+ 1369 06aa 80E0      		ldi r24,0
+ 1370 06ac 0895      		ret
+ 1371               	.LVL182:
+ 1372               	.L101:
+ 539:RTC_routines.c ****    if(error) return 1;
+ 1373               		.loc 1 539 0
+ 1374 06ae 81E0      		ldi r24,lo8(1)
+ 1375               	.LVL183:
+ 577:RTC_routines.c **** }
+ 1376               		.loc 1 577 0
+ 1377 06b0 0895      		ret
+ 1378               		.cfi_endproc
+ 1379               	.LFE13:
+ 1381               		.section	.progmem.data,"a",@progbits
+ 1384               	__c.1824:
+ 1385 0000 496E 7661 		.string	"Invalid Entry.."
+ 1385      6C69 6420 
+ 1385      456E 7472 
+ 1385      792E 2E00 
+ 1388               	__c.1822:
+ 1389 0010 4461 7465 		.string	"Date Update Failed.."
+ 1389      2055 7064 
+ 1389      6174 6520 
+ 1389      4661 696C 
+ 1389      6564 2E2E 
+ 1392               	__c.1820:
+ 1393 0025 4461 7465 		.string	"Date Updated sucessfully!"
+ 1393      2055 7064 
+ 1393      6174 6564 
+ 1393      2073 7563 
+ 1393      6573 7366 
+ 1396               	__c.1818:
+ 1397 003f 456E 7465 		.string	"Enter Day (Sunday:0, Monday:1...) (0-6):"
+ 1397      7220 4461 
+ 1397      7920 2853 
+ 1397      756E 6461 
+ 1397      793A 302C 
+ 1400               	__c.1815:
+ 1401 0068 456E 7465 		.string	"Enter Date (dd/mm/yy):"
+ 1401      7220 4461 
+ 1401      7465 2028 
+ 1401      6464 2F6D 
+ 1401      6D2F 7979 
+ 1404               	__c.1809:
+ 1405 007f 496E 7661 		.string	"Invalid Entry.."
+ 1405      6C69 6420 
+ 1405      456E 7472 
+ 1405      792E 2E00 
+ 1408               	__c.1807:
+ 1409 008f 5469 6D65 		.string	"Time Update Failed.."
+ 1409      2055 7064 
+ 1409      6174 6520 
+ 1409      4661 696C 
+ 1409      6564 2E2E 
+ 1412               	__c.1805:
+ 1413 00a4 5469 6D65 		.string	"Time Updated sucessfully!"
+ 1413      2055 7064 
+ 1413      6174 6564 
+ 1413      2073 7563 
+ 1413      6573 7366 
+ 1416               	__c.1802:
+ 1417 00be 456E 7465 		.string	"Enter Time in 24h format(hh:mm:ss):"
+ 1417      7220 5469 
+ 1417      6D65 2069 
+ 1417      6E20 3234 
+ 1417      6820 666F 
+ 1420               	__c.1777:
+ 1421 00e2 556E 6B6E 		.string	"Unknown"
+ 1421      6F77 6E00 
+ 1424               	__c.1774:
+ 1425 00ea 5361 7475 		.string	"Saturday"
+ 1425      7264 6179 
+ 1425      00
+ 1428               	__c.1771:
+ 1429 00f3 4672 6964 		.string	"Friday"
+ 1429      6179 00
+ 1432               	__c.1768:
+ 1433 00fa 5468 7572 		.string	"Thursday"
+ 1433      7364 6179 
+ 1433      00
+ 1436               	__c.1765:
+ 1437 0103 5765 646E 		.string	"Wednesday"
+ 1437      6573 6461 
+ 1437      7900 
+ 1440               	__c.1762:
+ 1441 010d 5475 6573 		.string	"Tuesday"
+ 1441      6461 7900 
+ 1444               	__c.1759:
+ 1445 0115 4D6F 6E64 		.string	"Monday"
+ 1445      6179 00
+ 1448               	__c.1755:
+ 1449 011c 5375 6E64 		.string	"Sunday"
+ 1449      6179 00
+ 1452               	__c.1752:
+ 1453 0123 2020 2020 		.string	"    Day: "
+ 1453      4461 793A 
+ 1453      2000 
+ 1456               	__c.1747:
+ 1457 012d 4461 7465 		.string	"Date:"
+ 1457      3A00 
+ 1460               	__c.1741:
+ 1461 0133 5469 6D65 		.string	"Time:"
+ 1461      3A00 
+ 1462               		.comm	rtc_register,7,1
+ 1463               		.comm	timeFAT,2,1
+ 1464               		.comm	dateFAT,2,1
+ 1465               		.comm	day,1,1
+ 1466               		.comm	date,11,1
+ 1467               		.comm	time,9,1
+ 1468               		.text
+ 1469               	.Letext0:
+ 1470               		.file 2 "RTC_routines.h"
+ 1471               		.file 3 "i2c_routines.h"
+ 1472               		.file 4 "UART_routines.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 RTC_routines.c
+     /tmp/ccmbt43F.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccmbt43F.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccmbt43F.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccmbt43F.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccmbt43F.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccmbt43F.s:12     .text:0000000000000000 RTC_setStartAddress
+     /tmp/ccmbt43F.s:64     .text:000000000000002c RTC_read
+                            *COM*:0000000000000007 rtc_register
+     /tmp/ccmbt43F.s:180    .text:0000000000000096 RTC_getTime
+                            *COM*:0000000000000009 time
+     /tmp/ccmbt43F.s:255    .text:0000000000000106 RTC_getDate
+                            *COM*:000000000000000b date
+     /tmp/ccmbt43F.s:332    .text:000000000000017a RTC_displayTime
+     /tmp/ccmbt43F.s:1460   .progmem.data:0000000000000133 __c.1741
+     /tmp/ccmbt43F.s:379    .text:00000000000001a6 RTC_displayDay
+     /tmp/ccmbt43F.s:1452   .progmem.data:0000000000000123 __c.1752
+     /tmp/ccmbt43F.s:1448   .progmem.data:000000000000011c __c.1755
+     /tmp/ccmbt43F.s:1444   .progmem.data:0000000000000115 __c.1759
+     /tmp/ccmbt43F.s:1440   .progmem.data:000000000000010d __c.1762
+     /tmp/ccmbt43F.s:1436   .progmem.data:0000000000000103 __c.1765
+     /tmp/ccmbt43F.s:1432   .progmem.data:00000000000000fa __c.1768
+     /tmp/ccmbt43F.s:1428   .progmem.data:00000000000000f3 __c.1771
+     /tmp/ccmbt43F.s:1424   .progmem.data:00000000000000ea __c.1774
+     /tmp/ccmbt43F.s:1420   .progmem.data:00000000000000e2 __c.1777
+     /tmp/ccmbt43F.s:460    .text:00000000000001f6 RTC_displayDate
+     /tmp/ccmbt43F.s:1456   .progmem.data:000000000000012d __c.1747
+     /tmp/ccmbt43F.s:510    .text:0000000000000226 RTC_updateRegisters
+     /tmp/ccmbt43F.s:596    .text:00000000000002d0 RTC_writeTime
+     /tmp/ccmbt43F.s:679    .text:000000000000031a RTC_writeDate
+     /tmp/ccmbt43F.s:762    .text:0000000000000364 RTC_updateTime
+     /tmp/ccmbt43F.s:1416   .progmem.data:00000000000000be __c.1802
+     /tmp/ccmbt43F.s:1412   .progmem.data:00000000000000a4 __c.1805
+     /tmp/ccmbt43F.s:1408   .progmem.data:000000000000008f __c.1807
+     /tmp/ccmbt43F.s:1404   .progmem.data:000000000000007f __c.1809
+     /tmp/ccmbt43F.s:960    .text:0000000000000472 RTC_updateDate
+     /tmp/ccmbt43F.s:1400   .progmem.data:0000000000000068 __c.1815
+     /tmp/ccmbt43F.s:1396   .progmem.data:000000000000003f __c.1818
+     /tmp/ccmbt43F.s:1392   .progmem.data:0000000000000025 __c.1820
+     /tmp/ccmbt43F.s:1388   .progmem.data:0000000000000010 __c.1822
+     /tmp/ccmbt43F.s:1384   .progmem.data:0000000000000000 __c.1824
+     /tmp/ccmbt43F.s:1221   .text:00000000000005e4 getDateTime_FAT
+                            *COM*:0000000000000002 dateFAT
+                            *COM*:0000000000000002 timeFAT
+                            *COM*:0000000000000001 day
+
+UNDEFINED SYMBOLS
+i2c_start
+i2c_stop
+i2c_sendAddress
+i2c_sendData
+i2c_repeatStart
+i2c_receiveData_NACK
+i2c_receiveData_ACK
+transmitByte
+transmitString_F
+transmitString
+__tablejump2__
+receiveByte
+__do_clear_bss

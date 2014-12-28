@@ -1,0 +1,103 @@
+/********************************************************************************
+                                Includes
+********************************************************************************/
+#include <avr/io.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <util/delay.h>
+#include <avr/pgmspace.h>
+#include <avr/interrupt.h>
+
+
+/********************************************************************************
+                                Macros and Defines
+********************************************************************************/
+#define F_CPU 16000000UL
+#define BAUD 9600
+#define MYUBRR F_CPU/16/BAUD-1
+
+/********************************************************************************
+                                Function Prototypes
+********************************************************************************/
+void usart_init(uint16_t ubrr);
+char usart_getchar( void ); 
+void usart_putchar( char data ); 
+void usart_pstr(char *s);
+unsigned char kbhit(void);
+
+
+/********************************************************************************
+                                Main
+********************************************************************************/
+int main( void )
+{
+	
+
+	// configure PORTA as output
+	DDRA = 0xFF;
+	// setup PORTB data direction as an input
+	DDRB = 0;
+	// make sure it is high impedance and will not source
+	PORTB = 0;
+	_delay_ms(2000);
+	// fire up the usart
+	usart_init ( MYUBRR );
+
+
+	usart_pstr("\x1B[2J\x1B\x63");
+	usart_pstr("Ready to rock and roll!\n\r");  // dump some strings to the screen at power on
+	usart_pstr("Type in a character, and I will transpose it up by 1:\n\r");
+	
+	// main loop
+	while(true) {
+		
+		usart_pstr("A");
+		_delay_ms(500);
+
+	}
+	return 0;
+}
+
+/********************************************************************************
+                                usart Related
+********************************************************************************/
+void usart_init( uint16_t ubrr) {
+	// Set baud rate
+	UBRRH = (uint8_t)(ubrr>>8);
+	UBRRL = (uint8_t)ubrr;
+	// Enable receiver and transmitter
+	UCSRB = (1<<RXEN)|(1<<TXEN);
+	// Set frame format: 8data, 1stop bit
+	UCSRC = (1<<URSEL)|(1<<USBS)|(3<<UCSZ0);
+}
+
+void usart_putchar(char data) { 
+	// Wait for empty transmit buffer
+	while ( !(UCSRA & (_BV(UDRE))) );
+	// Start transmission
+	UDR = data; 
+}
+
+char usart_getchar(void) { 
+	// Wait for incomming data
+	while ( !(UCSRA & (_BV(RXC))) );
+	// Return the data
+	return UDR;
+} 
+
+void usart_pstr(char *s) {
+    // loop through entire string
+	while (*s) {  
+        usart_putchar(*s);
+        s++;
+    }
+}
+
+unsigned char kbhit(void) {
+	//return nonzero if char waiting  polled version
+	unsigned char b;
+	b=0;
+	if(UCSRA & (1<<RXC)) b=1;
+	return b;
+}
+

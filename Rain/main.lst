@@ -1,0 +1,171 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	adc_init
+  18               	adc_init:
+  19               	.LFB6:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 80E4      		ldi r24,lo8(64)
+  25 0002 87B9      		out 39-32,r24
+  26               	.LM3:
+  27 0004 83E8      		ldi r24,lo8(-125)
+  28 0006 86B9      		out 38-32,r24
+  29               	/* epilogue start */
+  30               	.LM4:
+  31 0008 0895      		ret
+  32               	.LFE6:
+  34               	.global	adc_read
+  36               	adc_read:
+  37               	.LFB7:
+  38               	.LM5:
+  39               	/* prologue: function */
+  40               	/* frame size = 0 */
+  41               	.LM6:
+  42 000a 87B1      		in r24,39-32
+  43 000c 8760      		ori r24,lo8(7)
+  44 000e 87B9      		out 39-32,r24
+  45               	.LM7:
+  46 0010 369A      		sbi 38-32,6
+  47               	.L4:
+  48               	.LM8:
+  49 0012 3699      		sbic 38-32,6
+  50 0014 00C0      		rjmp .L4
+  51               	.LM9:
+  52 0016 24B1      		in r18,36-32
+  53 0018 35B1      		in r19,(36)+1-32
+  54               	.LM10:
+  55 001a C901      		movw r24,r18
+  56               	/* epilogue start */
+  57 001c 0895      		ret
+  58               	.LFE7:
+  60               	.global	main
+  62               	main:
+  63               	.LFB8:
+  64               	.LM11:
+  65 001e AF92      		push r10
+  66 0020 BF92      		push r11
+  67 0022 CF92      		push r12
+  68 0024 DF92      		push r13
+  69 0026 EF92      		push r14
+  70 0028 FF92      		push r15
+  71 002a 0F93      		push r16
+  72 002c 1F93      		push r17
+  73 002e DF93      		push r29
+  74 0030 CF93      		push r28
+  75 0032 CDB7      		in r28,__SP_L__
+  76 0034 DEB7      		in r29,__SP_H__
+  77 0036 2897      		sbiw r28,8
+  78 0038 0FB6      		in __tmp_reg__,__SREG__
+  79 003a F894      		cli
+  80 003c DEBF      		out __SP_H__,r29
+  81 003e 0FBE      		out __SREG__,__tmp_reg__
+  82 0040 CDBF      		out __SP_L__,r28
+  83               	/* prologue: function */
+  84               	/* frame size = 8 */
+  85               	.LBB26:
+  86               	.LBB27:
+  87               	.LM12:
+  88 0042 80E4      		ldi r24,lo8(64)
+  89 0044 87B9      		out 39-32,r24
+  90               	.LM13:
+  91 0046 83E8      		ldi r24,lo8(-125)
+  92 0048 86B9      		out 38-32,r24
+  93               	.LBE27:
+  94               	.LBE26:
+  95               	.LM14:
+  96 004a 8CE0      		ldi r24,lo8(12)
+  97 004c 0E94 0000 		call lcd_init
+  98               	.LM15:
+  99 0050 6E01      		movw r12,r28
+ 100 0052 0894      		sec
+ 101 0054 C11C      		adc r12,__zero_reg__
+ 102 0056 D11C      		adc r13,__zero_reg__
+ 103               	.LBB28:
+ 104               	.LBB29:
+ 105               	.LBB30:
+ 106               	.LBB31:
+ 107               	.LBB32:
+ 108               	.LBB33:
+ 109               	.LM16:
+ 110 0058 88E7      		ldi r24,lo8(1400)
+ 111 005a A82E      		mov r10,r24
+ 112 005c 85E0      		ldi r24,hi8(1400)
+ 113 005e B82E      		mov r11,r24
+ 114               	.L8:
+ 115               	.LBE33:
+ 116               	.LBE32:
+ 117               	.LBE31:
+ 118               	.LBE30:
+ 119               	.LBE29:
+ 120               	.LBE28:
+ 121               	.LM17:
+ 122 0060 0E94 0000 		call adc_read
+ 123 0064 7C01      		movw r14,r24
+ 124               	.LVL0:
+ 125               	.LM18:
+ 126 0066 0E94 0000 		call lcd_clrscr
+ 127               	.LM19:
+ 128 006a 00E0      		ldi r16,lo8(0)
+ 129 006c 10E0      		ldi r17,hi8(0)
+ 130               	.LVL1:
+ 131 006e C801      		movw r24,r16
+ 132 0070 B701      		movw r22,r14
+ 133 0072 0E94 0000 		call __floatunsisf
+ 134 0076 46E0      		ldi r20,lo8(6)
+ 135 0078 21E0      		ldi r18,lo8(1)
+ 136 007a 8601      		movw r16,r12
+ 137               	.LVL2:
+ 138 007c 0E94 0000 		call dtostrf
+ 139               	.LM20:
+ 140 0080 C601      		movw r24,r12
+ 141 0082 0E94 0000 		call lcd_puts
+ 142               	.LBB39:
+ 143               	.LBB38:
+ 144               	.LBB37:
+ 145               	.LBB36:
+ 146               	.LBB35:
+ 147               	.LBB34:
+ 148               	.LM21:
+ 149 0086 C501      		movw r24,r10
+ 150               	.LVL3:
+ 151               	/* #APP */
+ 152               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 153 0088 0197      		1: sbiw r24,1
+ 154 008a 01F4      		brne 1b
+ 155               	 ;  0 "" 2
+ 156               	/* #NOAPP */
+ 157 008c 00C0      		rjmp .L8
+ 158               	.LBE34:
+ 159               	.LBE35:
+ 160               	.LBE36:
+ 161               	.LBE37:
+ 162               	.LBE38:
+ 163               	.LBE39:
+ 164               	.LFE8:
+ 206               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:2      *ABS*:0000003f __SREG__
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:5      *ABS*:00000034 __CCP__
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:18     .text:00000000 adc_init
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:36     .text:0000000a adc_read
+C:\Users\Hiran\AppData\Local\Temp/ccFTyyE6.s:62     .text:0000001e main
+
+UNDEFINED SYMBOLS
+lcd_init
+lcd_clrscr
+__floatunsisf
+dtostrf
+lcd_puts

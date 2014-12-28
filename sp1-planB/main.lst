@@ -1,0 +1,77 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	main
+  18               	main:
+  19               	.LFB6:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 1ABA      		out 58-32,__zero_reg__
+  25 0002 40E0      		ldi r20,lo8(0)
+  26 0004 50E0      		ldi r21,hi8(0)
+  27               	.LVL0:
+  28               	.LBB2:
+  29               	.LM3:
+  30 0006 61E0      		ldi r22,lo8(1)
+  31 0008 70E0      		ldi r23,hi8(1)
+  32               	.L7:
+  33               	.LM4:
+  34 000a 89B3      		in r24,57-32
+  35 000c 90E0      		ldi r25,lo8(0)
+  36 000e 042E      		mov r0,r20
+  37 0010 00C0      		rjmp 2f
+  38 0012 9595      	1:	asr r25
+  39 0014 8795      		ror r24
+  40 0016 0A94      	2:	dec r0
+  41 0018 02F4      		brpl 1b
+  42               	.LVL1:
+  43 001a 80FF      		sbrs r24,0
+  44 001c 00C0      		rjmp .L2
+  45               	.LM5:
+  46 001e 8AB3      		in r24,58-32
+  47 0020 FB01      		movw r30,r22
+  48 0022 042E      		mov r0,r20
+  49 0024 00C0      		rjmp 2f
+  50 0026 EE0F      	1:	lsl r30
+  51 0028 FF1F      		rol r31
+  52 002a 0A94      	2:	dec r0
+  53 002c 02F4      		brpl 1b
+  54 002e 9F01      		movw r18,r30
+  55 0030 8E2B      		or r24,r30
+  56 0032 8ABB      		out 58-32,r24
+  57               	.LM6:
+  58 0034 8BB3      		in r24,59-32
+  59 0036 282B      		or r18,r24
+  60 0038 2BBB      		out 59-32,r18
+  61               	.L2:
+  62               	.LM7:
+  63 003a 4F5F      		subi r20,lo8(-(1))
+  64 003c 5F4F      		sbci r21,hi8(-(1))
+  65               	.LVL2:
+  66 003e 4830      		cpi r20,8
+  67 0040 5105      		cpc r21,__zero_reg__
+  68 0042 00F0      		brlo .L7
+  69 0044 40E0      		ldi r20,lo8(0)
+  70 0046 50E0      		ldi r21,hi8(0)
+  71 0048 00C0      		rjmp .L7
+  72               	.LBE2:
+  73               	.LFE6:
+  99               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Rasika\AppData\Local\Temp/ccR9lpMz.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccR9lpMz.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccR9lpMz.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccR9lpMz.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccR9lpMz.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccR9lpMz.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccR9lpMz.s:18     .text:00000000 main
+
+NO UNDEFINED SYMBOLS

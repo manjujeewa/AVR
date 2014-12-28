@@ -1,0 +1,23 @@
+==================================================
+acs712 lib
+==================================================
+= Copyright (c) Davide Gironi, 2012              =
+= http://davidegironi.blogspot.it/               =
+==================================================
+
+
+ACS712 is an avr library for ACS712 low current sensor.
+This current sensor gives precise current measurement for both AC and DC
+signals.
+
+Setup parameters in acs712.h
+
+
+Devel Notes
+-----------
+This library was developed on Eclipse, built with avr-gcc on Atmega8 @ 1MHz.
+
+
+License
+-------
+Please refer to LICENSE file for licensing information.

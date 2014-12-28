@@ -1,0 +1,566 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	readData
+  18               	readData:
+  19               	.LFB8:
+  20               	.LM1:
+  21 0000 0F93      		push r16
+  22 0002 1F93      		push r17
+  23               	/* prologue: function */
+  24               	/* frame size = 0 */
+  25               	.LM2:
+  26 0004 0E94 0000 		call RTC_getDate
+  27               	.LM3:
+  28 0008 8823      		tst r24
+  29 000a 01F0      		breq .L2
+  30 000c 0E94 0000 		call blinkRedLED
+  31               	.L2:
+  32               	.LM4:
+  33 0010 0E94 0000 		call RTC_getTime
+  34               	.LM5:
+  35 0014 8823      		tst r24
+  36 0016 01F0      		breq .L3
+  37 0018 0E94 0000 		call blinkRedLED
+  38               	.L3:
+  39 001c 80E0      		ldi r24,lo8(0)
+  40 001e 90E0      		ldi r25,hi8(0)
+  41               	.L4:
+  42               	.LM6:
+  43 0020 FC01      		movw r30,r24
+  44 0022 E050      		subi r30,lo8(-(dataString))
+  45 0024 F040      		sbci r31,hi8(-(dataString))
+  46 0026 1082      		st Z,__zero_reg__
+  47 0028 0196      		adiw r24,1
+  48               	.LM7:
+  49 002a 8436      		cpi r24,100
+  50 002c 9105      		cpc r25,__zero_reg__
+  51 002e 01F4      		brne .L4
+  52 0030 20E0      		ldi r18,lo8(0)
+  53 0032 30E0      		ldi r19,hi8(0)
+  54               	.L5:
+  55               	.LM8:
+  56 0034 F901      		movw r30,r18
+  57 0036 E050      		subi r30,lo8(-(date))
+  58 0038 F040      		sbci r31,hi8(-(date))
+  59 003a 8081      		ld r24,Z
+  60 003c F901      		movw r30,r18
+  61 003e E050      		subi r30,lo8(-(dataString))
+  62 0040 F040      		sbci r31,hi8(-(dataString))
+  63 0042 8083      		st Z,r24
+  64 0044 2F5F      		subi r18,lo8(-(1))
+  65 0046 3F4F      		sbci r19,hi8(-(1))
+  66               	.LM9:
+  67 0048 2A30      		cpi r18,10
+  68 004a 3105      		cpc r19,__zero_reg__
+  69 004c 01F4      		brne .L5
+  70               	.LM10:
+  71 004e 8CE2      		ldi r24,lo8(44)
+  72 0050 8093 0000 		sts dataString+10,r24
+  73 0054 2BE0      		ldi r18,lo8(11)
+  74 0056 30E0      		ldi r19,hi8(11)
+  75               	.L6:
+  76               	.LM11:
+  77 0058 F901      		movw r30,r18
+  78 005a E050      		subi r30,lo8(-(time-11))
+  79 005c F040      		sbci r31,hi8(-(time-11))
+  80 005e 8081      		ld r24,Z
+  81 0060 F901      		movw r30,r18
+  82 0062 E050      		subi r30,lo8(-(dataString))
+  83 0064 F040      		sbci r31,hi8(-(dataString))
+  84 0066 8083      		st Z,r24
+  85 0068 2F5F      		subi r18,lo8(-(1))
+  86 006a 3F4F      		sbci r19,hi8(-(1))
+  87 006c 2331      		cpi r18,19
+  88 006e 3105      		cpc r19,__zero_reg__
+  89 0070 01F4      		brne .L6
+  90               	.LM12:
+  91 0072 8CE2      		ldi r24,lo8(44)
+  92 0074 8093 0000 		sts dataString+19,r24
+  93 0078 14E1      		ldi r17,lo8(20)
+  94               	.LVL0:
+  95               	.L15:
+  96               	.LM13:
+  97 007a 0E94 0000 		call receiveByte
+  98 007e 082F      		mov r16,r24
+  99               	.LM14:
+ 100 0080 8A30      		cpi r24,lo8(10)
+ 101 0082 01F4      		brne .L7
+ 102               	.LVL1:
+ 103               	.LM15:
+ 104 0084 E12F      		mov r30,r17
+ 105 0086 F0E0      		ldi r31,lo8(0)
+ 106 0088 E050      		subi r30,lo8(-(dataString))
+ 107 008a F040      		sbci r31,hi8(-(dataString))
+ 108 008c 8DE0      		ldi r24,lo8(13)
+ 109               	.LVL2:
+ 110 008e 8083      		st Z,r24
+ 111               	.LM16:
+ 112 0090 1F5F      		subi r17,lo8(-(1))
+ 113 0092 E12F      		mov r30,r17
+ 114 0094 F0E0      		ldi r31,lo8(0)
+ 115 0096 E050      		subi r30,lo8(-(dataString))
+ 116 0098 F040      		sbci r31,hi8(-(dataString))
+ 117 009a 0083      		st Z,r16
+ 118               	/* epilogue start */
+ 119               	.LM17:
+ 120 009c 1F91      		pop r17
+ 121               	.LVL3:
+ 122 009e 0F91      		pop r16
+ 123               	.LVL4:
+ 124 00a0 0895      		ret
+ 125               	.LVL5:
+ 126               	.L7:
+ 127               	.LM18:
+ 128 00a2 8052      		subi r24,lo8(-(-32))
+ 129               	.LVL6:
+ 130 00a4 8F35      		cpi r24,lo8(95)
+ 131 00a6 00F4      		brsh .L15
+ 132               	.LM19:
+ 133 00a8 802F      		mov r24,r16
+ 134 00aa 0E94 0000 		call transmitByte
+ 135               	.LM20:
+ 136 00ae E12F      		mov r30,r17
+ 137 00b0 F0E0      		ldi r31,lo8(0)
+ 138 00b2 E050      		subi r30,lo8(-(dataString))
+ 139 00b4 F040      		sbci r31,hi8(-(dataString))
+ 140 00b6 0083      		st Z,r16
+ 141 00b8 1F5F      		subi r17,lo8(-(1))
+ 142 00ba 00C0      		rjmp .L15
+ 143               	.LFE8:
+ 145               	.global	recordData
+ 147               	recordData:
+ 148               	.LFB7:
+ 149               	.LM21:
+ 150 00bc DF93      		push r29
+ 151 00be CF93      		push r28
+ 152 00c0 CDB7      		in r28,__SP_L__
+ 153 00c2 DEB7      		in r29,__SP_H__
+ 154 00c4 2D97      		sbiw r28,13
+ 155 00c6 0FB6      		in __tmp_reg__,__SREG__
+ 156 00c8 F894      		cli
+ 157 00ca DEBF      		out __SP_H__,r29
+ 158 00cc 0FBE      		out __SREG__,__tmp_reg__
+ 159 00ce CDBF      		out __SP_L__,r28
+ 160               	/* prologue: function */
+ 161               	/* frame size = 13 */
+ 162               	.LM22:
+ 163 00d0 0E94 0000 		call RTC_getDate
+ 164               	.LM23:
+ 165 00d4 8823      		tst r24
+ 166 00d6 01F0      		breq .L17
+ 167 00d8 0E94 0000 		call blinkRedLED
+ 168               	.L17:
+ 169 00dc DE01      		movw r26,r28
+ 170 00de 1196      		adiw r26,1
+ 171 00e0 90E0      		ldi r25,lo8(0)
+ 172               	.LVL7:
+ 173               	.LM24:
+ 174 00e2 9E01      		movw r18,r28
+ 175 00e4 275F      		subi r18,lo8(-(9))
+ 176 00e6 3F4F      		sbci r19,hi8(-(9))
+ 177               	.LVL8:
+ 178               	.L20:
+ 179               	.LM25:
+ 180 00e8 E92F      		mov r30,r25
+ 181 00ea F0E0      		ldi r31,lo8(0)
+ 182 00ec E050      		subi r30,lo8(-(date))
+ 183 00ee F040      		sbci r31,hi8(-(date))
+ 184               	.LVL9:
+ 185 00f0 8081      		ld r24,Z
+ 186 00f2 8C93      		st X,r24
+ 187 00f4 9F5F      		subi r25,lo8(-(1))
+ 188               	.LVL10:
+ 189               	.LM26:
+ 190 00f6 9230      		cpi r25,lo8(2)
+ 191 00f8 01F0      		breq .L18
+ 192 00fa 9530      		cpi r25,lo8(5)
+ 193 00fc 01F4      		brne .L19
+ 194               	.L18:
+ 195 00fe 9F5F      		subi r25,lo8(-(1))
+ 196               	.L19:
+ 197 0100 1196      		adiw r26,1
+ 198               	.LM27:
+ 199 0102 A217      		cp r26,r18
+ 200 0104 B307      		cpc r27,r19
+ 201 0106 01F4      		brne .L20
+ 202               	.LM28:
+ 203 0108 8EE2      		ldi r24,lo8(46)
+ 204 010a 8987      		std Y+9,r24
+ 205               	.LM29:
+ 206 010c 83E4      		ldi r24,lo8(67)
+ 207 010e 8A87      		std Y+10,r24
+ 208               	.LM30:
+ 209 0110 83E5      		ldi r24,lo8(83)
+ 210 0112 8B87      		std Y+11,r24
+ 211               	.LM31:
+ 212 0114 86E5      		ldi r24,lo8(86)
+ 213 0116 8C87      		std Y+12,r24
+ 214               	.LM32:
+ 215 0118 CE01      		movw r24,r28
+ 216 011a 0196      		adiw r24,1
+ 217 011c 0E94 0000 		call writeFile
+ 218               	.LVL11:
+ 219               	.LM33:
+ 220 0120 8823      		tst r24
+ 221 0122 01F0      		breq .L23
+ 222 0124 0E94 0000 		call blinkRedLED
+ 223               	.L23:
+ 224               	/* epilogue start */
+ 225               	.LM34:
+ 226 0128 2D96      		adiw r28,13
+ 227 012a 0FB6      		in __tmp_reg__,__SREG__
+ 228 012c F894      		cli
+ 229 012e DEBF      		out __SP_H__,r29
+ 230 0130 0FBE      		out __SREG__,__tmp_reg__
+ 231 0132 CDBF      		out __SP_L__,r28
+ 232 0134 CF91      		pop r28
+ 233 0136 DF91      		pop r29
+ 234 0138 0895      		ret
+ 235               	.LFE7:
+ 237               		.data
+ 238               	.LC0:
+ 239 0000 676F 7420 		.string	"got it"
+ 239      6974 00
+ 240               		.text
+ 241               	.global	main
+ 243               	main:
+ 244               	.LFB6:
+ 245               	.LM35:
+ 246 013a 1F93      		push r17
+ 247               	/* prologue: function */
+ 248               	/* frame size = 0 */
+ 249               	.LM36:
+ 250 013c 80E1      		ldi r24,lo8(10000)
+ 251 013e 97E2      		ldi r25,hi8(10000)
+ 252               	.LVL12:
+ 253               	.LBB28:
+ 254               	.LBB29:
+ 255               	.LBB30:
+ 256               	.LBB31:
+ 257               	.LM37:
+ 258 0140 20E9      		ldi r18,lo8(400)
+ 259 0142 31E0      		ldi r19,hi8(400)
+ 260               	.L26:
+ 261 0144 F901      		movw r30,r18
+ 262               	.LVL13:
+ 263               	/* #APP */
+ 264               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 265 0146 3197      		1: sbiw r30,1
+ 266 0148 01F4      		brne 1b
+ 267               	 ;  0 "" 2
+ 268               	/* #NOAPP */
+ 269               	.LBE31:
+ 270               	.LBE30:
+ 271               	.LM38:
+ 272 014a 0197      		sbiw r24,1
+ 273               	.LM39:
+ 274 014c 01F4      		brne .L26
+ 275               	.LBE29:
+ 276               	.LBE28:
+ 277               	.LM40:
+ 278 014e 0E94 0000 		call port_init
+ 279               	.LVL14:
+ 280               	.LM41:
+ 281 0152 87E6      		ldi r24,lo8(103)
+ 282 0154 90E0      		ldi r25,hi8(103)
+ 283 0156 0E94 0000 		call USART_Init
+ 284               	.LM42:
+ 285 015a 0E94 0000 		call twi_init
+ 286               	.LM43:
+ 287 015e 0E94 0000 		call spi_init
+ 288               	.LM44:
+ 289 0162 80E0      		ldi r24,lo8(__c.1572)
+ 290 0164 90E0      		ldi r25,hi8(__c.1572)
+ 291 0166 0E94 0000 		call transmitString_F
+ 292               	.LM45:
+ 293 016a 80E0      		ldi r24,lo8(__c.1574)
+ 294 016c 90E0      		ldi r25,hi8(__c.1574)
+ 295 016e 0E94 0000 		call transmitString_F
+ 296               	.LM46:
+ 297 0172 80E0      		ldi r24,lo8(__c.1576)
+ 298 0174 90E0      		ldi r25,hi8(__c.1576)
+ 299 0176 0E94 0000 		call transmitString_F
+ 300 017a 88E8      		ldi r24,lo8(5000)
+ 301 017c 93E1      		ldi r25,hi8(5000)
+ 302               	.LVL15:
+ 303               	.LBB32:
+ 304               	.LBB33:
+ 305               	.LBB34:
+ 306               	.LBB35:
+ 307               	.LM47:
+ 308 017e 20E9      		ldi r18,lo8(400)
+ 309 0180 31E0      		ldi r19,hi8(400)
+ 310               	.L27:
+ 311 0182 F901      		movw r30,r18
+ 312               	.LVL16:
+ 313               	/* #APP */
+ 314               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 315 0184 3197      		1: sbiw r30,1
+ 316 0186 01F4      		brne 1b
+ 317               	 ;  0 "" 2
+ 318               	/* #NOAPP */
+ 319               	.LBE35:
+ 320               	.LBE34:
+ 321               	.LM48:
+ 322 0188 0197      		sbiw r24,1
+ 323               	.LM49:
+ 324 018a 01F4      		brne .L27
+ 325               	.LBE33:
+ 326               	.LBE32:
+ 327               	.LM50:
+ 328 018c 1092 0000 		sts cardType,__zero_reg__
+ 329 0190 10E0      		ldi r17,lo8(0)
+ 330               	.LVL17:
+ 331               	.L29:
+ 332               	.LM51:
+ 333 0192 0E94 0000 		call SD_init
+ 334               	.LVL18:
+ 335               	.LM52:
+ 336 0196 8823      		tst r24
+ 337               	.LVL19:
+ 338 0198 01F0      		breq .L28
+ 339               	.LM53:
+ 340 019a 1F5F      		subi r17,lo8(-(1))
+ 341 019c 1A30      		cpi r17,lo8(10)
+ 342 019e 01F4      		brne .L29
+ 343               	.LM54:
+ 344 01a0 8130      		cpi r24,lo8(1)
+ 345 01a2 01F4      		brne .L30
+ 346 01a4 80E0      		ldi r24,lo8(__c.1581)
+ 347 01a6 90E0      		ldi r25,hi8(__c.1581)
+ 348               	.LVL20:
+ 349 01a8 00C0      		rjmp .L44
+ 350               	.LVL21:
+ 351               	.L30:
+ 352               	.LM55:
+ 353 01aa 8230      		cpi r24,lo8(2)
+ 354 01ac 01F4      		brne .L31
+ 355 01ae 80E0      		ldi r24,lo8(__c.1583)
+ 356 01b0 90E0      		ldi r25,hi8(__c.1583)
+ 357               	.LVL22:
+ 358               	.L44:
+ 359 01b2 0E94 0000 		call transmitString_F
+ 360               	.LVL23:
+ 361               	.L31:
+ 362               	.LM56:
+ 363 01b6 0E94 0000 		call blinkRedLED
+ 364               	.LVL24:
+ 365               	.L28:
+ 366               	.LM57:
+ 367 01ba 8091 0000 		lds r24,cardType
+ 368               	.LVL25:
+ 369 01be 8230      		cpi r24,lo8(2)
+ 370 01c0 01F0      		breq .L34
+ 371 01c2 8330      		cpi r24,lo8(3)
+ 372 01c4 01F0      		breq .L35
+ 373 01c6 8130      		cpi r24,lo8(1)
+ 374 01c8 01F4      		brne .L43
+ 375               	.LM58:
+ 376 01ca 80E0      		ldi r24,lo8(__c.1586)
+ 377 01cc 90E0      		ldi r25,hi8(__c.1586)
+ 378 01ce 00C0      		rjmp .L45
+ 379               	.L34:
+ 380               	.LM59:
+ 381 01d0 80E0      		ldi r24,lo8(__c.1590)
+ 382 01d2 90E0      		ldi r25,hi8(__c.1590)
+ 383 01d4 00C0      		rjmp .L45
+ 384               	.L35:
+ 385               	.LM60:
+ 386 01d6 80E0      		ldi r24,lo8(__c.1593)
+ 387 01d8 90E0      		ldi r25,hi8(__c.1593)
+ 388 01da 00C0      		rjmp .L45
+ 389               	.L43:
+ 390               	.LM61:
+ 391 01dc 80E0      		ldi r24,lo8(__c.1596)
+ 392 01de 90E0      		ldi r25,hi8(__c.1596)
+ 393               	.L45:
+ 394 01e0 0E94 0000 		call transmitString_F
+ 395               	.LM62:
+ 396 01e4 0E94 0000 		call getBootSectorData
+ 397               	.LM63:
+ 398 01e8 8823      		tst r24
+ 399 01ea 01F0      		breq .L37
+ 400               	.LM64:
+ 401 01ec 80E0      		ldi r24,lo8(__c.1598)
+ 402 01ee 90E0      		ldi r25,hi8(__c.1598)
+ 403 01f0 0E94 0000 		call transmitString_F
+ 404               	.LM65:
+ 405 01f4 0E94 0000 		call blinkRedLED
+ 406               	.L37:
+ 407               	.LM66:
+ 408 01f8 8DE0      		ldi r24,lo8(13)
+ 409 01fa 0E94 0000 		call transmitByte
+ 410 01fe 8AE0      		ldi r24,lo8(10)
+ 411 0200 0E94 0000 		call transmitByte
+ 412               	.LM67:
+ 413 0204 80E0      		ldi r24,lo8(0)
+ 414 0206 60E0      		ldi r22,lo8(0)
+ 415 0208 70E0      		ldi r23,hi8(0)
+ 416 020a 0E94 0000 		call findFiles
+ 417               	.LM68:
+ 418 020e 0E94 0000 		call readData
+ 419               	.LM69:
+ 420 0212 80E0      		ldi r24,lo8(.LC0)
+ 421 0214 90E0      		ldi r25,hi8(.LC0)
+ 422 0216 0E94 0000 		call transmitString
+ 423               	.LM70:
+ 424 021a 0E94 0000 		call recordData
+ 425               	.L38:
+ 426 021e 00C0      		rjmp .L38
+ 427               	.LFE6:
+ 429               		.section	.progmem.data,"a",@progbits
+ 432               	__c.1598:
+ 433 0000 0A0D 4641 		.string	"\n\rFAT32 not found!"
+ 433      5433 3220 
+ 433      6E6F 7420 
+ 433      666F 756E 
+ 433      6421 00
+ 436               	__c.1596:
+ 437 0013 556E 6B6E 		.string	"Unknown SD Card Detected!"
+ 437      6F77 6E20 
+ 437      5344 2043 
+ 437      6172 6420 
+ 437      4465 7465 
+ 440               	__c.1593:
+ 441 002d 5374 616E 		.string	"Standard Capacity Card (Ver 2.x) Detected!"
+ 441      6461 7264 
+ 441      2043 6170 
+ 441      6163 6974 
+ 441      7920 4361 
+ 444               	__c.1590:
+ 445 0058 4869 6768 		.string	"High Capacity Card Detected!"
+ 445      2043 6170 
+ 445      6163 6974 
+ 445      7920 4361 
+ 445      7264 2044 
+ 448               	__c.1586:
+ 449 0075 5374 616E 		.string	"Standard Capacity Card (Ver 1.x) Detected!"
+ 449      6461 7264 
+ 449      2043 6170 
+ 449      6163 6974 
+ 449      7920 4361 
+ 452               	__c.1583:
+ 453 00a0 4361 7264 		.string	"Card Initialization failed.."
+ 453      2049 6E69 
+ 453      7469 616C 
+ 453      697A 6174 
+ 453      696F 6E20 
+ 456               	__c.1581:
+ 457 00bd 5344 2063 		.string	"SD card not detected.."
+ 457      6172 6420 
+ 457      6E6F 7420 
+ 457      6465 7465 
+ 457      6374 6564 
+ 460               	__c.1576:
+ 461 00d4 0A0D 2A2A 		.string	"\n\r****************************************************\n\r"
+ 461      2A2A 2A2A 
+ 461      2A2A 2A2A 
+ 461      2A2A 2A2A 
+ 461      2A2A 2A2A 
+ 464               	__c.1574:
+ 465 010d 0A0D 2020 		.string	"\n\r         Weather Station Data Storage Testing "
+ 465      2020 2020 
+ 465      2020 2057 
+ 465      6561 7468 
+ 465      6572 2053 
+ 468               	__c.1572:
+ 469 013e 0A0D 0A0D 		.string	"\n\r\n\r****************************************************"
+ 469      2A2A 2A2A 
+ 469      2A2A 2A2A 
+ 469      2A2A 2A2A 
+ 469      2A2A 2A2A 
+ 470               		.comm time,9,1
+ 471               		.comm date,11,1
+ 472               		.comm day,1,1
+ 473               		.comm dateFAT,2,1
+ 474               		.comm timeFAT,2,1
+ 475               		.comm rtc_register,7,1
+ 476               		.comm startBlock,4,1
+ 477               		.comm totalBlocks,4,1
+ 478               		.comm SDHC_flag,1,1
+ 479               		.comm cardType,1,1
+ 480               		.comm buffer,512,1
+ 481               		.comm firstDataSector,4,1
+ 482               		.comm rootCluster,4,1
+ 483               		.comm totalClusters,4,1
+ 484               		.comm bytesPerSector,2,1
+ 485               		.comm sectorPerCluster,2,1
+ 486               		.comm reservedSectorCount,2,1
+ 487               		.comm unusedSectors,4,1
+ 488               		.comm appendFileSector,4,1
+ 489               		.comm appendFileLocation,4,1
+ 490               		.comm fileSize,4,1
+ 491               		.comm appendStartCluster,4,1
+ 492               		.comm freeClusterCountUpdated,1,1
+ 493               		.comm dataString,100,1
+ 534               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:18     .text:00000000 readData
+                            *COM*:00000064 dataString
+                            *COM*:0000000b date
+                            *COM*:00000009 time
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:147    .text:000000bc recordData
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:243    .text:0000013a main
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:468    .progmem.data:0000013e __c.1572
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:464    .progmem.data:0000010d __c.1574
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:460    .progmem.data:000000d4 __c.1576
+                            *COM*:00000001 cardType
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:456    .progmem.data:000000bd __c.1581
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:452    .progmem.data:000000a0 __c.1583
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:448    .progmem.data:00000075 __c.1586
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:444    .progmem.data:00000058 __c.1590
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:440    .progmem.data:0000002d __c.1593
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:436    .progmem.data:00000013 __c.1596
+C:\Users\Rasika\AppData\Local\Temp/ccEGQCdE.s:432    .progmem.data:00000000 __c.1598
+                            *COM*:00000001 day
+                            *COM*:00000002 dateFAT
+                            *COM*:00000002 timeFAT
+                            *COM*:00000007 rtc_register
+                            *COM*:00000004 startBlock
+                            *COM*:00000004 totalBlocks
+                            *COM*:00000001 SDHC_flag
+                            *COM*:00000200 buffer
+                            *COM*:00000004 firstDataSector
+                            *COM*:00000004 rootCluster
+                            *COM*:00000004 totalClusters
+                            *COM*:00000002 bytesPerSector
+                            *COM*:00000002 sectorPerCluster
+                            *COM*:00000002 reservedSectorCount
+                            *COM*:00000004 unusedSectors
+                            *COM*:00000004 appendFileSector
+                            *COM*:00000004 appendFileLocation
+                            *COM*:00000004 fileSize
+                            *COM*:00000004 appendStartCluster
+                            *COM*:00000001 freeClusterCountUpdated
+
+UNDEFINED SYMBOLS
+RTC_getDate
+blinkRedLED
+RTC_getTime
+receiveByte
+transmitByte
+writeFile
+port_init
+USART_Init
+twi_init
+spi_init
+transmitString_F
+SD_init
+getBootSectorData
+findFiles
+transmitString
+__do_copy_data
+__do_clear_bss

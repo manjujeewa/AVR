@@ -1,0 +1,1149 @@
+   1               		.file	"RTC_routines.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	RTC_updateRegisters
+  18               	RTC_updateRegisters:
+  19               	.LFB9:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 8091 0000 		lds r24,time+6
+  25 0004 90E0      		ldi r25,lo8(0)
+  26 0006 8770      		andi r24,lo8(7)
+  27 0008 9070      		andi r25,hi8(7)
+  28 000a 64E0      		ldi r22,4
+  29 000c 880F      	1:	lsl r24
+  30 000e 991F      		rol r25
+  31 0010 6A95      		dec r22
+  32 0012 01F4      		brne 1b
+  33 0014 2091 0000 		lds r18,time+7
+  34 0018 2F70      		andi r18,lo8(15)
+  35 001a 282B      		or r18,r24
+  36 001c 2093 0000 		sts rtc_register,r18
+  37               	.LM3:
+  38 0020 8091 0000 		lds r24,time+3
+  39 0024 90E0      		ldi r25,lo8(0)
+  40 0026 8770      		andi r24,lo8(7)
+  41 0028 9070      		andi r25,hi8(7)
+  42 002a 54E0      		ldi r21,4
+  43 002c 880F      	1:	lsl r24
+  44 002e 991F      		rol r25
+  45 0030 5A95      		dec r21
+  46 0032 01F4      		brne 1b
+  47 0034 2091 0000 		lds r18,time+4
+  48 0038 2F70      		andi r18,lo8(15)
+  49 003a 282B      		or r18,r24
+  50 003c 2093 0000 		sts rtc_register+1,r18
+  51               	.LM4:
+  52 0040 8091 0000 		lds r24,time
+  53 0044 90E0      		ldi r25,lo8(0)
+  54 0046 8370      		andi r24,lo8(3)
+  55 0048 9070      		andi r25,hi8(3)
+  56 004a 44E0      		ldi r20,4
+  57 004c 880F      	1:	lsl r24
+  58 004e 991F      		rol r25
+  59 0050 4A95      		dec r20
+  60 0052 01F4      		brne 1b
+  61 0054 2091 0000 		lds r18,time+1
+  62 0058 2F70      		andi r18,lo8(15)
+  63 005a 282B      		or r18,r24
+  64 005c 2093 0000 		sts rtc_register+2,r18
+  65               	.LM5:
+  66 0060 8091 0000 		lds r24,date+10
+  67 0064 8093 0000 		sts rtc_register+3,r24
+  68               	.LM6:
+  69 0068 8091 0000 		lds r24,date
+  70 006c 90E0      		ldi r25,lo8(0)
+  71 006e 8370      		andi r24,lo8(3)
+  72 0070 9070      		andi r25,hi8(3)
+  73 0072 34E0      		ldi r19,4
+  74 0074 880F      	1:	lsl r24
+  75 0076 991F      		rol r25
+  76 0078 3A95      		dec r19
+  77 007a 01F4      		brne 1b
+  78 007c 2091 0000 		lds r18,date+1
+  79 0080 2F70      		andi r18,lo8(15)
+  80 0082 282B      		or r18,r24
+  81 0084 2093 0000 		sts rtc_register+4,r18
+  82               	.LM7:
+  83 0088 8091 0000 		lds r24,date+3
+  84 008c 90E0      		ldi r25,lo8(0)
+  85 008e 8170      		andi r24,lo8(1)
+  86 0090 9070      		andi r25,hi8(1)
+  87 0092 24E0      		ldi r18,4
+  88 0094 880F      	1:	lsl r24
+  89 0096 991F      		rol r25
+  90 0098 2A95      		dec r18
+  91 009a 01F4      		brne 1b
+  92 009c 2091 0000 		lds r18,date+4
+  93 00a0 2F70      		andi r18,lo8(15)
+  94 00a2 282B      		or r18,r24
+  95 00a4 2093 0000 		sts rtc_register+5,r18
+  96               	.LM8:
+  97 00a8 9091 0000 		lds r25,date+8
+  98 00ac 9295      		swap r25
+  99 00ae 907F      		andi r25,lo8(-16)
+ 100 00b0 8091 0000 		lds r24,date+9
+ 101 00b4 8F70      		andi r24,lo8(15)
+ 102 00b6 982B      		or r25,r24
+ 103 00b8 9093 0000 		sts rtc_register+6,r25
+ 104               	/* epilogue start */
+ 105               	.LM9:
+ 106 00bc 0895      		ret
+ 107               	.LFE9:
+ 109               	.global	RTC_displayDay
+ 111               	RTC_displayDay:
+ 112               	.LFB8:
+ 113               	.LM10:
+ 114               	/* prologue: function */
+ 115               	/* frame size = 0 */
+ 116               	.LM11:
+ 117 00be 80E0      		ldi r24,lo8(__c.1509)
+ 118 00c0 90E0      		ldi r25,hi8(__c.1509)
+ 119 00c2 0E94 0000 		call transmitString_F
+ 120               	.LM12:
+ 121 00c6 8091 0000 		lds r24,rtc_register+3
+ 122 00ca 8330      		cpi r24,lo8(3)
+ 123 00cc 01F0      		breq .L8
+ 124 00ce 8430      		cpi r24,lo8(4)
+ 125 00d0 00F4      		brsh .L12
+ 126 00d2 8130      		cpi r24,lo8(1)
+ 127 00d4 01F0      		breq .L6
+ 128 00d6 8230      		cpi r24,lo8(2)
+ 129 00d8 00F4      		brsh .L7
+ 130 00da 00C0      		rjmp .L18
+ 131               	.L12:
+ 132 00dc 8530      		cpi r24,lo8(5)
+ 133 00de 01F0      		breq .L10
+ 134 00e0 8530      		cpi r24,lo8(5)
+ 135 00e2 00F0      		brlo .L9
+ 136 00e4 8630      		cpi r24,lo8(6)
+ 137 00e6 01F4      		brne .L16
+ 138 00e8 00C0      		rjmp .L19
+ 139               	.L18:
+ 140               	.LM13:
+ 141 00ea 80E0      		ldi r24,lo8(__c.1512)
+ 142 00ec 90E0      		ldi r25,hi8(__c.1512)
+ 143 00ee 00C0      		rjmp .L17
+ 144               	.L6:
+ 145               	.LM14:
+ 146 00f0 80E0      		ldi r24,lo8(__c.1516)
+ 147 00f2 90E0      		ldi r25,hi8(__c.1516)
+ 148 00f4 00C0      		rjmp .L17
+ 149               	.L7:
+ 150               	.LM15:
+ 151 00f6 80E0      		ldi r24,lo8(__c.1519)
+ 152 00f8 90E0      		ldi r25,hi8(__c.1519)
+ 153 00fa 00C0      		rjmp .L17
+ 154               	.L8:
+ 155               	.LM16:
+ 156 00fc 80E0      		ldi r24,lo8(__c.1522)
+ 157 00fe 90E0      		ldi r25,hi8(__c.1522)
+ 158 0100 00C0      		rjmp .L17
+ 159               	.L9:
+ 160               	.LM17:
+ 161 0102 80E0      		ldi r24,lo8(__c.1525)
+ 162 0104 90E0      		ldi r25,hi8(__c.1525)
+ 163 0106 00C0      		rjmp .L17
+ 164               	.L10:
+ 165               	.LM18:
+ 166 0108 80E0      		ldi r24,lo8(__c.1528)
+ 167 010a 90E0      		ldi r25,hi8(__c.1528)
+ 168 010c 00C0      		rjmp .L17
+ 169               	.L19:
+ 170               	.LM19:
+ 171 010e 80E0      		ldi r24,lo8(__c.1531)
+ 172 0110 90E0      		ldi r25,hi8(__c.1531)
+ 173 0112 00C0      		rjmp .L17
+ 174               	.L16:
+ 175               	.LM20:
+ 176 0114 80E0      		ldi r24,lo8(__c.1534)
+ 177 0116 90E0      		ldi r25,hi8(__c.1534)
+ 178               	.L17:
+ 179 0118 0E94 0000 		call transmitString_F
+ 180 011c 0895      		ret
+ 181               	.LFE8:
+ 183               	.global	RTC_writeDate
+ 185               	RTC_writeDate:
+ 186               	.LFB11:
+ 187               	.LM21:
+ 188               	/* prologue: function */
+ 189               	/* frame size = 0 */
+ 190               	.LM22:
+ 191 011e 0E94 0000 		call i2c_start
+ 192               	.LM23:
+ 193 0122 8130      		cpi r24,lo8(1)
+ 194 0124 01F0      		breq .L25
+ 195               	.L21:
+ 196               	.LM24:
+ 197 0126 80ED      		ldi r24,lo8(-48)
+ 198 0128 0E94 0000 		call i2c_sendAddress
+ 199               	.LM25:
+ 200 012c 8130      		cpi r24,lo8(1)
+ 201 012e 01F0      		breq .L25
+ 202               	.L23:
+ 203               	.LM26:
+ 204 0130 83E0      		ldi r24,lo8(3)
+ 205 0132 0E94 0000 		call i2c_sendData
+ 206               	.LM27:
+ 207 0136 8130      		cpi r24,lo8(1)
+ 208 0138 01F0      		breq .L25
+ 209               	.L24:
+ 210               	.LM28:
+ 211 013a 8091 0000 		lds r24,rtc_register+3
+ 212 013e 0E94 0000 		call i2c_sendData
+ 213               	.LM29:
+ 214 0142 8130      		cpi r24,lo8(1)
+ 215 0144 01F0      		breq .L25
+ 216               	.LM30:
+ 217 0146 8091 0000 		lds r24,rtc_register+4
+ 218 014a 0E94 0000 		call i2c_sendData
+ 219               	.LM31:
+ 220 014e 8130      		cpi r24,lo8(1)
+ 221 0150 01F0      		breq .L25
+ 222               	.LM32:
+ 223 0152 8091 0000 		lds r24,rtc_register+5
+ 224 0156 0E94 0000 		call i2c_sendData
+ 225               	.LM33:
+ 226 015a 8130      		cpi r24,lo8(1)
+ 227 015c 01F0      		breq .L25
+ 228               	.LM34:
+ 229 015e 8091 0000 		lds r24,rtc_register+6
+ 230 0162 0E94 0000 		call i2c_sendData
+ 231               	.LM35:
+ 232 0166 8130      		cpi r24,lo8(1)
+ 233 0168 01F4      		brne .L26
+ 234               	.L25:
+ 235               	.LM36:
+ 236 016a 0E94 0000 		call i2c_stop
+ 237 016e 81E0      		ldi r24,lo8(1)
+ 238 0170 0895      		ret
+ 239               	.L26:
+ 240               	.LM37:
+ 241 0172 0E94 0000 		call i2c_stop
+ 242 0176 80E0      		ldi r24,lo8(0)
+ 243               	.LM38:
+ 244 0178 0895      		ret
+ 245               	.LFE11:
+ 247               	.global	RTC_updateDate
+ 249               	RTC_updateDate:
+ 250               	.LFB13:
+ 251               	.LM39:
+ 252               	.LVL0:
+ 253               	/* prologue: function */
+ 254               	/* frame size = 0 */
+ 255 017a FC01      		movw r30,r24
+ 256               	.LM40:
+ 257 017c 8081      		ld r24,Z
+ 258               	.LVL1:
+ 259 017e 8093 0000 		sts date,r24
+ 260               	.LM41:
+ 261 0182 8181      		ldd r24,Z+1
+ 262 0184 8093 0000 		sts date+1,r24
+ 263               	.LM42:
+ 264 0188 8281      		ldd r24,Z+2
+ 265 018a 8093 0000 		sts date+2,r24
+ 266               	.LM43:
+ 267 018e 8381      		ldd r24,Z+3
+ 268 0190 8093 0000 		sts date+3,r24
+ 269               	.LM44:
+ 270 0194 8481      		ldd r24,Z+4
+ 271 0196 8093 0000 		sts date+4,r24
+ 272               	.LM45:
+ 273 019a 8581      		ldd r24,Z+5
+ 274 019c 8093 0000 		sts date+5,r24
+ 275               	.LM46:
+ 276 01a0 8681      		ldd r24,Z+6
+ 277 01a2 8093 0000 		sts date+6,r24
+ 278               	.LM47:
+ 279 01a6 8781      		ldd r24,Z+7
+ 280 01a8 8093 0000 		sts date+7,r24
+ 281               	.LM48:
+ 282 01ac 8085      		ldd r24,Z+8
+ 283 01ae 8093 0000 		sts date+8,r24
+ 284               	.LM49:
+ 285 01b2 8185      		ldd r24,Z+9
+ 286 01b4 8093 0000 		sts date+9,r24
+ 287               	.LM50:
+ 288 01b8 8285      		ldd r24,Z+10
+ 289 01ba 8F70      		andi r24,lo8(15)
+ 290 01bc 8093 0000 		sts date+10,r24
+ 291               	.LM51:
+ 292 01c0 0E94 0000 		call RTC_updateRegisters
+ 293               	.LVL2:
+ 294               	.LM52:
+ 295 01c4 0E94 0000 		call RTC_writeDate
+ 296               	.LM53:
+ 297 01c8 8DE0      		ldi r24,lo8(13)
+ 298 01ca 0E94 0000 		call transmitByte
+ 299 01ce 8AE0      		ldi r24,lo8(10)
+ 300 01d0 0E94 0000 		call transmitByte
+ 301               	.LM54:
+ 302 01d4 8DE0      		ldi r24,lo8(13)
+ 303 01d6 0E94 0000 		call transmitByte
+ 304 01da 8AE0      		ldi r24,lo8(10)
+ 305 01dc 0E94 0000 		call transmitByte
+ 306               	.LM55:
+ 307 01e0 80E0      		ldi r24,lo8(__c.1665)
+ 308 01e2 90E0      		ldi r25,hi8(__c.1665)
+ 309 01e4 0E94 0000 		call transmitString_F
+ 310               	.LM56:
+ 311 01e8 80E0      		ldi r24,lo8(0)
+ 312               	/* epilogue start */
+ 313 01ea 0895      		ret
+ 314               	.LFE13:
+ 316               	.global	RTC_writeTime
+ 318               	RTC_writeTime:
+ 319               	.LFB10:
+ 320               	.LM57:
+ 321               	/* prologue: function */
+ 322               	/* frame size = 0 */
+ 323               	.LM58:
+ 324 01ec 0E94 0000 		call i2c_start
+ 325               	.LM59:
+ 326 01f0 8130      		cpi r24,lo8(1)
+ 327 01f2 01F0      		breq .L37
+ 328               	.L33:
+ 329               	.LM60:
+ 330 01f4 80ED      		ldi r24,lo8(-48)
+ 331 01f6 0E94 0000 		call i2c_sendAddress
+ 332               	.LM61:
+ 333 01fa 8130      		cpi r24,lo8(1)
+ 334 01fc 01F0      		breq .L37
+ 335               	.L35:
+ 336               	.LM62:
+ 337 01fe 80E0      		ldi r24,lo8(0)
+ 338 0200 0E94 0000 		call i2c_sendData
+ 339               	.LM63:
+ 340 0204 8130      		cpi r24,lo8(1)
+ 341 0206 01F0      		breq .L37
+ 342               	.L36:
+ 343               	.LM64:
+ 344 0208 8091 0000 		lds r24,rtc_register
+ 345 020c 0E94 0000 		call i2c_sendData
+ 346               	.LM65:
+ 347 0210 8130      		cpi r24,lo8(1)
+ 348 0212 01F0      		breq .L37
+ 349               	.LM66:
+ 350 0214 8091 0000 		lds r24,rtc_register+1
+ 351 0218 0E94 0000 		call i2c_sendData
+ 352               	.LM67:
+ 353 021c 8130      		cpi r24,lo8(1)
+ 354 021e 01F0      		breq .L37
+ 355               	.LM68:
+ 356 0220 8091 0000 		lds r24,rtc_register+2
+ 357 0224 0E94 0000 		call i2c_sendData
+ 358               	.LM69:
+ 359 0228 8130      		cpi r24,lo8(1)
+ 360 022a 01F4      		brne .L38
+ 361               	.L37:
+ 362               	.LM70:
+ 363 022c 0E94 0000 		call i2c_stop
+ 364 0230 81E0      		ldi r24,lo8(1)
+ 365 0232 0895      		ret
+ 366               	.L38:
+ 367               	.LM71:
+ 368 0234 0E94 0000 		call i2c_stop
+ 369 0238 80E0      		ldi r24,lo8(0)
+ 370               	.LM72:
+ 371 023a 0895      		ret
+ 372               	.LFE10:
+ 374               	.global	RTC_updateTime
+ 376               	RTC_updateTime:
+ 377               	.LFB12:
+ 378               	.LM73:
+ 379 023c 1F93      		push r17
+ 380               	/* prologue: function */
+ 381               	/* frame size = 0 */
+ 382               	.LM74:
+ 383 023e 8DE0      		ldi r24,lo8(13)
+ 384 0240 0E94 0000 		call transmitByte
+ 385 0244 8AE0      		ldi r24,lo8(10)
+ 386 0246 0E94 0000 		call transmitByte
+ 387               	.LM75:
+ 388 024a 80E0      		ldi r24,lo8(__c.1635)
+ 389 024c 90E0      		ldi r25,hi8(__c.1635)
+ 390 024e 0E94 0000 		call transmitString_F
+ 391               	.LM76:
+ 392 0252 0E94 0000 		call receiveByte
+ 393 0256 182F      		mov r17,r24
+ 394               	.LVL3:
+ 395               	.LM77:
+ 396 0258 0E94 0000 		call transmitByte
+ 397               	.LM78:
+ 398 025c 812F      		mov r24,r17
+ 399 025e 8053      		subi r24,lo8(-(-48))
+ 400 0260 8330      		cpi r24,lo8(3)
+ 401 0262 00F0      		brlo .+2
+ 402 0264 00C0      		rjmp .L41
+ 403               	.LM79:
+ 404 0266 1093 0000 		sts time,r17
+ 405               	.LM80:
+ 406 026a 0E94 0000 		call receiveByte
+ 407 026e 182F      		mov r17,r24
+ 408               	.LVL4:
+ 409               	.LM81:
+ 410 0270 0E94 0000 		call transmitByte
+ 411               	.LM82:
+ 412 0274 812F      		mov r24,r17
+ 413 0276 8053      		subi r24,lo8(-(-48))
+ 414 0278 8A30      		cpi r24,lo8(10)
+ 415 027a 00F0      		brlo .+2
+ 416 027c 00C0      		rjmp .L41
+ 417               	.LM83:
+ 418 027e 1093 0000 		sts time+1,r17
+ 419               	.LM84:
+ 420 0282 8AE3      		ldi r24,lo8(58)
+ 421 0284 0E94 0000 		call transmitByte
+ 422               	.LM85:
+ 423 0288 8091 0000 		lds r24,time
+ 424 028c 90E0      		ldi r25,lo8(0)
+ 425 028e 8370      		andi r24,lo8(3)
+ 426 0290 9070      		andi r25,hi8(3)
+ 427 0292 9C01      		movw r18,r24
+ 428 0294 E3E0      		ldi r30,3
+ 429 0296 220F      	1:	lsl r18
+ 430 0298 331F      		rol r19
+ 431 029a EA95      		dec r30
+ 432 029c 01F4      		brne 1b
+ 433 029e 880F      		lsl r24
+ 434 02a0 991F      		rol r25
+ 435 02a2 280F      		add r18,r24
+ 436 02a4 391F      		adc r19,r25
+ 437 02a6 8091 0000 		lds r24,time+1
+ 438 02aa 8F70      		andi r24,lo8(15)
+ 439 02ac 280F      		add r18,r24
+ 440 02ae 311D      		adc r19,__zero_reg__
+ 441 02b0 2831      		cpi r18,24
+ 442 02b2 3105      		cpc r19,__zero_reg__
+ 443 02b4 04F0      		brlt .+2
+ 444 02b6 00C0      		rjmp .L41
+ 445               	.LM86:
+ 446 02b8 0E94 0000 		call receiveByte
+ 447 02bc 182F      		mov r17,r24
+ 448               	.LVL5:
+ 449               	.LM87:
+ 450 02be 0E94 0000 		call transmitByte
+ 451               	.LM88:
+ 452 02c2 812F      		mov r24,r17
+ 453 02c4 8053      		subi r24,lo8(-(-48))
+ 454 02c6 8630      		cpi r24,lo8(6)
+ 455 02c8 00F4      		brsh .L41
+ 456               	.LM89:
+ 457 02ca 1093 0000 		sts time+3,r17
+ 458               	.LM90:
+ 459 02ce 0E94 0000 		call receiveByte
+ 460 02d2 182F      		mov r17,r24
+ 461               	.LVL6:
+ 462               	.LM91:
+ 463 02d4 0E94 0000 		call transmitByte
+ 464               	.LM92:
+ 465 02d8 812F      		mov r24,r17
+ 466 02da 8053      		subi r24,lo8(-(-48))
+ 467 02dc 8A30      		cpi r24,lo8(10)
+ 468 02de 00F4      		brsh .L41
+ 469               	.LM93:
+ 470 02e0 1093 0000 		sts time+4,r17
+ 471               	.LM94:
+ 472 02e4 8AE3      		ldi r24,lo8(58)
+ 473 02e6 0E94 0000 		call transmitByte
+ 474               	.LM95:
+ 475 02ea 0E94 0000 		call receiveByte
+ 476 02ee 182F      		mov r17,r24
+ 477               	.LVL7:
+ 478               	.LM96:
+ 479 02f0 0E94 0000 		call transmitByte
+ 480               	.LM97:
+ 481 02f4 812F      		mov r24,r17
+ 482 02f6 8053      		subi r24,lo8(-(-48))
+ 483 02f8 8630      		cpi r24,lo8(6)
+ 484 02fa 00F4      		brsh .L41
+ 485               	.LM98:
+ 486 02fc 1093 0000 		sts time+6,r17
+ 487               	.LM99:
+ 488 0300 0E94 0000 		call receiveByte
+ 489 0304 182F      		mov r17,r24
+ 490               	.LVL8:
+ 491               	.LM100:
+ 492 0306 0E94 0000 		call transmitByte
+ 493               	.LM101:
+ 494 030a 812F      		mov r24,r17
+ 495 030c 8053      		subi r24,lo8(-(-48))
+ 496 030e 8A30      		cpi r24,lo8(10)
+ 497 0310 00F4      		brsh .L41
+ 498               	.LM102:
+ 499 0312 1093 0000 		sts time+7,r17
+ 500               	.LM103:
+ 501 0316 0E94 0000 		call RTC_updateRegisters
+ 502               	.LM104:
+ 503 031a 0E94 0000 		call RTC_writeTime
+ 504 031e 182F      		mov r17,r24
+ 505               	.LVL9:
+ 506               	.LM105:
+ 507 0320 8DE0      		ldi r24,lo8(13)
+ 508 0322 0E94 0000 		call transmitByte
+ 509 0326 8AE0      		ldi r24,lo8(10)
+ 510 0328 0E94 0000 		call transmitByte
+ 511               	.LM106:
+ 512 032c 1123      		tst r17
+ 513 032e 01F4      		brne .L42
+ 514               	.LM107:
+ 515 0330 80E0      		ldi r24,lo8(__c.1638)
+ 516 0332 90E0      		ldi r25,hi8(__c.1638)
+ 517 0334 0E94 0000 		call transmitString_F
+ 518 0338 80E0      		ldi r24,lo8(0)
+ 519 033a 00C0      		rjmp .L43
+ 520               	.L42:
+ 521               	.LM108:
+ 522 033c 80E0      		ldi r24,lo8(__c.1640)
+ 523 033e 90E0      		ldi r25,hi8(__c.1640)
+ 524 0340 00C0      		rjmp .L45
+ 525               	.L41:
+ 526               	.LM109:
+ 527 0342 8DE0      		ldi r24,lo8(13)
+ 528 0344 0E94 0000 		call transmitByte
+ 529 0348 8AE0      		ldi r24,lo8(10)
+ 530 034a 0E94 0000 		call transmitByte
+ 531               	.LM110:
+ 532 034e 80E0      		ldi r24,lo8(__c.1642)
+ 533 0350 90E0      		ldi r25,hi8(__c.1642)
+ 534               	.L45:
+ 535 0352 0E94 0000 		call transmitString_F
+ 536 0356 81E0      		ldi r24,lo8(1)
+ 537               	.L43:
+ 538               	/* epilogue start */
+ 539               	.LM111:
+ 540 0358 1F91      		pop r17
+ 541               	.LVL10:
+ 542 035a 0895      		ret
+ 543               	.LFE12:
+ 545               	.global	RTC_setStartAddress
+ 547               	RTC_setStartAddress:
+ 548               	.LFB2:
+ 549               	.LM112:
+ 550               	/* prologue: function */
+ 551               	/* frame size = 0 */
+ 552               	.LM113:
+ 553 035c 0E94 0000 		call i2c_start
+ 554               	.LM114:
+ 555 0360 8130      		cpi r24,lo8(1)
+ 556 0362 01F0      		breq .L52
+ 557               	.L47:
+ 558               	.LM115:
+ 559 0364 80ED      		ldi r24,lo8(-48)
+ 560 0366 0E94 0000 		call i2c_sendAddress
+ 561               	.LM116:
+ 562 036a 8130      		cpi r24,lo8(1)
+ 563 036c 01F0      		breq .L52
+ 564               	.L49:
+ 565               	.LM117:
+ 566 036e 80E0      		ldi r24,lo8(0)
+ 567 0370 0E94 0000 		call i2c_sendData
+ 568               	.LM118:
+ 569 0374 8130      		cpi r24,lo8(1)
+ 570 0376 01F4      		brne .L50
+ 571               	.L52:
+ 572               	.LM119:
+ 573 0378 0E94 0000 		call i2c_stop
+ 574 037c 81E0      		ldi r24,lo8(1)
+ 575 037e 0895      		ret
+ 576               	.L50:
+ 577               	.LM120:
+ 578 0380 0E94 0000 		call i2c_stop
+ 579 0384 80E0      		ldi r24,lo8(0)
+ 580               	.LM121:
+ 581 0386 0895      		ret
+ 582               	.LFE2:
+ 584               	.global	RTC_read
+ 586               	RTC_read:
+ 587               	.LFB3:
+ 588               	.LM122:
+ 589 0388 1F93      		push r17
+ 590 038a CF93      		push r28
+ 591 038c DF93      		push r29
+ 592               	/* prologue: function */
+ 593               	/* frame size = 0 */
+ 594               	.LM123:
+ 595 038e 0E94 0000 		call i2c_start
+ 596               	.LM124:
+ 597 0392 8130      		cpi r24,lo8(1)
+ 598 0394 01F0      		breq .L67
+ 599               	.L54:
+ 600               	.LM125:
+ 601 0396 80ED      		ldi r24,lo8(-48)
+ 602 0398 0E94 0000 		call i2c_sendAddress
+ 603               	.LM126:
+ 604 039c 8130      		cpi r24,lo8(1)
+ 605 039e 01F0      		breq .L67
+ 606               	.L56:
+ 607               	.LM127:
+ 608 03a0 80E0      		ldi r24,lo8(0)
+ 609 03a2 0E94 0000 		call i2c_sendData
+ 610               	.LM128:
+ 611 03a6 8130      		cpi r24,lo8(1)
+ 612 03a8 01F0      		breq .L67
+ 613               	.L57:
+ 614               	.LM129:
+ 615 03aa 0E94 0000 		call i2c_repeatStart
+ 616               	.LM130:
+ 617 03ae 8130      		cpi r24,lo8(1)
+ 618 03b0 01F0      		breq .L67
+ 619               	.L58:
+ 620               	.LM131:
+ 621 03b2 81ED      		ldi r24,lo8(-47)
+ 622 03b4 0E94 0000 		call i2c_sendAddress
+ 623               	.LM132:
+ 624 03b8 8130      		cpi r24,lo8(1)
+ 625 03ba 01F0      		breq .L67
+ 626               	.L59:
+ 627               	.LM133:
+ 628 03bc C0E0      		ldi r28,lo8(rtc_register)
+ 629 03be D0E0      		ldi r29,hi8(rtc_register)
+ 630 03c0 10E0      		ldi r17,lo8(0)
+ 631               	.LVL11:
+ 632               	.L63:
+ 633               	.LM134:
+ 634 03c2 1630      		cpi r17,lo8(6)
+ 635 03c4 01F4      		brne .L60
+ 636               	.LM135:
+ 637 03c6 0E94 0000 		call i2c_receiveData_NACK
+ 638               	.LVL12:
+ 639 03ca 00C0      		rjmp .L61
+ 640               	.LVL13:
+ 641               	.L60:
+ 642               	.LM136:
+ 643 03cc 0E94 0000 		call i2c_receiveData_ACK
+ 644               	.LVL14:
+ 645               	.L61:
+ 646               	.LM137:
+ 647 03d0 8E37      		cpi r24,lo8(126)
+ 648               	.LVL15:
+ 649 03d2 01F4      		brne .L62
+ 650               	.L67:
+ 651               	.LM138:
+ 652 03d4 0E94 0000 		call i2c_stop
+ 653               	.LVL16:
+ 654 03d8 81E0      		ldi r24,lo8(1)
+ 655 03da 00C0      		rjmp .L55
+ 656               	.LVL17:
+ 657               	.L62:
+ 658               	.LM139:
+ 659 03dc 8993      		st Y+,r24
+ 660               	.LM140:
+ 661 03de 1F5F      		subi r17,lo8(-(1))
+ 662 03e0 1730      		cpi r17,lo8(7)
+ 663 03e2 01F4      		brne .L63
+ 664               	.LM141:
+ 665 03e4 0E94 0000 		call i2c_stop
+ 666               	.LVL18:
+ 667 03e8 80E0      		ldi r24,lo8(0)
+ 668               	.L55:
+ 669               	/* epilogue start */
+ 670               	.LM142:
+ 671 03ea DF91      		pop r29
+ 672 03ec CF91      		pop r28
+ 673 03ee 1F91      		pop r17
+ 674               	.LVL19:
+ 675 03f0 0895      		ret
+ 676               	.LFE3:
+ 678               	.global	getDateTime_FAT
+ 680               	getDateTime_FAT:
+ 681               	.LFB14:
+ 682               	.LM143:
+ 683               	/* prologue: function */
+ 684               	/* frame size = 0 */
+ 685               	.LM144:
+ 686 03f2 0E94 0000 		call RTC_read
+ 687               	.LM145:
+ 688 03f6 8823      		tst r24
+ 689 03f8 01F0      		breq .L69
+ 690 03fa 81E0      		ldi r24,lo8(1)
+ 691 03fc 0895      		ret
+ 692               	.L69:
+ 693               	.LM146:
+ 694 03fe 4091 0000 		lds r20,rtc_register+6
+ 695               	.LM147:
+ 696 0402 842F      		mov r24,r20
+ 697 0404 8295      		swap r24
+ 698 0406 8F70      		andi r24,lo8(15)
+ 699 0408 90E0      		ldi r25,lo8(0)
+ 700 040a FC01      		movw r30,r24
+ 701 040c 63E0      		ldi r22,3
+ 702 040e EE0F      	1:	lsl r30
+ 703 0410 FF1F      		rol r31
+ 704 0412 6A95      		dec r22
+ 705 0414 01F4      		brne 1b
+ 706 0416 880F      		lsl r24
+ 707 0418 991F      		rol r25
+ 708 041a E80F      		add r30,r24
+ 709 041c F91F      		adc r31,r25
+ 710               	.LM148:
+ 711 041e 50E0      		ldi r21,lo8(0)
+ 712 0420 4F70      		andi r20,lo8(15)
+ 713 0422 5070      		andi r21,hi8(15)
+ 714 0424 4C5E      		subi r20,lo8(-(20))
+ 715 0426 5F4F      		sbci r21,hi8(-(20))
+ 716               	.LM149:
+ 717 0428 6091 0000 		lds r22,rtc_register+5
+ 718               	.LM150:
+ 719 042c 862F      		mov r24,r22
+ 720 042e 8295      		swap r24
+ 721 0430 8F70      		andi r24,lo8(15)
+ 722 0432 AAE0      		ldi r26,lo8(10)
+ 723 0434 8A9F      		mul r24,r26
+ 724 0436 802D      		mov r24,r0
+ 725 0438 1124      		clr r1
+ 726               	.LM151:
+ 727 043a 7091 0000 		lds r23,rtc_register+4
+ 728               	.LM152:
+ 729 043e 272F      		mov r18,r23
+ 730 0440 2295      		swap r18
+ 731 0442 2F70      		andi r18,lo8(15)
+ 732 0444 2A9F      		mul r18,r26
+ 733 0446 202D      		mov r18,r0
+ 734 0448 1124      		clr r1
+ 735               	.LM153:
+ 736 044a 6F70      		andi r22,lo8(15)
+ 737 044c 860F      		add r24,r22
+ 738 044e 90E0      		ldi r25,lo8(0)
+ 739 0450 4E0F      		add r20,r30
+ 740 0452 5F1F      		adc r21,r31
+ 741 0454 34E0      		ldi r19,4
+ 742 0456 440F      	1:	lsl r20
+ 743 0458 551F      		rol r21
+ 744 045a 3A95      		dec r19
+ 745 045c 01F4      		brne 1b
+ 746 045e 842B      		or r24,r20
+ 747 0460 952B      		or r25,r21
+ 748 0462 B5E0      		ldi r27,5
+ 749 0464 880F      	1:	lsl r24
+ 750 0466 991F      		rol r25
+ 751 0468 BA95      		dec r27
+ 752 046a 01F4      		brne 1b
+ 753 046c 7F70      		andi r23,lo8(15)
+ 754 046e 270F      		add r18,r23
+ 755 0470 30E0      		ldi r19,lo8(0)
+ 756 0472 822B      		or r24,r18
+ 757 0474 932B      		or r25,r19
+ 758 0476 9093 0000 		sts (dateFAT)+1,r25
+ 759 047a 8093 0000 		sts dateFAT,r24
+ 760               	.LM154:
+ 761 047e 7091 0000 		lds r23,rtc_register+2
+ 762               	.LM155:
+ 763 0482 872F      		mov r24,r23
+ 764 0484 8295      		swap r24
+ 765 0486 8F70      		andi r24,lo8(15)
+ 766 0488 8A9F      		mul r24,r26
+ 767 048a 802D      		mov r24,r0
+ 768 048c 1124      		clr r1
+ 769               	.LM156:
+ 770 048e E091 0000 		lds r30,rtc_register+1
+ 771               	.LM157:
+ 772 0492 4E2F      		mov r20,r30
+ 773 0494 4295      		swap r20
+ 774 0496 4F70      		andi r20,lo8(15)
+ 775 0498 4A9F      		mul r20,r26
+ 776 049a 402D      		mov r20,r0
+ 777 049c 1124      		clr r1
+ 778               	.LM158:
+ 779 049e 6091 0000 		lds r22,rtc_register
+ 780               	.LM159:
+ 781 04a2 262F      		mov r18,r22
+ 782 04a4 2295      		swap r18
+ 783 04a6 2F70      		andi r18,lo8(15)
+ 784 04a8 2A9F      		mul r18,r26
+ 785 04aa 202D      		mov r18,r0
+ 786 04ac 1124      		clr r1
+ 787 04ae 6F70      		andi r22,lo8(15)
+ 788 04b0 260F      		add r18,r22
+ 789               	.LM160:
+ 790 04b2 7F70      		andi r23,lo8(15)
+ 791 04b4 870F      		add r24,r23
+ 792 04b6 90E0      		ldi r25,lo8(0)
+ 793 04b8 A6E0      		ldi r26,6
+ 794 04ba 880F      	1:	lsl r24
+ 795 04bc 991F      		rol r25
+ 796 04be AA95      		dec r26
+ 797 04c0 01F4      		brne 1b
+ 798 04c2 EF70      		andi r30,lo8(15)
+ 799 04c4 4E0F      		add r20,r30
+ 800 04c6 50E0      		ldi r21,lo8(0)
+ 801 04c8 842B      		or r24,r20
+ 802 04ca 952B      		or r25,r21
+ 803 04cc F5E0      		ldi r31,5
+ 804 04ce 880F      	1:	lsl r24
+ 805 04d0 991F      		rol r25
+ 806 04d2 FA95      		dec r31
+ 807 04d4 01F4      		brne 1b
+ 808 04d6 2695      		lsr r18
+ 809 04d8 30E0      		ldi r19,lo8(0)
+ 810 04da 822B      		or r24,r18
+ 811 04dc 932B      		or r25,r19
+ 812 04de 9093 0000 		sts (timeFAT)+1,r25
+ 813 04e2 8093 0000 		sts timeFAT,r24
+ 814 04e6 80E0      		ldi r24,lo8(0)
+ 815               	.LM161:
+ 816 04e8 0895      		ret
+ 817               	.LFE14:
+ 819               	.global	RTC_getDate
+ 821               	RTC_getDate:
+ 822               	.LFB5:
+ 823               	.LM162:
+ 824               	/* prologue: function */
+ 825               	/* frame size = 0 */
+ 826               	.LM163:
+ 827 04ea 0E94 0000 		call RTC_read
+ 828               	.LM164:
+ 829 04ee 8823      		tst r24
+ 830 04f0 01F0      		breq .L73
+ 831 04f2 81E0      		ldi r24,lo8(1)
+ 832 04f4 0895      		ret
+ 833               	.L73:
+ 834               	.LM165:
+ 835 04f6 1092 0000 		sts date+10,__zero_reg__
+ 836               	.LM166:
+ 837 04fa 9091 0000 		lds r25,rtc_register+6
+ 838 04fe 892F      		mov r24,r25
+ 839 0500 8F70      		andi r24,lo8(15)
+ 840 0502 8063      		ori r24,lo8(48)
+ 841 0504 8093 0000 		sts date+9,r24
+ 842               	.LM167:
+ 843 0508 9295      		swap r25
+ 844 050a 9F70      		andi r25,lo8(15)
+ 845 050c 9063      		ori r25,lo8(48)
+ 846 050e 9093 0000 		sts date+8,r25
+ 847               	.LM168:
+ 848 0512 80E3      		ldi r24,lo8(48)
+ 849 0514 8093 0000 		sts date+7,r24
+ 850               	.LM169:
+ 851 0518 82E3      		ldi r24,lo8(50)
+ 852 051a 8093 0000 		sts date+6,r24
+ 853               	.LM170:
+ 854 051e 3FE2      		ldi r19,lo8(47)
+ 855 0520 3093 0000 		sts date+5,r19
+ 856               	.LM171:
+ 857 0524 8091 0000 		lds r24,rtc_register+5
+ 858 0528 282F      		mov r18,r24
+ 859 052a 2F70      		andi r18,lo8(15)
+ 860 052c 2063      		ori r18,lo8(48)
+ 861 052e 2093 0000 		sts date+4,r18
+ 862               	.LM172:
+ 863 0532 90E0      		ldi r25,lo8(0)
+ 864 0534 8071      		andi r24,lo8(16)
+ 865 0536 9070      		andi r25,hi8(16)
+ 866 0538 E4E0      		ldi r30,4
+ 867 053a 9595      	1:	asr r25
+ 868 053c 8795      		ror r24
+ 869 053e EA95      		dec r30
+ 870 0540 01F4      		brne 1b
+ 871 0542 8063      		ori r24,lo8(48)
+ 872 0544 8093 0000 		sts date+3,r24
+ 873               	.LM173:
+ 874 0548 3093 0000 		sts date+2,r19
+ 875               	.LM174:
+ 876 054c 8091 0000 		lds r24,rtc_register+4
+ 877 0550 282F      		mov r18,r24
+ 878 0552 2F70      		andi r18,lo8(15)
+ 879 0554 2063      		ori r18,lo8(48)
+ 880 0556 2093 0000 		sts date+1,r18
+ 881               	.LM175:
+ 882 055a 90E0      		ldi r25,lo8(0)
+ 883 055c 8073      		andi r24,lo8(48)
+ 884 055e 9070      		andi r25,hi8(48)
+ 885 0560 74E0      		ldi r23,4
+ 886 0562 9595      	1:	asr r25
+ 887 0564 8795      		ror r24
+ 888 0566 7A95      		dec r23
+ 889 0568 01F4      		brne 1b
+ 890 056a 8063      		ori r24,lo8(48)
+ 891 056c 8093 0000 		sts date,r24
+ 892 0570 80E0      		ldi r24,lo8(0)
+ 893               	.LM176:
+ 894 0572 0895      		ret
+ 895               	.LFE5:
+ 897               	.global	RTC_displayDate
+ 899               	RTC_displayDate:
+ 900               	.LFB7:
+ 901               	.LM177:
+ 902               	/* prologue: function */
+ 903               	/* frame size = 0 */
+ 904               	.LM178:
+ 905 0574 0E94 0000 		call RTC_getDate
+ 906               	.LM179:
+ 907 0578 8823      		tst r24
+ 908 057a 01F0      		breq .L77
+ 909 057c 81E0      		ldi r24,lo8(1)
+ 910 057e 0895      		ret
+ 911               	.L77:
+ 912               	.LM180:
+ 913 0580 8DE0      		ldi r24,lo8(13)
+ 914 0582 0E94 0000 		call transmitByte
+ 915 0586 8AE0      		ldi r24,lo8(10)
+ 916 0588 0E94 0000 		call transmitByte
+ 917               	.LM181:
+ 918 058c 80E0      		ldi r24,lo8(__c.1502)
+ 919 058e 90E0      		ldi r25,hi8(__c.1502)
+ 920 0590 0E94 0000 		call transmitString_F
+ 921               	.LM182:
+ 922 0594 80E0      		ldi r24,lo8(date)
+ 923 0596 90E0      		ldi r25,hi8(date)
+ 924 0598 0E94 0000 		call transmitString
+ 925               	.LM183:
+ 926 059c 0E94 0000 		call RTC_displayDay
+ 927 05a0 80E0      		ldi r24,lo8(0)
+ 928               	.LM184:
+ 929 05a2 0895      		ret
+ 930               	.LFE7:
+ 932               	.global	RTC_getTime
+ 934               	RTC_getTime:
+ 935               	.LFB4:
+ 936               	.LM185:
+ 937               	/* prologue: function */
+ 938               	/* frame size = 0 */
+ 939               	.LM186:
+ 940 05a4 0E94 0000 		call RTC_read
+ 941               	.LM187:
+ 942 05a8 8823      		tst r24
+ 943 05aa 01F0      		breq .L81
+ 944 05ac 81E0      		ldi r24,lo8(1)
+ 945 05ae 0895      		ret
+ 946               	.L81:
+ 947               	.LM188:
+ 948 05b0 0E94 0000 		call RTC_read
+ 949               	.LM189:
+ 950 05b4 1092 0000 		sts time+8,__zero_reg__
+ 951               	.LM190:
+ 952 05b8 8091 0000 		lds r24,rtc_register
+ 953 05bc 282F      		mov r18,r24
+ 954 05be 2F70      		andi r18,lo8(15)
+ 955 05c0 2063      		ori r18,lo8(48)
+ 956 05c2 2093 0000 		sts time+7,r18
+ 957               	.LM191:
+ 958 05c6 90E0      		ldi r25,lo8(0)
+ 959 05c8 8077      		andi r24,lo8(112)
+ 960 05ca 9070      		andi r25,hi8(112)
+ 961 05cc B4E0      		ldi r27,4
+ 962 05ce 9595      	1:	asr r25
+ 963 05d0 8795      		ror r24
+ 964 05d2 BA95      		dec r27
+ 965 05d4 01F4      		brne 1b
+ 966 05d6 8063      		ori r24,lo8(48)
+ 967 05d8 8093 0000 		sts time+6,r24
+ 968               	.LM192:
+ 969 05dc 3AE3      		ldi r19,lo8(58)
+ 970 05de 3093 0000 		sts time+5,r19
+ 971               	.LM193:
+ 972 05e2 8091 0000 		lds r24,rtc_register+1
+ 973 05e6 282F      		mov r18,r24
+ 974 05e8 2F70      		andi r18,lo8(15)
+ 975 05ea 2063      		ori r18,lo8(48)
+ 976 05ec 2093 0000 		sts time+4,r18
+ 977               	.LM194:
+ 978 05f0 90E0      		ldi r25,lo8(0)
+ 979 05f2 8077      		andi r24,lo8(112)
+ 980 05f4 9070      		andi r25,hi8(112)
+ 981 05f6 A4E0      		ldi r26,4
+ 982 05f8 9595      	1:	asr r25
+ 983 05fa 8795      		ror r24
+ 984 05fc AA95      		dec r26
+ 985 05fe 01F4      		brne 1b
+ 986 0600 8063      		ori r24,lo8(48)
+ 987 0602 8093 0000 		sts time+3,r24
+ 988               	.LM195:
+ 989 0606 3093 0000 		sts time+2,r19
+ 990               	.LM196:
+ 991 060a 8091 0000 		lds r24,rtc_register+2
+ 992 060e 282F      		mov r18,r24
+ 993 0610 2F70      		andi r18,lo8(15)
+ 994 0612 2063      		ori r18,lo8(48)
+ 995 0614 2093 0000 		sts time+1,r18
+ 996               	.LM197:
+ 997 0618 90E0      		ldi r25,lo8(0)
+ 998 061a 8073      		andi r24,lo8(48)
+ 999 061c 9070      		andi r25,hi8(48)
+ 1000 061e F4E0      		ldi r31,4
+ 1001 0620 9595      	1:	asr r25
+ 1002 0622 8795      		ror r24
+ 1003 0624 FA95      		dec r31
+ 1004 0626 01F4      		brne 1b
+ 1005 0628 8063      		ori r24,lo8(48)
+ 1006 062a 8093 0000 		sts time,r24
+ 1007 062e 80E0      		ldi r24,lo8(0)
+ 1008               	.LM198:
+ 1009 0630 0895      		ret
+ 1010               	.LFE4:
+ 1012               	.global	RTC_displayTime
+ 1014               	RTC_displayTime:
+ 1015               	.LFB6:
+ 1016               	.LM199:
+ 1017               	/* prologue: function */
+ 1018               	/* frame size = 0 */
+ 1019               	.LM200:
+ 1020 0632 0E94 0000 		call RTC_getTime
+ 1021               	.LM201:
+ 1022 0636 8823      		tst r24
+ 1023 0638 01F0      		breq .L85
+ 1024 063a 81E0      		ldi r24,lo8(1)
+ 1025 063c 0895      		ret
+ 1026               	.L85:
+ 1027               	.LM202:
+ 1028 063e 8DE0      		ldi r24,lo8(13)
+ 1029 0640 0E94 0000 		call transmitByte
+ 1030 0644 8AE0      		ldi r24,lo8(10)
+ 1031 0646 0E94 0000 		call transmitByte
+ 1032               	.LM203:
+ 1033 064a 80E0      		ldi r24,lo8(__c.1494)
+ 1034 064c 90E0      		ldi r25,hi8(__c.1494)
+ 1035 064e 0E94 0000 		call transmitString_F
+ 1036               	.LM204:
+ 1037 0652 80E0      		ldi r24,lo8(time)
+ 1038 0654 90E0      		ldi r25,hi8(time)
+ 1039 0656 0E94 0000 		call transmitString
+ 1040 065a 80E0      		ldi r24,lo8(0)
+ 1041               	.LM205:
+ 1042 065c 0895      		ret
+ 1043               	.LFE6:
+ 1045               		.section	.progmem.data,"a",@progbits
+ 1048               	__c.1667:
+ 1049 0000 4461 7465 		.string	"Date Update Failed.."
+ 1049      2055 7064 
+ 1049      6174 6520 
+ 1049      4661 696C 
+ 1049      6564 2E2E 
+ 1052               	__c.1665:
+ 1053 0015 4461 7465 		.string	"Date Updated sucessfully!"
+ 1053      2055 7064 
+ 1053      6174 6564 
+ 1053      2073 7563 
+ 1053      6573 7366 
+ 1056               	__c.1642:
+ 1057 002f 496E 7661 		.string	"Invalid Entry.."
+ 1057      6C69 6420 
+ 1057      456E 7472 
+ 1057      792E 2E00 
+ 1060               	__c.1640:
+ 1061 003f 5469 6D65 		.string	"Time Update Failed.."
+ 1061      2055 7064 
+ 1061      6174 6520 
+ 1061      4661 696C 
+ 1061      6564 2E2E 
+ 1064               	__c.1638:
+ 1065 0054 5469 6D65 		.string	"Time Updated sucessfully!"
+ 1065      2055 7064 
+ 1065      6174 6564 
+ 1065      2073 7563 
+ 1065      6573 7366 
+ 1068               	__c.1635:
+ 1069 006e 456E 7465 		.string	"Enter Time in 24h format(hh:mm:ss):"
+ 1069      7220 5469 
+ 1069      6D65 2069 
+ 1069      6E20 3234 
+ 1069      6820 666F 
+ 1072               	__c.1534:
+ 1073 0092 556E 6B6E 		.string	"Unknown"
+ 1073      6F77 6E00 
+ 1076               	__c.1531:
+ 1077 009a 5361 7475 		.string	"Saturday"
+ 1077      7264 6179 
+ 1077      00
+ 1080               	__c.1528:
+ 1081 00a3 4672 6964 		.string	"Friday"
+ 1081      6179 00
+ 1084               	__c.1525:
+ 1085 00aa 5468 7572 		.string	"Thursday"
+ 1085      7364 6179 
+ 1085      00
+ 1088               	__c.1522:
+ 1089 00b3 5765 646E 		.string	"Wednesday"
+ 1089      6573 6461 
+ 1089      7900 
+ 1092               	__c.1519:
+ 1093 00bd 5475 6573 		.string	"Tuesday"
+ 1093      6461 7900 
+ 1096               	__c.1516:
+ 1097 00c5 4D6F 6E64 		.string	"Monday"
+ 1097      6179 00
+ 1100               	__c.1512:
+ 1101 00cc 5375 6E64 		.string	"Sunday"
+ 1101      6179 00
+ 1104               	__c.1509:
+ 1105 00d3 2020 2020 		.string	"    Day: "
+ 1105      4461 793A 
+ 1105      2000 
+ 1108               	__c.1502:
+ 1109 00dd 4461 7465 		.string	"Date:"
+ 1109      3A00 
+ 1112               	__c.1494:
+ 1113 00e3 5469 6D65 		.string	"Time:"
+ 1113      3A00 
+ 1114               		.comm time,9,1
+ 1115               		.comm date,11,1
+ 1116               		.comm day,1,1
+ 1117               		.comm dateFAT,2,1
+ 1118               		.comm timeFAT,2,1
+ 1119               		.comm rtc_register,7,1
+ 1240               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 RTC_routines.c
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:18     .text:00000000 RTC_updateRegisters
+                            *COM*:00000009 time
+                            *COM*:00000007 rtc_register
+                            *COM*:0000000b date
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:111    .text:000000be RTC_displayDay
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1104   .progmem.data:000000d3 __c.1509
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1100   .progmem.data:000000cc __c.1512
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1096   .progmem.data:000000c5 __c.1516
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1092   .progmem.data:000000bd __c.1519
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1088   .progmem.data:000000b3 __c.1522
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1084   .progmem.data:000000aa __c.1525
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1080   .progmem.data:000000a3 __c.1528
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1076   .progmem.data:0000009a __c.1531
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1072   .progmem.data:00000092 __c.1534
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:185    .text:0000011e RTC_writeDate
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:249    .text:0000017a RTC_updateDate
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1052   .progmem.data:00000015 __c.1665
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:318    .text:000001ec RTC_writeTime
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:376    .text:0000023c RTC_updateTime
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1068   .progmem.data:0000006e __c.1635
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1064   .progmem.data:00000054 __c.1638
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1060   .progmem.data:0000003f __c.1640
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1056   .progmem.data:0000002f __c.1642
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:547    .text:0000035c RTC_setStartAddress
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:586    .text:00000388 RTC_read
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:680    .text:000003f2 getDateTime_FAT
+                            *COM*:00000002 dateFAT
+                            *COM*:00000002 timeFAT
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:821    .text:000004ea RTC_getDate
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:899    .text:00000574 RTC_displayDate
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1108   .progmem.data:000000dd __c.1502
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:934    .text:000005a4 RTC_getTime
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1014   .text:00000632 RTC_displayTime
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1112   .progmem.data:000000e3 __c.1494
+C:\Users\Rasika\AppData\Local\Temp/ccBkBZaM.s:1048   .progmem.data:00000000 __c.1667
+                            *COM*:00000001 day
+
+UNDEFINED SYMBOLS
+transmitString_F
+i2c_start
+i2c_sendAddress
+i2c_sendData
+i2c_stop
+transmitByte
+receiveByte
+i2c_repeatStart
+i2c_receiveData_NACK
+i2c_receiveData_ACK
+transmitString
+__do_clear_bss

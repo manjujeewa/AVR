@@ -1,0 +1,386 @@
+
+main.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000206  00000000  00000000  00000074  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         0000000e  00800060  00000206  0000027a  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .stab         000006cc  00000000  00000000  00000288  2**2
+                  CONTENTS, READONLY, DEBUGGING
+  3 .stabstr      00000054  00000000  00000000  00000954  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  4 .comment      00000011  00000000  00000000  000009a8  2**0
+                  CONTENTS, READONLY
+  5 .debug_aranges 00000028  00000000  00000000  000009b9  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_info   00000247  00000000  00000000  000009e1  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_abbrev 00000194  00000000  00000000  00000c28  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_line   000000c3  00000000  00000000  00000dbc  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_frame  000000c4  00000000  00000000  00000e80  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_str    0000016c  00000000  00000000  00000f44  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    000001c7  00000000  00000000  000010b0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_ranges 00000030  00000000  00000000  00001277  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0c 94 2a 00 	jmp	0x54	; 0x54 <__ctors_end>
+   4:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+   8:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+   c:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  10:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  14:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  18:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  1c:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  20:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  24:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  28:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  2c:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  30:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  34:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  38:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  3c:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  40:	0c 94 a2 00 	jmp	0x144	; 0x144 <__vector_16>
+  44:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  48:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  4c:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+  50:	0c 94 3f 00 	jmp	0x7e	; 0x7e <__bad_interrupt>
+
+00000054 <__ctors_end>:
+  54:	11 24       	eor	r1, r1
+  56:	1f be       	out	0x3f, r1	; 63
+  58:	cf e5       	ldi	r28, 0x5F	; 95
+  5a:	d8 e0       	ldi	r29, 0x08	; 8
+  5c:	de bf       	out	0x3e, r29	; 62
+  5e:	cd bf       	out	0x3d, r28	; 61
+
+00000060 <__do_copy_data>:
+  60:	10 e0       	ldi	r17, 0x00	; 0
+  62:	a0 e6       	ldi	r26, 0x60	; 96
+  64:	b0 e0       	ldi	r27, 0x00	; 0
+  66:	e6 e0       	ldi	r30, 0x06	; 6
+  68:	f2 e0       	ldi	r31, 0x02	; 2
+  6a:	02 c0       	rjmp	.+4      	; 0x70 <__do_copy_data+0x10>
+  6c:	05 90       	lpm	r0, Z+
+  6e:	0d 92       	st	X+, r0
+  70:	ae 36       	cpi	r26, 0x6E	; 110
+  72:	b1 07       	cpc	r27, r17
+  74:	d9 f7       	brne	.-10     	; 0x6c <__do_copy_data+0xc>
+  76:	0e 94 d4 00 	call	0x1a8	; 0x1a8 <main>
+  7a:	0c 94 01 01 	jmp	0x202	; 0x202 <_exit>
+
+0000007e <__bad_interrupt>:
+  7e:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
+
+00000082 <init>:
+}
+
+
+void init(void){
+
+	DDRC = 0xff;
+  82:	8f ef       	ldi	r24, 0xFF	; 255
+  84:	84 bb       	out	0x14, r24	; 20
+	DDRA =  1<<3| 1<<4| 1<<5| 1<<6 | 1<<7 ;
+  86:	88 ef       	ldi	r24, 0xF8	; 248
+  88:	8a bb       	out	0x1a, r24	; 26
+	DDRD = DDRD | ~(1<<2) | 1<<4 | 1<<5;
+  8a:	81 b3       	in	r24, 0x11	; 17
+  8c:	8b 6f       	ori	r24, 0xFB	; 251
+  8e:	81 bb       	out	0x11, r24	; 17
+	
+	//ADMUX = 1 << MUX1 | 1 << REFS0 | 1 << REFS1;
+	//ADCSRA = 1 << ADEN | 1 << ADPS1 | 1 << ADPS2 ;
+	//ADCSRA = 0b10000110;
+	MCUCR = 0 << SM2 | 0 << SM1 | 1 << SM0;
+  90:	80 e1       	ldi	r24, 0x10	; 16
+  92:	85 bf       	out	0x35, r24	; 53
+	ADCSRA = 0x8F;
+  94:	8f e8       	ldi	r24, 0x8F	; 143
+  96:	86 b9       	out	0x06, r24	; 6
+	ADMUX = 0b11000000;
+  98:	80 ec       	ldi	r24, 0xC0	; 192
+  9a:	87 b9       	out	0x07, r24	; 7
+  9c:	08 95       	ret
+
+0000009e <getDigi>:
+}
+
+
+
+void getDigi(unsigned int val){
+  9e:	cf 93       	push	r28
+  a0:	df 93       	push	r29
+  a2:	9c 01       	movw	r18, r24
+
+	dig[0] = val%10;
+  a4:	ea e0       	ldi	r30, 0x0A	; 10
+  a6:	f0 e0       	ldi	r31, 0x00	; 0
+  a8:	bf 01       	movw	r22, r30
+  aa:	0e 94 d9 00 	call	0x1b2	; 0x1b2 <__udivmodhi4>
+  ae:	80 93 60 00 	sts	0x0060, r24
+	dig[1] = (val%100)/10;
+  b2:	c9 01       	movw	r24, r18
+  b4:	64 e6       	ldi	r22, 0x64	; 100
+  b6:	70 e0       	ldi	r23, 0x00	; 0
+  b8:	0e 94 d9 00 	call	0x1b2	; 0x1b2 <__udivmodhi4>
+  bc:	eb 01       	movw	r28, r22
+  be:	bf 01       	movw	r22, r30
+  c0:	0e 94 d9 00 	call	0x1b2	; 0x1b2 <__udivmodhi4>
+  c4:	60 93 61 00 	sts	0x0061, r22
+	dig[2] = (val/100)%10;
+  c8:	ce 01       	movw	r24, r28
+  ca:	bf 01       	movw	r22, r30
+  cc:	0e 94 d9 00 	call	0x1b2	; 0x1b2 <__udivmodhi4>
+  d0:	80 93 62 00 	sts	0x0062, r24
+	dig[3] = val/1000;
+  d4:	c9 01       	movw	r24, r18
+  d6:	68 ee       	ldi	r22, 0xE8	; 232
+  d8:	73 e0       	ldi	r23, 0x03	; 3
+  da:	0e 94 d9 00 	call	0x1b2	; 0x1b2 <__udivmodhi4>
+  de:	60 93 63 00 	sts	0x0063, r22
+}
+  e2:	df 91       	pop	r29
+  e4:	cf 91       	pop	r28
+  e6:	08 95       	ret
+
+000000e8 <displaySSD>:
+
+void displaySSD(unsigned int n){
+
+	unsigned int j;
+
+	for(j=0;j<n;j++){
+  e8:	40 e0       	ldi	r20, 0x00	; 0
+  ea:	50 e0       	ldi	r21, 0x00	; 0
+			if(i==3) {
+				PORTC=SSD[dig[i]] ; //Displaying Dot
+			}else{
+				PORTC=SSD[dig[i]];
+			}
+			PORTA = (1<<i+4) ;
+  ec:	61 e0       	ldi	r22, 0x01	; 1
+  ee:	70 e0       	ldi	r23, 0x00	; 0
+
+void displaySSD(unsigned int n){
+
+	unsigned int j;
+
+	for(j=0;j<n;j++){
+  f0:	48 17       	cp	r20, r24
+  f2:	59 07       	cpc	r21, r25
+  f4:	31 f1       	breq	.+76     	; 0x142 <displaySSD+0x5a>
+  f6:	24 e0       	ldi	r18, 0x04	; 4
+  f8:	30 e0       	ldi	r19, 0x00	; 0
+		unsigned char i ;
+
+		for(i=0;i != 4;i++){
+
+
+			if(i==3) {
+  fa:	27 30       	cpi	r18, 0x07	; 7
+  fc:	19 f4       	brne	.+6      	; 0x104 <displaySSD+0x1c>
+				PORTC=SSD[dig[i]] ; //Displaying Dot
+  fe:	e0 91 63 00 	lds	r30, 0x0063
+ 102:	04 c0       	rjmp	.+8      	; 0x10c <displaySSD+0x24>
+ 104:	f9 01       	movw	r30, r18
+ 106:	e4 5a       	subi	r30, 0xA4	; 164
+ 108:	ff 4f       	sbci	r31, 0xFF	; 255
+			}else{
+				PORTC=SSD[dig[i]];
+ 10a:	e0 81       	ld	r30, Z
+ 10c:	f0 e0       	ldi	r31, 0x00	; 0
+ 10e:	ec 59       	subi	r30, 0x9C	; 156
+ 110:	ff 4f       	sbci	r31, 0xFF	; 255
+ 112:	e0 81       	ld	r30, Z
+ 114:	e5 bb       	out	0x15, r30	; 21
+			}
+			PORTA = (1<<i+4) ;
+ 116:	fb 01       	movw	r30, r22
+ 118:	02 2e       	mov	r0, r18
+ 11a:	01 c0       	rjmp	.+2      	; 0x11e <displaySSD+0x36>
+ 11c:	ee 0f       	add	r30, r30
+ 11e:	0a 94       	dec	r0
+ 120:	ea f7       	brpl	.-6      	; 0x11c <displaySSD+0x34>
+ 122:	eb bb       	out	0x1b, r30	; 27
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 124:	ef ec       	ldi	r30, 0xCF	; 207
+ 126:	f7 e0       	ldi	r31, 0x07	; 7
+ 128:	31 97       	sbiw	r30, 0x01	; 1
+ 12a:	f1 f7       	brne	.-4      	; 0x128 <displaySSD+0x40>
+ 12c:	00 c0       	rjmp	.+0      	; 0x12e <displaySSD+0x46>
+ 12e:	00 00       	nop
+			_delay_ms(1);
+			PORTA=0;
+ 130:	1b ba       	out	0x1b, r1	; 27
+ 132:	2f 5f       	subi	r18, 0xFF	; 255
+ 134:	3f 4f       	sbci	r19, 0xFF	; 255
+	unsigned int j;
+
+	for(j=0;j<n;j++){
+		unsigned char i ;
+
+		for(i=0;i != 4;i++){
+ 136:	28 30       	cpi	r18, 0x08	; 8
+ 138:	31 05       	cpc	r19, r1
+ 13a:	f9 f6       	brne	.-66     	; 0xfa <displaySSD+0x12>
+
+void displaySSD(unsigned int n){
+
+	unsigned int j;
+
+	for(j=0;j<n;j++){
+ 13c:	4f 5f       	subi	r20, 0xFF	; 255
+ 13e:	5f 4f       	sbci	r21, 0xFF	; 255
+ 140:	d7 cf       	rjmp	.-82     	; 0xf0 <displaySSD+0x8>
+ 142:	08 95       	ret
+
+00000144 <__vector_16>:
+	dig[2] = (val/100)%10;
+	dig[3] = val/1000;
+}
+
+ISR(ADC_vect)
+{
+ 144:	1f 92       	push	r1
+ 146:	0f 92       	push	r0
+ 148:	0f b6       	in	r0, 0x3f	; 63
+ 14a:	0f 92       	push	r0
+ 14c:	11 24       	eor	r1, r1
+ 14e:	2f 93       	push	r18
+ 150:	3f 93       	push	r19
+ 152:	4f 93       	push	r20
+ 154:	5f 93       	push	r21
+ 156:	6f 93       	push	r22
+ 158:	7f 93       	push	r23
+ 15a:	8f 93       	push	r24
+ 15c:	9f 93       	push	r25
+ 15e:	af 93       	push	r26
+ 160:	bf 93       	push	r27
+ 162:	ef 93       	push	r30
+ 164:	ff 93       	push	r31
+ 	double c = ((ADCL | ADCH << 8)*256)/(1023);
+ 166:	84 b1       	in	r24, 0x04	; 4
+ 168:	95 b1       	in	r25, 0x05	; 5
+ 16a:	98 2f       	mov	r25, r24
+ 16c:	80 e0       	ldi	r24, 0x00	; 0
+ 16e:	6f ef       	ldi	r22, 0xFF	; 255
+ 170:	73 e0       	ldi	r23, 0x03	; 3
+ 172:	0e 94 ed 00 	call	0x1da	; 0x1da <__divmodhi4>
+ 176:	cb 01       	movw	r24, r22
+	getDigi((int)c);
+ 178:	0e 94 4f 00 	call	0x9e	; 0x9e <getDigi>
+	displaySSD(1);
+ 17c:	81 e0       	ldi	r24, 0x01	; 1
+ 17e:	90 e0       	ldi	r25, 0x00	; 0
+ 180:	0e 94 74 00 	call	0xe8	; 0xe8 <displaySSD>
+				// Output ADCH to PortD
+	ADCSRA |= 1<<ADSC;		// Start Conversion
+ 184:	36 9a       	sbi	0x06, 6	; 6
+}
+ 186:	ff 91       	pop	r31
+ 188:	ef 91       	pop	r30
+ 18a:	bf 91       	pop	r27
+ 18c:	af 91       	pop	r26
+ 18e:	9f 91       	pop	r25
+ 190:	8f 91       	pop	r24
+ 192:	7f 91       	pop	r23
+ 194:	6f 91       	pop	r22
+ 196:	5f 91       	pop	r21
+ 198:	4f 91       	pop	r20
+ 19a:	3f 91       	pop	r19
+ 19c:	2f 91       	pop	r18
+ 19e:	0f 90       	pop	r0
+ 1a0:	0f be       	out	0x3f, r0	; 63
+ 1a2:	0f 90       	pop	r0
+ 1a4:	1f 90       	pop	r1
+ 1a6:	18 95       	reti
+
+000001a8 <main>:
+unsigned char dig[] = {1,2,3,4};
+
+
+int main(void){
+
+	init();
+ 1a8:	0e 94 41 00 	call	0x82	; 0x82 <init>
+
+	sei();// Global interrupt enable
+ 1ac:	78 94       	sei
+	
+	ADCSRA |= (1<<ADSC);
+ 1ae:	36 9a       	sbi	0x06, 6	; 6
+ 1b0:	ff cf       	rjmp	.-2      	; 0x1b0 <main+0x8>
+
+000001b2 <__udivmodhi4>:
+ 1b2:	aa 1b       	sub	r26, r26
+ 1b4:	bb 1b       	sub	r27, r27
+ 1b6:	51 e1       	ldi	r21, 0x11	; 17
+ 1b8:	07 c0       	rjmp	.+14     	; 0x1c8 <__udivmodhi4_ep>
+
+000001ba <__udivmodhi4_loop>:
+ 1ba:	aa 1f       	adc	r26, r26
+ 1bc:	bb 1f       	adc	r27, r27
+ 1be:	a6 17       	cp	r26, r22
+ 1c0:	b7 07       	cpc	r27, r23
+ 1c2:	10 f0       	brcs	.+4      	; 0x1c8 <__udivmodhi4_ep>
+ 1c4:	a6 1b       	sub	r26, r22
+ 1c6:	b7 0b       	sbc	r27, r23
+
+000001c8 <__udivmodhi4_ep>:
+ 1c8:	88 1f       	adc	r24, r24
+ 1ca:	99 1f       	adc	r25, r25
+ 1cc:	5a 95       	dec	r21
+ 1ce:	a9 f7       	brne	.-22     	; 0x1ba <__udivmodhi4_loop>
+ 1d0:	80 95       	com	r24
+ 1d2:	90 95       	com	r25
+ 1d4:	bc 01       	movw	r22, r24
+ 1d6:	cd 01       	movw	r24, r26
+ 1d8:	08 95       	ret
+
+000001da <__divmodhi4>:
+ 1da:	97 fb       	bst	r25, 7
+ 1dc:	07 2e       	mov	r0, r23
+ 1de:	16 f4       	brtc	.+4      	; 0x1e4 <__divmodhi4+0xa>
+ 1e0:	00 94       	com	r0
+ 1e2:	07 d0       	rcall	.+14     	; 0x1f2 <__divmodhi4_neg1>
+ 1e4:	77 fd       	sbrc	r23, 7
+ 1e6:	09 d0       	rcall	.+18     	; 0x1fa <__divmodhi4_neg2>
+ 1e8:	0e 94 d9 00 	call	0x1b2	; 0x1b2 <__udivmodhi4>
+ 1ec:	07 fc       	sbrc	r0, 7
+ 1ee:	05 d0       	rcall	.+10     	; 0x1fa <__divmodhi4_neg2>
+ 1f0:	3e f4       	brtc	.+14     	; 0x200 <__divmodhi4_exit>
+
+000001f2 <__divmodhi4_neg1>:
+ 1f2:	90 95       	com	r25
+ 1f4:	81 95       	neg	r24
+ 1f6:	9f 4f       	sbci	r25, 0xFF	; 255
+ 1f8:	08 95       	ret
+
+000001fa <__divmodhi4_neg2>:
+ 1fa:	70 95       	com	r23
+ 1fc:	61 95       	neg	r22
+ 1fe:	7f 4f       	sbci	r23, 0xFF	; 255
+
+00000200 <__divmodhi4_exit>:
+ 200:	08 95       	ret
+
+00000202 <_exit>:
+ 202:	f8 94       	cli
+
+00000204 <__stop_program>:
+ 204:	ff cf       	rjmp	.-2      	; 0x204 <__stop_program>

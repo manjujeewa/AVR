@@ -1,0 +1,279 @@
+   1               		.file	"UART_routines.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	USART_Init
+  18               	USART_Init:
+  19               	.LFB2:
+  20               	.LM1:
+  21               	.LVL0:
+  22               	/* prologue: function */
+  23               	/* frame size = 0 */
+  24               	.LM2:
+  25 0000 89B9      		out 41-32,r24
+  26               	.LM3:
+  27 0002 892F      		mov r24,r25
+  28 0004 990F      		lsl r25
+  29 0006 990B      		sbc r25,r25
+  30               	.LVL1:
+  31 0008 80BD      		out 64-32,r24
+  32               	.LM4:
+  33 000a 88E9      		ldi r24,lo8(-104)
+  34 000c 8AB9      		out 42-32,r24
+  35               	/* epilogue start */
+  36               	.LM5:
+  37 000e 0895      		ret
+  38               	.LFE2:
+  40               	.global	transmitByte
+  42               	transmitByte:
+  43               	.LFB3:
+  44               	.LM6:
+  45               	/* prologue: function */
+  46               	/* frame size = 0 */
+  47               	.LVL2:
+  48               	.L4:
+  49               	.LM7:
+  50 0010 5D9B      		sbis 43-32,5
+  51 0012 00C0      		rjmp .L4
+  52               	.LM8:
+  53 0014 8CB9      		out 44-32,r24
+  54               	/* epilogue start */
+  55               	.LM9:
+  56 0016 0895      		ret
+  57               	.LFE3:
+  59               	.global	receiveByte
+  61               	receiveByte:
+  62               	.LFB4:
+  63               	.LM10:
+  64               	/* prologue: function */
+  65               	/* frame size = 0 */
+  66               	.L8:
+  67               	.LM11:
+  68 0018 5F9B      		sbis 43-32,7
+  69 001a 00C0      		rjmp .L8
+  70               	.LM12:
+  71 001c 8CB1      		in r24,44-32
+  72               	/* epilogue start */
+  73               	.LM13:
+  74 001e 0895      		ret
+  75               	.LFE4:
+  77               	.global	transmitString_F
+  79               	transmitString_F:
+  80               	.LFB5:
+  81               	.LM14:
+  82               	.LVL3:
+  83               	/* prologue: function */
+  84               	/* frame size = 0 */
+  85 0020 FC01      		movw r30,r24
+  86 0022 00C0      		rjmp .L12
+  87               	.LVL4:
+  88               	.L16:
+  89               	.LBB8:
+  90               	.LBB9:
+  91               	.LM15:
+  92 0024 5D9B      		sbis 43-32,5
+  93 0026 00C0      		rjmp .L16
+  94               	.LBE9:
+  95               	.LBE8:
+  96               	.LBB11:
+  97               	.LM16:
+  98 0028 3196      		adiw r30,1
+  99               	.LBE11:
+ 100               	.LBB12:
+ 101               	.LBB10:
+ 102               	.LM17:
+ 103 002a 8CB9      		out 44-32,r24
+ 104               	.LVL5:
+ 105               	.L12:
+ 106               	.LBE10:
+ 107               	.LBE12:
+ 108               	.LBB13:
+ 109               	.LM18:
+ 110               	/* #APP */
+ 111               	 ;  25 "UART_routines.c" 1
+ 112 002c 8491      		lpm r24, Z
+ 113               		
+ 114               	 ;  0 "" 2
+ 115               	/* #NOAPP */
+ 116               	.LBE13:
+ 117 002e 8823      		tst r24
+ 118 0030 01F4      		brne .L16
+ 119               	/* epilogue start */
+ 120               	.LM19:
+ 121 0032 0895      		ret
+ 122               	.LFE5:
+ 124               	.global	transmitString
+ 126               	transmitString:
+ 127               	.LFB6:
+ 128               	.LM20:
+ 129               	.LVL6:
+ 130               	/* prologue: function */
+ 131               	/* frame size = 0 */
+ 132 0034 FC01      		movw r30,r24
+ 133 0036 00C0      		rjmp .L19
+ 134               	.LVL7:
+ 135               	.L22:
+ 136               	.LBB14:
+ 137               	.LBB15:
+ 138               	.LM21:
+ 139 0038 5D9B      		sbis 43-32,5
+ 140 003a 00C0      		rjmp .L22
+ 141               	.LBE15:
+ 142               	.LBE14:
+ 143               	.LM22:
+ 144 003c 3196      		adiw r30,1
+ 145               	.LBB17:
+ 146               	.LBB16:
+ 147               	.LM23:
+ 148 003e 8CB9      		out 44-32,r24
+ 149               	.LVL8:
+ 150               	.L19:
+ 151               	.LBE16:
+ 152               	.LBE17:
+ 153               	.LM24:
+ 154 0040 8081      		ld r24,Z
+ 155 0042 8823      		tst r24
+ 156 0044 01F4      		brne .L22
+ 157               	/* epilogue start */
+ 158               	.LM25:
+ 159 0046 0895      		ret
+ 160               	.LFE6:
+ 162               		.data
+ 163               	.LC0:
+ 164 0000 3078 2020 		.string	"0x        "
+ 164      2020 2020 
+ 164      2020 00
+ 165               		.text
+ 166               	.global	transmitHex
+ 168               	transmitHex:
+ 169               	.LFB7:
+ 170               	.LM26:
+ 171               	.LVL9:
+ 172 0048 DF93      		push r29
+ 173 004a CF93      		push r28
+ 174 004c CDB7      		in r28,__SP_L__
+ 175 004e DEB7      		in r29,__SP_H__
+ 176 0050 2B97      		sbiw r28,11
+ 177 0052 0FB6      		in __tmp_reg__,__SREG__
+ 178 0054 F894      		cli
+ 179 0056 DEBF      		out __SP_H__,r29
+ 180 0058 0FBE      		out __SREG__,__tmp_reg__
+ 181 005a CDBF      		out __SP_L__,r28
+ 182               	/* prologue: function */
+ 183               	/* frame size = 11 */
+ 184               	.LM27:
+ 185 005c 8130      		cpi r24,lo8(1)
+ 186 005e 01F4      		brne .L25
+ 187 0060 94E0      		ldi r25,lo8(4)
+ 188               	.LVL10:
+ 189 0062 00C0      		rjmp .L26
+ 190               	.LVL11:
+ 191               	.L25:
+ 192               	.LM28:
+ 193 0064 8230      		cpi r24,lo8(2)
+ 194 0066 01F4      		brne .L27
+ 195 0068 98E0      		ldi r25,lo8(8)
+ 196               	.LVL12:
+ 197 006a 00C0      		rjmp .L26
+ 198               	.LVL13:
+ 199               	.L27:
+ 200 006c 92E0      		ldi r25,lo8(2)
+ 201               	.LVL14:
+ 202               	.L26:
+ 203               	.LM29:
+ 204 006e DE01      		movw r26,r28
+ 205 0070 1196      		adiw r26,1
+ 206 0072 E0E0      		ldi r30,lo8(.LC0)
+ 207 0074 F0E0      		ldi r31,hi8(.LC0)
+ 208 0076 8BE0      		ldi r24,lo8(11)
+ 209               	.LVL15:
+ 210               	.L28:
+ 211 0078 0190      		ld r0,Z+
+ 212 007a 0D92      		st X+,r0
+ 213 007c 8150      		subi r24,lo8(-(-1))
+ 214 007e 01F4      		brne .L28
+ 215 0080 9E01      		movw r18,r28
+ 216 0082 2E5F      		subi r18,lo8(-(2))
+ 217 0084 3F4F      		sbci r19,hi8(-(2))
+ 218               	.LVL16:
+ 219               	.L35:
+ 220               	.LM30:
+ 221 0086 842F      		mov r24,r20
+ 222               	.LVL17:
+ 223 0088 8F70      		andi r24,lo8(15)
+ 224 008a E92F      		mov r30,r25
+ 225 008c F0E0      		ldi r31,lo8(0)
+ 226               	.LM31:
+ 227 008e 8A30      		cpi r24,lo8(10)
+ 228 0090 00F4      		brsh .L29
+ 229               	.LVL18:
+ 230 0092 E20F      		add r30,r18
+ 231 0094 F31F      		adc r31,r19
+ 232               	.LVL19:
+ 233 0096 805D      		subi r24,lo8(-(48))
+ 234 0098 00C0      		rjmp .L36
+ 235               	.LVL20:
+ 236               	.L29:
+ 237               	.LM32:
+ 238 009a E20F      		add r30,r18
+ 239 009c F31F      		adc r31,r19
+ 240               	.LVL21:
+ 241 009e 895C      		subi r24,lo8(-(55))
+ 242               	.L36:
+ 243 00a0 8083      		st Z,r24
+ 244               	.LM33:
+ 245 00a2 9150      		subi r25,lo8(-(-1))
+ 246               	.LVL22:
+ 247 00a4 01F0      		breq .L31
+ 248               	.LM34:
+ 249 00a6 E4E0      		ldi r30,4
+ 250 00a8 7695      	1:	lsr r23
+ 251 00aa 6795      		ror r22
+ 252 00ac 5795      		ror r21
+ 253 00ae 4795      		ror r20
+ 254 00b0 EA95      		dec r30
+ 255 00b2 01F4      		brne 1b
+ 256               	.LVL23:
+ 257 00b4 00C0      		rjmp .L35
+ 258               	.LVL24:
+ 259               	.L31:
+ 260               	.LM35:
+ 261 00b6 CE01      		movw r24,r28
+ 262               	.LVL25:
+ 263 00b8 0196      		adiw r24,1
+ 264 00ba 0E94 0000 		call transmitString
+ 265               	.LVL26:
+ 266               	/* epilogue start */
+ 267               	.LM36:
+ 268 00be 2B96      		adiw r28,11
+ 269 00c0 0FB6      		in __tmp_reg__,__SREG__
+ 270 00c2 F894      		cli
+ 271 00c4 DEBF      		out __SP_H__,r29
+ 272 00c6 0FBE      		out __SREG__,__tmp_reg__
+ 273 00c8 CDBF      		out __SP_L__,r28
+ 274 00ca CF91      		pop r28
+ 275 00cc DF91      		pop r29
+ 276 00ce 0895      		ret
+ 277               	.LFE7:
+ 343               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 UART_routines.c
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:18     .text:00000000 USART_Init
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:42     .text:00000010 transmitByte
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:61     .text:00000018 receiveByte
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:79     .text:00000020 transmitString_F
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:126    .text:00000034 transmitString
+C:\Users\Rasika\AppData\Local\Temp/ccHIJsSj.s:168    .text:00000048 transmitHex
+
+UNDEFINED SYMBOLS
+__do_copy_data

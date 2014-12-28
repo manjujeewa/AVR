@@ -1,0 +1,23 @@
+==================================================
+dc motor pwm soft
+==================================================
+= Copyright (c) Davide Gironi, 2013              =
+= http://davidegironi.blogspot.it/               =
+==================================================
+
+
+DC motor speed and direction can be modulated using PWM.
+This libray implements a way to control a dc motor using software PWM.
+It also features slow start / stop.
+
+Setup parameters in dcmotorpwmsoft.h
+
+
+Devel Notes
+-----------
+This library was developed on Eclipse, built with avr-gcc on Atmega8 @ 1MHz.
+
+
+License
+-------
+Please refer to LICENSE file for licensing information.

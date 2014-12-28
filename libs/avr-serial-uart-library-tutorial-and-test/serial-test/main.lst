@@ -1,0 +1,306 @@
+   1               		.file	"main.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.rodata.str1.1,"aMS",@progbits,1
+  11               	.LC0:
+  12 0000 5374 7269 		.string	"String stored in SRAM\n"
+  12      6E67 2073 
+  12      746F 7265 
+  12      6420 696E 
+  12      2053 5241 
+  13               		.section	.text.startup,"ax",@progbits
+  14               	.global	main
+  16               	main:
+  17               	.LFB1:
+  18               		.file 1 "main.c"
+   1:main.c        **** /*************************************************************************
+   2:main.c        **** Title:    example program for the Interrupt controlled UART library
+   3:main.c        **** Author:   Peter Fleury <pfleury@gmx.ch>   http://jump.to/fleury
+   4:main.c        **** File:     $Id: test_uart.c,v 1.4 2005/07/10 11:46:30 Peter Exp $
+   5:main.c        **** Software: AVR-GCC 3.3
+   6:main.c        **** Hardware: any AVR with built-in UART, tested on AT90S8515 at 4 Mhz
+   7:main.c        **** 
+   8:main.c        **** DESCRIPTION:
+   9:main.c        ****           This example shows how to use the UART library uart.c
+  10:main.c        **** 
+  11:main.c        **** *************************************************************************/
+  12:main.c        **** #include <stdlib.h>
+  13:main.c        **** #include <avr/io.h>
+  14:main.c        **** #include <avr/interrupt.h>
+  15:main.c        **** #include <avr/signal.h>
+  16:main.c        **** #include <avr/pgmspace.h>
+  17:main.c        **** 
+  18:main.c        **** #include "uart.h"
+  19:main.c        **** 
+  20:main.c        **** 
+  21:main.c        **** /* define CPU frequency in Mhz here if not defined in Makefile */
+  22:main.c        **** #ifndef F_CPU
+  23:main.c        **** #define F_CPU 4000000UL
+  24:main.c        **** #endif
+  25:main.c        **** 
+  26:main.c        **** /* 9600 baud */
+  27:main.c        **** #define UART_BAUD_RATE      9600      
+  28:main.c        **** 
+  29:main.c        **** 
+  30:main.c        **** int main(void)
+  31:main.c        **** {
+  19               		.loc 1 31 0
+  20               		.cfi_startproc
+  21 0000 CF93      		push r28
+  22               	.LCFI0:
+  23               		.cfi_def_cfa_offset 3
+  24               		.cfi_offset 28, -2
+  25 0002 DF93      		push r29
+  26               	.LCFI1:
+  27               		.cfi_def_cfa_offset 4
+  28               		.cfi_offset 29, -3
+  29 0004 CDB7      		in r28,__SP_L__
+  30 0006 DEB7      		in r29,__SP_H__
+  31               	.LCFI2:
+  32               		.cfi_def_cfa_register 28
+  33 0008 2797      		sbiw r28,7
+  34               	.LCFI3:
+  35               		.cfi_def_cfa_offset 11
+  36 000a 0FB6      		in __tmp_reg__,__SREG__
+  37 000c F894      		cli
+  38 000e DEBF      		out __SP_H__,r29
+  39 0010 0FBE      		out __SREG__,__tmp_reg__
+  40 0012 CDBF      		out __SP_L__,r28
+  41               	/* prologue: function */
+  42               	/* frame size = 7 */
+  43               	/* stack size = 9 */
+  44               	.L__stack_usage = 9
+  45               	.LVL0:
+  32:main.c        ****     unsigned int c;
+  33:main.c        ****     char buffer[7];
+  34:main.c        ****     int  num=134;
+  35:main.c        **** 
+  36:main.c        ****     
+  37:main.c        ****     /*
+  38:main.c        ****      *  Initialize UART library, pass baudrate and AVR cpu clock
+  39:main.c        ****      *  with the macro 
+  40:main.c        ****      *  UART_BAUD_SELECT() (normal speed mode )
+  41:main.c        ****      *  or 
+  42:main.c        ****      *  UART_BAUD_SELECT_DOUBLE_SPEED() ( double speed mode)
+  43:main.c        ****      */
+  44:main.c        ****     uart_init( UART_BAUD_SELECT(UART_BAUD_RATE,F_CPU) ); 
+  46               		.loc 1 44 0
+  47 0014 83E3      		ldi r24,lo8(51)
+  48 0016 90E0      		ldi r25,0
+  49 0018 0E94 0000 		call uart_init
+  50               	.LVL1:
+  45:main.c        ****     
+  46:main.c        ****     /*
+  47:main.c        ****      * now enable interrupt, since UART library is interrupt controlled
+  48:main.c        ****      */
+  49:main.c        ****     sei();
+  51               		.loc 1 49 0
+  52               	/* #APP */
+  53               	 ;  49 "main.c" 1
+  54 001c 7894      		sei
+  55               	 ;  0 "" 2
+  50:main.c        ****     
+  51:main.c        ****     /*
+  52:main.c        ****      *  Transmit string to UART
+  53:main.c        ****      *  The string is buffered by the uart library in a circular buffer
+  54:main.c        ****      *  and one character at a time is transmitted to the UART using interrupts.
+  55:main.c        ****      *  uart_puts() blocks if it can not write the whole string to the circular 
+  56:main.c        ****      *  buffer
+  57:main.c        ****      */
+  58:main.c        ****     uart_puts("String stored in SRAM\n");
+  56               		.loc 1 58 0
+  57               	/* #NOAPP */
+  58 001e 80E0      		ldi r24,lo8(.LC0)
+  59 0020 90E0      		ldi r25,hi8(.LC0)
+  60 0022 0E94 0000 		call uart_puts
+  61               	.LVL2:
+  59:main.c        ****     
+  60:main.c        ****     /*
+  61:main.c        ****      * Transmit string from program memory to UART
+  62:main.c        ****      */
+  63:main.c        ****     uart_puts_P("String stored in FLASH\n");
+  62               		.loc 1 63 0
+  63 0026 80E0      		ldi r24,lo8(__c.1786)
+  64 0028 90E0      		ldi r25,hi8(__c.1786)
+  65 002a 0E94 0000 		call uart_puts_p
+  66               	.LVL3:
+  64:main.c        ****     
+  65:main.c        ****         
+  66:main.c        ****     /* 
+  67:main.c        ****      * Use standard avr-libc functions to convert numbers into string
+  68:main.c        ****      * before transmitting via UART
+  69:main.c        ****      */     
+  70:main.c        ****     itoa( num, buffer, 10);   // convert interger into string (decimal format)         
+  67               		.loc 1 70 0
+  68 002e 4AE0      		ldi r20,lo8(10)
+  69 0030 50E0      		ldi r21,0
+  70 0032 BE01      		movw r22,r28
+  71 0034 6F5F      		subi r22,-1
+  72 0036 7F4F      		sbci r23,-1
+  73 0038 86E8      		ldi r24,lo8(-122)
+  74 003a 90E0      		ldi r25,0
+  75 003c 0E94 0000 		call itoa
+  76               	.LVL4:
+  71:main.c        ****     uart_puts(buffer);        // and transmit string to UART
+  77               		.loc 1 71 0
+  78 0040 CE01      		movw r24,r28
+  79 0042 0196      		adiw r24,1
+  80 0044 0E94 0000 		call uart_puts
+  81               	.LVL5:
+  72:main.c        **** 
+  73:main.c        ****     
+  74:main.c        ****     /*
+  75:main.c        ****      * Transmit single character to UART
+  76:main.c        ****      */
+  77:main.c        ****     uart_putc('\r');
+  82               		.loc 1 77 0
+  83 0048 8DE0      		ldi r24,lo8(13)
+  84               	.L17:
+  85 004a 0E94 0000 		call uart_putc
+  86               	.LVL6:
+  87               	.L3:
+  78:main.c        ****     
+  79:main.c        ****     for(;;)
+  80:main.c        ****     {
+  81:main.c        ****         /*
+  82:main.c        ****          * Get received character from ringbuffer
+  83:main.c        ****          * uart_getc() returns in the lower byte the received character and 
+  84:main.c        ****          * in the higher byte (bitmask) the last receive error
+  85:main.c        ****          * UART_NO_DATA is returned when no data is available.
+  86:main.c        ****          *
+  87:main.c        ****          */
+  88:main.c        ****         c = uart_getc();
+  88               		.loc 1 88 0
+  89 004e 0E94 0000 		call uart_getc
+  90               	.LVL7:
+  91 0052 8C01      		movw r16,r24
+  92               	.LVL8:
+  89:main.c        ****         if ( c & UART_NO_DATA )
+  93               		.loc 1 89 0
+  94 0054 90FD      		sbrc r25,0
+  95 0056 00C0      		rjmp .L3
+  90:main.c        ****         {
+  91:main.c        ****             /* 
+  92:main.c        ****              * no data available from UART 
+  93:main.c        ****              */
+  94:main.c        ****         }
+  95:main.c        ****         else
+  96:main.c        ****         {
+  97:main.c        ****             /*
+  98:main.c        ****              * new data available from UART
+  99:main.c        ****              * check for Frame or Overrun error
+ 100:main.c        ****              */
+ 101:main.c        ****             if ( c & UART_FRAME_ERROR )
+  96               		.loc 1 101 0
+  97 0058 93FF      		sbrs r25,3
+  98 005a 00C0      		rjmp .L4
+ 102:main.c        ****             {
+ 103:main.c        ****                 /* Framing Error detected, i.e no stop bit detected */
+ 104:main.c        ****                 uart_puts_P("UART Frame Error: ");
+  99               		.loc 1 104 0
+ 100 005c 80E0      		ldi r24,lo8(__c.1788)
+ 101 005e 90E0      		ldi r25,hi8(__c.1788)
+ 102 0060 0E94 0000 		call uart_puts_p
+ 103               	.LVL9:
+ 104               	.L4:
+ 105:main.c        ****             }
+ 106:main.c        ****             if ( c & UART_OVERRUN_ERROR )
+ 105               		.loc 1 106 0
+ 106 0064 12FF      		sbrs r17,2
+ 107 0066 00C0      		rjmp .L5
+ 107:main.c        ****             {
+ 108:main.c        ****                 /* 
+ 109:main.c        ****                  * Overrun, a character already present in the UART UDR register was 
+ 110:main.c        ****                  * not read by the interrupt handler before the next character arrived,
+ 111:main.c        ****                  * one or more received characters have been dropped
+ 112:main.c        ****                  */
+ 113:main.c        ****                 uart_puts_P("UART Overrun Error: ");
+ 108               		.loc 1 113 0
+ 109 0068 80E0      		ldi r24,lo8(__c.1790)
+ 110 006a 90E0      		ldi r25,hi8(__c.1790)
+ 111 006c 0E94 0000 		call uart_puts_p
+ 112               	.LVL10:
+ 113               	.L5:
+ 114:main.c        ****             }
+ 115:main.c        ****             if ( c & UART_BUFFER_OVERFLOW )
+ 114               		.loc 1 115 0
+ 115 0070 11FF      		sbrs r17,1
+ 116 0072 00C0      		rjmp .L6
+ 116:main.c        ****             {
+ 117:main.c        ****                 /* 
+ 118:main.c        ****                  * We are not reading the receive buffer fast enough,
+ 119:main.c        ****                  * one or more received character have been dropped 
+ 120:main.c        ****                  */
+ 121:main.c        ****                 uart_puts_P("Buffer overflow error: ");
+ 117               		.loc 1 121 0
+ 118 0074 80E0      		ldi r24,lo8(__c.1792)
+ 119 0076 90E0      		ldi r25,hi8(__c.1792)
+ 120 0078 0E94 0000 		call uart_puts_p
+ 121               	.LVL11:
+ 122               	.L6:
+ 122:main.c        ****             }
+ 123:main.c        ****             /* 
+ 124:main.c        ****              * send received character back
+ 125:main.c        ****              */
+ 126:main.c        ****             uart_putc( (unsigned char)c );
+ 123               		.loc 1 126 0
+ 124 007c 802F      		mov r24,r16
+ 125 007e 00C0      		rjmp .L17
+ 126               		.cfi_endproc
+ 127               	.LFE1:
+ 129               		.section	.progmem.data,"a",@progbits
+ 132               	__c.1792:
+ 133 0000 4275 6666 		.string	"Buffer overflow error: "
+ 133      6572 206F 
+ 133      7665 7266 
+ 133      6C6F 7720 
+ 133      6572 726F 
+ 136               	__c.1790:
+ 137 0018 5541 5254 		.string	"UART Overrun Error: "
+ 137      204F 7665 
+ 137      7272 756E 
+ 137      2045 7272 
+ 137      6F72 3A20 
+ 140               	__c.1788:
+ 141 002d 5541 5254 		.string	"UART Frame Error: "
+ 141      2046 7261 
+ 141      6D65 2045 
+ 141      7272 6F72 
+ 141      3A20 00
+ 144               	__c.1786:
+ 145 0040 5374 7269 		.string	"String stored in FLASH\n"
+ 145      6E67 2073 
+ 145      746F 7265 
+ 145      6420 696E 
+ 145      2046 4C41 
+ 146               		.text
+ 147               	.Letext0:
+ 148               		.file 2 "uart.h"
+ 149               		.file 3 "/usr/lib/avr/include/stdlib.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 main.c
+     /tmp/cco7xipu.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/cco7xipu.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/cco7xipu.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/cco7xipu.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/cco7xipu.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/cco7xipu.s:16     .text.startup:0000000000000000 main
+     /tmp/cco7xipu.s:144    .progmem.data:0000000000000040 __c.1786
+     /tmp/cco7xipu.s:140    .progmem.data:000000000000002d __c.1788
+     /tmp/cco7xipu.s:136    .progmem.data:0000000000000018 __c.1790
+     /tmp/cco7xipu.s:132    .progmem.data:0000000000000000 __c.1792
+
+UNDEFINED SYMBOLS
+uart_init
+uart_puts
+uart_puts_p
+itoa
+uart_putc
+uart_getc
+__do_copy_data

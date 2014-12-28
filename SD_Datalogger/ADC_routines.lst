@@ -1,0 +1,304 @@
+   1               		.file	"ADC_routines.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	ADC_init
+  18               	ADC_init:
+  19               	.LFB2:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 16B8      		out 38-32,__zero_reg__
+  25               	.LM3:
+  26 0002 80E4      		ldi r24,lo8(64)
+  27 0004 87B9      		out 39-32,r24
+  28               	.LM4:
+  29 0006 82E8      		ldi r24,lo8(-126)
+  30 0008 86B9      		out 38-32,r24
+  31               	.LM5:
+  32 000a 379A      		sbi 38-32,7
+  33               	/* epilogue start */
+  34               	.LM6:
+  35 000c 0895      		ret
+  36               	.LFE2:
+  38               	.global	ADC_read
+  40               	ADC_read:
+  41               	.LFB3:
+  42               	.LM7:
+  43               	/* prologue: function */
+  44               	/* frame size = 0 */
+  45               	.LM8:
+  46 000e 60E0      		ldi r22,lo8(0)
+  47               	.LVL0:
+  48 0010 40E0      		ldi r20,lo8(0)
+  49 0012 50E0      		ldi r21,hi8(0)
+  50               	.LVL1:
+  51               	.L5:
+  52               	.LM9:
+  53 0014 369A      		sbi 38-32,6
+  54               	.L4:
+  55               	.LM10:
+  56 0016 349B      		sbis 38-32,4
+  57 0018 00C0      		rjmp .L4
+  58               	.LM11:
+  59 001a 349A      		sbi 38-32,4
+  60               	.LM12:
+  61 001c 94B1      		in r25,36-32
+  62               	.LM13:
+  63 001e 85B1      		in r24,37-32
+  64               	.LM14:
+  65 0020 382F      		mov r19,r24
+  66 0022 20E0      		ldi r18,lo8(0)
+  67 0024 F901      		movw r30,r18
+  68 0026 E90F      		add r30,r25
+  69 0028 F11D      		adc r31,__zero_reg__
+  70 002a 4E0F      		add r20,r30
+  71 002c 5F1F      		adc r21,r31
+  72               	.LM15:
+  73 002e 6F5F      		subi r22,lo8(-(1))
+  74 0030 6830      		cpi r22,lo8(8)
+  75 0032 01F4      		brne .L5
+  76               	.LM16:
+  77 0034 9A01      		movw r18,r20
+  78 0036 83E0      		ldi r24,3
+  79 0038 3695      	1:	lsr r19
+  80 003a 2795      		ror r18
+  81 003c 8A95      		dec r24
+  82 003e 01F4      		brne 1b
+  83               	.LVL2:
+  84 0040 F4E0      		ldi r31,hi8(1024)
+  85 0042 2030      		cpi r18,lo8(1024)
+  86 0044 3F07      		cpc r19,r31
+  87 0046 00F0      		brlo .L6
+  88 0048 2FEF      		ldi r18,lo8(1023)
+  89 004a 33E0      		ldi r19,hi8(1023)
+  90               	.L6:
+  91               	.LM17:
+  92 004c C901      		movw r24,r18
+  93               	.LVL3:
+  94               	/* epilogue start */
+  95 004e 0895      		ret
+  96               	.LFE3:
+  98               	.global	readTemperature
+ 100               	readTemperature:
+ 101               	.LFB4:
+ 102               	.LM18:
+ 103               	.LVL4:
+ 104 0050 0F93      		push r16
+ 105 0052 1F93      		push r17
+ 106               	/* prologue: function */
+ 107               	/* frame size = 0 */
+ 108               	.LM19:
+ 109 0054 8064      		ori r24,lo8(64)
+ 110               	.LVL5:
+ 111 0056 87B9      		out 39-32,r24
+ 112               	.LM20:
+ 113 0058 0E94 0000 		call ADC_read
+ 114               	.LM21:
+ 115 005c A0E0      		ldi r26,lo8(0)
+ 116 005e B0E0      		ldi r27,hi8(0)
+ 117               	.LVL6:
+ 118 0060 BC01      		movw r22,r24
+ 119 0062 CD01      		movw r24,r26
+ 120               	.LVL7:
+ 121 0064 0E94 0000 		call __floatunsisf
+ 122               	.LVL8:
+ 123 0068 20E0      		ldi r18,lo8(0x40a00000)
+ 124 006a 30E0      		ldi r19,hi8(0x40a00000)
+ 125 006c 40EA      		ldi r20,hlo8(0x40a00000)
+ 126 006e 50E4      		ldi r21,hhi8(0x40a00000)
+ 127 0070 0E94 0000 		call __mulsf3
+ 128 0074 20E0      		ldi r18,lo8(0x3a800000)
+ 129 0076 30E0      		ldi r19,hi8(0x3a800000)
+ 130 0078 40E8      		ldi r20,hlo8(0x3a800000)
+ 131 007a 5AE3      		ldi r21,hhi8(0x3a800000)
+ 132 007c 0E94 0000 		call __mulsf3
+ 133 0080 20E0      		ldi r18,lo8(0x447a0000)
+ 134 0082 30E0      		ldi r19,hi8(0x447a0000)
+ 135 0084 4AE7      		ldi r20,hlo8(0x447a0000)
+ 136 0086 54E4      		ldi r21,hhi8(0x447a0000)
+ 137 0088 0E94 0000 		call __mulsf3
+ 138 008c 0E94 0000 		call __fixunssfsi
+ 139 0090 8B01      		movw r16,r22
+ 140 0092 9C01      		movw r18,r24
+ 141               	.LM22:
+ 142 0094 83E4      		ldi r24,lo8(67)
+ 143 0096 8093 0000 		sts temperature+6,r24
+ 144               	.LM23:
+ 145 009a 80EB      		ldi r24,lo8(-80)
+ 146 009c 8093 0000 		sts temperature+5,r24
+ 147               	.LM24:
+ 148 00a0 C801      		movw r24,r16
+ 149 00a2 6AE0      		ldi r22,lo8(10)
+ 150 00a4 70E0      		ldi r23,hi8(10)
+ 151 00a6 0E94 0000 		call __udivmodhi4
+ 152 00aa 8063      		ori r24,lo8(48)
+ 153 00ac 8093 0000 		sts temperature+4,r24
+ 154               	.LM25:
+ 155 00b0 8EE2      		ldi r24,lo8(46)
+ 156 00b2 8093 0000 		sts temperature+3,r24
+ 157               	.LM26:
+ 158 00b6 C801      		movw r24,r16
+ 159 00b8 6AE0      		ldi r22,lo8(10)
+ 160 00ba 70E0      		ldi r23,hi8(10)
+ 161 00bc 0E94 0000 		call __udivmodhi4
+ 162 00c0 9B01      		movw r18,r22
+ 163               	.LM27:
+ 164 00c2 CB01      		movw r24,r22
+ 165 00c4 6AE0      		ldi r22,lo8(10)
+ 166 00c6 70E0      		ldi r23,hi8(10)
+ 167 00c8 0E94 0000 		call __udivmodhi4
+ 168 00cc 8063      		ori r24,lo8(48)
+ 169 00ce 8093 0000 		sts temperature+2,r24
+ 170               	.LM28:
+ 171 00d2 C901      		movw r24,r18
+ 172 00d4 6AE0      		ldi r22,lo8(10)
+ 173 00d6 70E0      		ldi r23,hi8(10)
+ 174 00d8 0E94 0000 		call __udivmodhi4
+ 175 00dc 9B01      		movw r18,r22
+ 176               	.LM29:
+ 177 00de CB01      		movw r24,r22
+ 178 00e0 6AE0      		ldi r22,lo8(10)
+ 179 00e2 70E0      		ldi r23,hi8(10)
+ 180 00e4 0E94 0000 		call __udivmodhi4
+ 181 00e8 8063      		ori r24,lo8(48)
+ 182 00ea 8093 0000 		sts temperature+1,r24
+ 183               	.LM30:
+ 184 00ee C901      		movw r24,r18
+ 185 00f0 6AE0      		ldi r22,lo8(10)
+ 186 00f2 70E0      		ldi r23,hi8(10)
+ 187 00f4 0E94 0000 		call __udivmodhi4
+ 188 00f8 6063      		ori r22,lo8(48)
+ 189 00fa 6093 0000 		sts temperature,r22
+ 190               	/* epilogue start */
+ 191               	.LM31:
+ 192 00fe 1F91      		pop r17
+ 193 0100 0F91      		pop r16
+ 194 0102 0895      		ret
+ 195               	.LFE4:
+ 197               	.global	readVoltage
+ 199               	readVoltage:
+ 200               	.LFB5:
+ 201               	.LM32:
+ 202               	.LVL9:
+ 203 0104 0F93      		push r16
+ 204 0106 1F93      		push r17
+ 205               	/* prologue: function */
+ 206               	/* frame size = 0 */
+ 207               	.LM33:
+ 208 0108 8064      		ori r24,lo8(64)
+ 209               	.LVL10:
+ 210 010a 87B9      		out 39-32,r24
+ 211               	.LM34:
+ 212 010c 0E94 0000 		call ADC_read
+ 213               	.LM35:
+ 214 0110 A0E0      		ldi r26,lo8(0)
+ 215 0112 B0E0      		ldi r27,hi8(0)
+ 216               	.LVL11:
+ 217 0114 BC01      		movw r22,r24
+ 218 0116 CD01      		movw r24,r26
+ 219               	.LVL12:
+ 220 0118 0E94 0000 		call __floatunsisf
+ 221               	.LVL13:
+ 222 011c 20E0      		ldi r18,lo8(0x40a00000)
+ 223 011e 30E0      		ldi r19,hi8(0x40a00000)
+ 224 0120 40EA      		ldi r20,hlo8(0x40a00000)
+ 225 0122 50E4      		ldi r21,hhi8(0x40a00000)
+ 226 0124 0E94 0000 		call __mulsf3
+ 227 0128 20E0      		ldi r18,lo8(0x3a800000)
+ 228 012a 30E0      		ldi r19,hi8(0x3a800000)
+ 229 012c 40E8      		ldi r20,hlo8(0x3a800000)
+ 230 012e 5AE3      		ldi r21,hhi8(0x3a800000)
+ 231 0130 0E94 0000 		call __mulsf3
+ 232 0134 20E0      		ldi r18,lo8(0x447a0000)
+ 233 0136 30E0      		ldi r19,hi8(0x447a0000)
+ 234 0138 4AE7      		ldi r20,hlo8(0x447a0000)
+ 235 013a 54E4      		ldi r21,hhi8(0x447a0000)
+ 236 013c 0E94 0000 		call __mulsf3
+ 237 0140 0E94 0000 		call __fixunssfsi
+ 238 0144 8B01      		movw r16,r22
+ 239 0146 9C01      		movw r18,r24
+ 240               	.LM36:
+ 241 0148 86E5      		ldi r24,lo8(86)
+ 242 014a 8093 0000 		sts voltage+6,r24
+ 243               	.LM37:
+ 244 014e 80E2      		ldi r24,lo8(32)
+ 245 0150 8093 0000 		sts voltage+5,r24
+ 246               	.LM38:
+ 247 0154 C801      		movw r24,r16
+ 248 0156 6AE0      		ldi r22,lo8(10)
+ 249 0158 70E0      		ldi r23,hi8(10)
+ 250 015a 0E94 0000 		call __udivmodhi4
+ 251 015e 8063      		ori r24,lo8(48)
+ 252 0160 8093 0000 		sts voltage+4,r24
+ 253               	.LM39:
+ 254 0164 C801      		movw r24,r16
+ 255 0166 6AE0      		ldi r22,lo8(10)
+ 256 0168 70E0      		ldi r23,hi8(10)
+ 257 016a 0E94 0000 		call __udivmodhi4
+ 258 016e 9B01      		movw r18,r22
+ 259               	.LM40:
+ 260 0170 CB01      		movw r24,r22
+ 261 0172 6AE0      		ldi r22,lo8(10)
+ 262 0174 70E0      		ldi r23,hi8(10)
+ 263 0176 0E94 0000 		call __udivmodhi4
+ 264 017a 8063      		ori r24,lo8(48)
+ 265 017c 8093 0000 		sts voltage+3,r24
+ 266               	.LM41:
+ 267 0180 C901      		movw r24,r18
+ 268 0182 6AE0      		ldi r22,lo8(10)
+ 269 0184 70E0      		ldi r23,hi8(10)
+ 270 0186 0E94 0000 		call __udivmodhi4
+ 271 018a 9B01      		movw r18,r22
+ 272               	.LM42:
+ 273 018c CB01      		movw r24,r22
+ 274 018e 6AE0      		ldi r22,lo8(10)
+ 275 0190 70E0      		ldi r23,hi8(10)
+ 276 0192 0E94 0000 		call __udivmodhi4
+ 277 0196 8063      		ori r24,lo8(48)
+ 278 0198 8093 0000 		sts voltage+2,r24
+ 279               	.LM43:
+ 280 019c 8EE2      		ldi r24,lo8(46)
+ 281 019e 8093 0000 		sts voltage+1,r24
+ 282               	.LM44:
+ 283 01a2 C901      		movw r24,r18
+ 284 01a4 6AE0      		ldi r22,lo8(10)
+ 285 01a6 70E0      		ldi r23,hi8(10)
+ 286 01a8 0E94 0000 		call __udivmodhi4
+ 287 01ac 6063      		ori r22,lo8(48)
+ 288 01ae 6093 0000 		sts voltage,r22
+ 289               	/* epilogue start */
+ 290               	.LM45:
+ 291 01b2 1F91      		pop r17
+ 292 01b4 0F91      		pop r16
+ 293 01b6 0895      		ret
+ 294               	.LFE5:
+ 296               		.comm temperature,7,1
+ 297               		.comm voltage,7,1
+ 346               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 ADC_routines.c
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:2      *ABS*:0000003f __SREG__
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:5      *ABS*:00000034 __CCP__
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:18     .text:00000000 ADC_init
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:40     .text:0000000e ADC_read
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:100    .text:00000050 readTemperature
+                            *COM*:00000007 temperature
+C:\Users\Hiran\AppData\Local\Temp/ccm6zbG2.s:199    .text:00000104 readVoltage
+                            *COM*:00000007 voltage
+
+UNDEFINED SYMBOLS
+__floatunsisf
+__mulsf3
+__fixunssfsi
+__udivmodhi4
+__do_clear_bss

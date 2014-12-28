@@ -1,0 +1,333 @@
+
+main.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         000001a0  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         0000000e  00800060  000001a0  00000234  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000002  0080006e  0080006e  00000242  2**0
+                  ALLOC
+  3 .stab         000006cc  00000000  00000000  00000244  2**2
+                  CONTENTS, READONLY, DEBUGGING
+  4 .stabstr      00000054  00000000  00000000  00000910  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  5 .comment      00000011  00000000  00000000  00000964  2**0
+                  CONTENTS, READONLY
+  6 .debug_aranges 00000028  00000000  00000000  00000975  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_info   0000025b  00000000  00000000  0000099d  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_abbrev 000001c2  00000000  00000000  00000bf8  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_line   000000c1  00000000  00000000  00000dba  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_frame  00000060  00000000  00000000  00000e7c  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_str    00000160  00000000  00000000  00000edc  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_loc    000000fc  00000000  00000000  0000103c  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 13 .debug_ranges 00000030  00000000  00000000  00001138  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0c 94 2a 00 	jmp	0x54	; 0x54 <__ctors_end>
+   4:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+   8:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+   c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  10:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  14:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  18:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  1c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  20:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  24:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  28:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  2c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  30:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  34:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  38:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  3c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  40:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  44:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  48:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  4c:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+  50:	0c 94 47 00 	jmp	0x8e	; 0x8e <__bad_interrupt>
+
+00000054 <__ctors_end>:
+  54:	11 24       	eor	r1, r1
+  56:	1f be       	out	0x3f, r1	; 63
+  58:	cf e5       	ldi	r28, 0x5F	; 95
+  5a:	d8 e0       	ldi	r29, 0x08	; 8
+  5c:	de bf       	out	0x3e, r29	; 62
+  5e:	cd bf       	out	0x3d, r28	; 61
+
+00000060 <__do_copy_data>:
+  60:	10 e0       	ldi	r17, 0x00	; 0
+  62:	a0 e6       	ldi	r26, 0x60	; 96
+  64:	b0 e0       	ldi	r27, 0x00	; 0
+  66:	e0 ea       	ldi	r30, 0xA0	; 160
+  68:	f1 e0       	ldi	r31, 0x01	; 1
+  6a:	02 c0       	rjmp	.+4      	; 0x70 <__do_copy_data+0x10>
+  6c:	05 90       	lpm	r0, Z+
+  6e:	0d 92       	st	X+, r0
+  70:	ae 36       	cpi	r26, 0x6E	; 110
+  72:	b1 07       	cpc	r27, r17
+  74:	d9 f7       	brne	.-10     	; 0x6c <__do_copy_data+0xc>
+
+00000076 <__do_clear_bss>:
+  76:	10 e0       	ldi	r17, 0x00	; 0
+  78:	ae e6       	ldi	r26, 0x6E	; 110
+  7a:	b0 e0       	ldi	r27, 0x00	; 0
+  7c:	01 c0       	rjmp	.+2      	; 0x80 <.do_clear_bss_start>
+
+0000007e <.do_clear_bss_loop>:
+  7e:	1d 92       	st	X+, r1
+
+00000080 <.do_clear_bss_start>:
+  80:	a0 37       	cpi	r26, 0x70	; 112
+  82:	b1 07       	cpc	r27, r17
+  84:	e1 f7       	brne	.-8      	; 0x7e <.do_clear_bss_loop>
+  86:	0e 94 a8 00 	call	0x150	; 0x150 <main>
+  8a:	0c 94 ce 00 	jmp	0x19c	; 0x19c <_exit>
+
+0000008e <__bad_interrupt>:
+  8e:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
+
+00000092 <init>:
+
+
+
+
+void init(void){
+	DDRC = 0xff;
+  92:	8f ef       	ldi	r24, 0xFF	; 255
+  94:	84 bb       	out	0x14, r24	; 20
+	DDRA =  1<<4| 1<<5| 1<<6 | 1<<7 ; 
+  96:	80 ef       	ldi	r24, 0xF0	; 240
+  98:	8a bb       	out	0x1a, r24	; 26
+	
+	DDRD = DDRD | ~(1<<2) | 1<<4 | 1<<5;
+  9a:	81 b3       	in	r24, 0x11	; 17
+  9c:	8b 6f       	ori	r24, 0xFB	; 251
+  9e:	81 bb       	out	0x11, r24	; 17
+	
+	//PORTA = 1<<3 ;
+
+	//ADMUX = 1 << MUX1 | 1 << REFS0 | 1 << REFS1;
+	//ADCSRA = 1 << ADEN | 1 << ADPS1 | 1 << ADPS2 ;
+	ADCSRA = 0b10000110;
+  a0:	86 e8       	ldi	r24, 0x86	; 134
+  a2:	86 b9       	out	0x06, r24	; 6
+	ADMUX = 0b11000000;
+  a4:	80 ec       	ldi	r24, 0xC0	; 192
+  a6:	87 b9       	out	0x07, r24	; 7
+  a8:	08 95       	ret
+
+000000aa <getDigi>:
+}
+
+
+
+
+void getDigi(unsigned int val){
+  aa:	cf 93       	push	r28
+  ac:	df 93       	push	r29
+  ae:	9c 01       	movw	r18, r24
+
+	dig[0] = val%10;	
+  b0:	ea e0       	ldi	r30, 0x0A	; 10
+  b2:	f0 e0       	ldi	r31, 0x00	; 0
+  b4:	bf 01       	movw	r22, r30
+  b6:	0e 94 ba 00 	call	0x174	; 0x174 <__udivmodhi4>
+  ba:	80 93 60 00 	sts	0x0060, r24
+	dig[1] = (val%100)/10;	
+  be:	c9 01       	movw	r24, r18
+  c0:	64 e6       	ldi	r22, 0x64	; 100
+  c2:	70 e0       	ldi	r23, 0x00	; 0
+  c4:	0e 94 ba 00 	call	0x174	; 0x174 <__udivmodhi4>
+  c8:	eb 01       	movw	r28, r22
+  ca:	bf 01       	movw	r22, r30
+  cc:	0e 94 ba 00 	call	0x174	; 0x174 <__udivmodhi4>
+  d0:	60 93 61 00 	sts	0x0061, r22
+	dig[2] = (val/100)%10;	
+  d4:	ce 01       	movw	r24, r28
+  d6:	bf 01       	movw	r22, r30
+  d8:	0e 94 ba 00 	call	0x174	; 0x174 <__udivmodhi4>
+  dc:	80 93 62 00 	sts	0x0062, r24
+	dig[3] = val/1000;
+  e0:	c9 01       	movw	r24, r18
+  e2:	68 ee       	ldi	r22, 0xE8	; 232
+  e4:	73 e0       	ldi	r23, 0x03	; 3
+  e6:	0e 94 ba 00 	call	0x174	; 0x174 <__udivmodhi4>
+  ea:	60 93 63 00 	sts	0x0063, r22
+}
+  ee:	df 91       	pop	r29
+  f0:	cf 91       	pop	r28
+  f2:	08 95       	ret
+
+000000f4 <displaySSD>:
+
+void displaySSD(unsigned int n){
+	
+	unsigned int j;
+	
+	for(j=0;j<n;j++){
+  f4:	40 e0       	ldi	r20, 0x00	; 0
+  f6:	50 e0       	ldi	r21, 0x00	; 0
+			if(i==3) {
+				PORTC=SSD[dig[i]] ; //Displaying Dot
+			}else{
+				PORTC=SSD[dig[i]];
+			}
+			PORTA = (1<<i+4) ;
+  f8:	61 e0       	ldi	r22, 0x01	; 1
+  fa:	70 e0       	ldi	r23, 0x00	; 0
+
+void displaySSD(unsigned int n){
+	
+	unsigned int j;
+	
+	for(j=0;j<n;j++){
+  fc:	48 17       	cp	r20, r24
+  fe:	59 07       	cpc	r21, r25
+ 100:	31 f1       	breq	.+76     	; 0x14e <displaySSD+0x5a>
+ 102:	24 e0       	ldi	r18, 0x04	; 4
+ 104:	30 e0       	ldi	r19, 0x00	; 0
+		unsigned char i ;
+	
+		for(i=0;i != 4;i++){
+		
+			
+			if(i==3) {
+ 106:	27 30       	cpi	r18, 0x07	; 7
+ 108:	19 f4       	brne	.+6      	; 0x110 <displaySSD+0x1c>
+				PORTC=SSD[dig[i]] ; //Displaying Dot
+ 10a:	e0 91 63 00 	lds	r30, 0x0063
+ 10e:	04 c0       	rjmp	.+8      	; 0x118 <displaySSD+0x24>
+ 110:	f9 01       	movw	r30, r18
+ 112:	e4 5a       	subi	r30, 0xA4	; 164
+ 114:	ff 4f       	sbci	r31, 0xFF	; 255
+			}else{
+				PORTC=SSD[dig[i]];
+ 116:	e0 81       	ld	r30, Z
+ 118:	f0 e0       	ldi	r31, 0x00	; 0
+ 11a:	ec 59       	subi	r30, 0x9C	; 156
+ 11c:	ff 4f       	sbci	r31, 0xFF	; 255
+ 11e:	e0 81       	ld	r30, Z
+ 120:	e5 bb       	out	0x15, r30	; 21
+			}
+			PORTA = (1<<i+4) ;
+ 122:	fb 01       	movw	r30, r22
+ 124:	02 2e       	mov	r0, r18
+ 126:	01 c0       	rjmp	.+2      	; 0x12a <displaySSD+0x36>
+ 128:	ee 0f       	add	r30, r30
+ 12a:	0a 94       	dec	r0
+ 12c:	ea f7       	brpl	.-6      	; 0x128 <displaySSD+0x34>
+ 12e:	eb bb       	out	0x1b, r30	; 27
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 130:	ef ec       	ldi	r30, 0xCF	; 207
+ 132:	f7 e0       	ldi	r31, 0x07	; 7
+ 134:	31 97       	sbiw	r30, 0x01	; 1
+ 136:	f1 f7       	brne	.-4      	; 0x134 <displaySSD+0x40>
+ 138:	00 c0       	rjmp	.+0      	; 0x13a <displaySSD+0x46>
+ 13a:	00 00       	nop
+			_delay_ms(1);
+			PORTA=0;
+ 13c:	1b ba       	out	0x1b, r1	; 27
+ 13e:	2f 5f       	subi	r18, 0xFF	; 255
+ 140:	3f 4f       	sbci	r19, 0xFF	; 255
+	unsigned int j;
+	
+	for(j=0;j<n;j++){
+		unsigned char i ;
+	
+		for(i=0;i != 4;i++){
+ 142:	28 30       	cpi	r18, 0x08	; 8
+ 144:	31 05       	cpc	r19, r1
+ 146:	f9 f6       	brne	.-66     	; 0x106 <displaySSD+0x12>
+
+void displaySSD(unsigned int n){
+	
+	unsigned int j;
+	
+	for(j=0;j<n;j++){
+ 148:	4f 5f       	subi	r20, 0xFF	; 255
+ 14a:	5f 4f       	sbci	r21, 0xFF	; 255
+ 14c:	d7 cf       	rjmp	.-82     	; 0xfc <displaySSD+0x8>
+ 14e:	08 95       	ret
+
+00000150 <main>:
+
+volatile unsigned int count=0000;
+
+int main(void){
+		
+	init();
+ 150:	0e 94 49 00 	call	0x92	; 0x92 <init>
+	
+	
+	while(1){
+		PORTD = 1<<4 | 0<<5 ;
+ 154:	c0 e1       	ldi	r28, 0x10	; 16
+ 156:	c2 bb       	out	0x12, r28	; 18
+		ADCSRA |= (1<<ADSC);
+ 158:	36 9a       	sbi	0x06, 6	; 6
+
+		while(ADCSRA & 1<<ADSC);
+ 15a:	36 99       	sbic	0x06, 6	; 6
+ 15c:	fe cf       	rjmp	.-4      	; 0x15a <main+0xa>
+		getDigi(ADCL | ADCH << 8 );
+ 15e:	84 b1       	in	r24, 0x04	; 4
+ 160:	25 b1       	in	r18, 0x05	; 5
+ 162:	90 e0       	ldi	r25, 0x00	; 0
+ 164:	92 2b       	or	r25, r18
+ 166:	0e 94 55 00 	call	0xaa	; 0xaa <getDigi>
+		displaySSD(1);
+ 16a:	81 e0       	ldi	r24, 0x01	; 1
+ 16c:	90 e0       	ldi	r25, 0x00	; 0
+ 16e:	0e 94 7a 00 	call	0xf4	; 0xf4 <displaySSD>
+
+				
+	}
+ 172:	f1 cf       	rjmp	.-30     	; 0x156 <main+0x6>
+
+00000174 <__udivmodhi4>:
+ 174:	aa 1b       	sub	r26, r26
+ 176:	bb 1b       	sub	r27, r27
+ 178:	51 e1       	ldi	r21, 0x11	; 17
+ 17a:	07 c0       	rjmp	.+14     	; 0x18a <__udivmodhi4_ep>
+
+0000017c <__udivmodhi4_loop>:
+ 17c:	aa 1f       	adc	r26, r26
+ 17e:	bb 1f       	adc	r27, r27
+ 180:	a6 17       	cp	r26, r22
+ 182:	b7 07       	cpc	r27, r23
+ 184:	10 f0       	brcs	.+4      	; 0x18a <__udivmodhi4_ep>
+ 186:	a6 1b       	sub	r26, r22
+ 188:	b7 0b       	sbc	r27, r23
+
+0000018a <__udivmodhi4_ep>:
+ 18a:	88 1f       	adc	r24, r24
+ 18c:	99 1f       	adc	r25, r25
+ 18e:	5a 95       	dec	r21
+ 190:	a9 f7       	brne	.-22     	; 0x17c <__udivmodhi4_loop>
+ 192:	80 95       	com	r24
+ 194:	90 95       	com	r25
+ 196:	bc 01       	movw	r22, r24
+ 198:	cd 01       	movw	r24, r26
+ 19a:	08 95       	ret
+
+0000019c <_exit>:
+ 19c:	f8 94       	cli
+
+0000019e <__stop_program>:
+ 19e:	ff cf       	rjmp	.-2      	; 0x19e <__stop_program>

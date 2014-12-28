@@ -1,0 +1,65 @@
+   1               		.file	"acs712.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	acs712_getcurrent
+  18               	acs712_getcurrent:
+  19               	.LFB2:
+  20               	.LM1:
+  21               	.LVL0:
+  22 0000 EF92      		push r14
+  23 0002 FF92      		push r15
+  24 0004 0F93      		push r16
+  25 0006 1F93      		push r17
+  26               	/* prologue: function */
+  27               	/* frame size = 0 */
+  28 0008 7B01      		movw r14,r22
+  29 000a 8C01      		movw r16,r24
+  30               	.LM2:
+  31 000c CA01      		movw r24,r20
+  32 000e B901      		movw r22,r18
+  33               	.LVL1:
+  34 0010 20E0      		ldi r18,lo8(0xbf000000)
+  35 0012 30E0      		ldi r19,hi8(0xbf000000)
+  36 0014 40E0      		ldi r20,hlo8(0xbf000000)
+  37 0016 5FEB      		ldi r21,hhi8(0xbf000000)
+  38               	.LVL2:
+  39 0018 0E94 0000 		call __mulsf3
+  40 001c 9B01      		movw r18,r22
+  41 001e AC01      		movw r20,r24
+  42 0020 C801      		movw r24,r16
+  43 0022 B701      		movw r22,r14
+  44 0024 0E94 0000 		call __addsf3
+  45 0028 22E0      		ldi r18,lo8(0x3d872b02)
+  46 002a 3BE2      		ldi r19,hi8(0x3d872b02)
+  47 002c 47E8      		ldi r20,hlo8(0x3d872b02)
+  48 002e 5DE3      		ldi r21,hhi8(0x3d872b02)
+  49 0030 0E94 0000 		call __divsf3
+  50               	/* epilogue start */
+  51               	.LM3:
+  52 0034 1F91      		pop r17
+  53 0036 0F91      		pop r16
+  54 0038 FF90      		pop r15
+  55 003a EF90      		pop r14
+  56               	.LVL3:
+  57 003c 0895      		ret
+  58               	.LFE2:
+  84               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 acs712.c
+C:\Users\Rasika\AppData\Local\Temp/ccPYoaWC.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccPYoaWC.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccPYoaWC.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccPYoaWC.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccPYoaWC.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccPYoaWC.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccPYoaWC.s:18     .text:00000000 acs712_getcurrent
+
+UNDEFINED SYMBOLS
+__mulsf3
+__addsf3
+__divsf3

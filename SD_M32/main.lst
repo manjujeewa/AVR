@@ -1,0 +1,1991 @@
+   1               		.file	"main.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	port_init
+  12               	port_init:
+  13               	.LFB7:
+  14               		.file 1 "main.c"
+   1:main.c        **** //***********************************************************
+   2:main.c        **** // **** MAIN routine FOR Interfacing microSD/SDHC CARD ****
+   3:main.c        **** //***********************************************************
+   4:main.c        **** //Controller: ATmega32 (Clock: 8 Mhz-internal)
+   5:main.c        **** //Compiler	: AVR-GCC (winAVR with AVRStudio)
+   6:main.c        **** //Project V.: Version - 2.4.1
+   7:main.c        **** //Author	: CC Dharmani, Chennai (India)
+   8:main.c        **** //			  www.dharmanitech.com
+   9:main.c        **** //Date		: 24 Apr 2011
+  10:main.c        **** //***********************************************************
+  11:main.c        **** 
+  12:main.c        **** //Link to the Post: http://www.dharmanitech.com/2009/01/sd-card-interfacing-with-atmega8-fat32.html
+  13:main.c        **** #define F_CPU 16000000UL
+  14:main.c        **** 
+  15:main.c        **** #include <avr/io.h>
+  16:main.c        **** #include <avr/pgmspace.h>
+  17:main.c        **** #include <avr/interrupt.h>
+  18:main.c        **** #include <util/delay.h>
+  19:main.c        **** #include "SPI_routines.h"
+  20:main.c        **** #include "SD_routines.h"
+  21:main.c        **** #include "UART_routines.h"
+  22:main.c        **** #include "RTC_routines.h"
+  23:main.c        **** #include "i2c_routines.h"
+  24:main.c        **** #include "FAT32.h"
+  25:main.c        **** 
+  26:main.c        **** 
+  27:main.c        **** void port_init(void)
+  28:main.c        **** {
+  15               		.loc 1 28 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  29:main.c        **** PORTA = 0x00;
+  21               		.loc 1 29 0
+  22 0000 1BBA      		out 0x1b,__zero_reg__
+  30:main.c        **** DDRA  = 0x00;
+  23               		.loc 1 30 0
+  24 0002 1ABA      		out 0x1a,__zero_reg__
+  31:main.c        **** PORTB = 0xEF;
+  25               		.loc 1 31 0
+  26 0004 8FEE      		ldi r24,lo8(-17)
+  27 0006 88BB      		out 0x18,r24
+  32:main.c        **** DDRB  = 0xBF; //MISO line i/p, rest o/p
+  28               		.loc 1 32 0
+  29 0008 8FEB      		ldi r24,lo8(-65)
+  30 000a 87BB      		out 0x17,r24
+  33:main.c        **** PORTC = 0x00;
+  31               		.loc 1 33 0
+  32 000c 15BA      		out 0x15,__zero_reg__
+  34:main.c        **** DDRC  = 0x00;
+  33               		.loc 1 34 0
+  34 000e 14BA      		out 0x14,__zero_reg__
+  35:main.c        **** PORTD = 0x00;
+  35               		.loc 1 35 0
+  36 0010 12BA      		out 0x12,__zero_reg__
+  36:main.c        **** DDRD  = 0xFE;
+  37               		.loc 1 36 0
+  38 0012 8EEF      		ldi r24,lo8(-2)
+  39 0014 81BB      		out 0x11,r24
+  40 0016 0895      		ret
+  41               		.cfi_endproc
+  42               	.LFE7:
+  44               	.global	init_devices
+  46               	init_devices:
+  47               	.LFB8:
+  37:main.c        **** }
+  38:main.c        **** 
+  39:main.c        **** 
+  40:main.c        **** //call this routine to initialize all peripherals
+  41:main.c        **** void init_devices(void)
+  42:main.c        **** {
+  48               		.loc 1 42 0
+  49               		.cfi_startproc
+  50               	/* prologue: function */
+  51               	/* frame size = 0 */
+  52               	/* stack size = 0 */
+  53               	.L__stack_usage = 0
+  43:main.c        ****  cli();  //all interrupts disabled
+  54               		.loc 1 43 0
+  55               	/* #APP */
+  56               	 ;  43 "main.c" 1
+  57 0018 F894      		cli
+  58               	 ;  0 "" 2
+  44:main.c        ****  port_init();
+  59               		.loc 1 44 0
+  60               	/* #NOAPP */
+  61 001a 0E94 0000 		call port_init
+  62               	.LVL0:
+  45:main.c        ****  spi_init();
+  63               		.loc 1 45 0
+  64 001e 0E94 0000 		call spi_init
+  65               	.LVL1:
+  46:main.c        ****  twi_init();
+  66               		.loc 1 46 0
+  67 0022 0E94 0000 		call twi_init
+  68               	.LVL2:
+  47:main.c        ****  uart0_init();
+  69               		.loc 1 47 0
+  70 0026 0E94 0000 		call uart0_init
+  71               	.LVL3:
+  48:main.c        **** 
+  49:main.c        ****  MCUCR = 0x00;
+  72               		.loc 1 49 0
+  73 002a 15BE      		out 0x35,__zero_reg__
+  50:main.c        ****  GICR  = 0x00;
+  74               		.loc 1 50 0
+  75 002c 1BBE      		out 0x3b,__zero_reg__
+  51:main.c        ****  TIMSK = 0x00; //timer interrupt sources
+  76               		.loc 1 51 0
+  77 002e 19BE      		out 0x39,__zero_reg__
+  78 0030 0895      		ret
+  79               		.cfi_endproc
+  80               	.LFE8:
+  82               		.section	.text.startup,"ax",@progbits
+  83               	.global	main
+  85               	main:
+  86               	.LFB9:
+  52:main.c        ****  //all peripherals are now initialized
+  53:main.c        **** }
+  54:main.c        **** 
+  55:main.c        **** //*************************** MAIN *******************************//
+  56:main.c        **** int main(void)
+  57:main.c        **** {
+  87               		.loc 1 57 0
+  88               		.cfi_startproc
+  89 0000 CF93      		push r28
+  90               	.LCFI0:
+  91               		.cfi_def_cfa_offset 3
+  92               		.cfi_offset 28, -2
+  93 0002 DF93      		push r29
+  94               	.LCFI1:
+  95               		.cfi_def_cfa_offset 4
+  96               		.cfi_offset 29, -3
+  97 0004 CDB7      		in r28,__SP_L__
+  98 0006 DEB7      		in r29,__SP_H__
+  99               	.LCFI2:
+ 100               		.cfi_def_cfa_register 28
+ 101 0008 2D97      		sbiw r28,13
+ 102               	.LCFI3:
+ 103               		.cfi_def_cfa_offset 17
+ 104 000a 0FB6      		in __tmp_reg__,__SREG__
+ 105 000c F894      		cli
+ 106 000e DEBF      		out __SP_H__,r29
+ 107 0010 0FBE      		out __SREG__,__tmp_reg__
+ 108 0012 CDBF      		out __SP_L__,r28
+ 109               	/* prologue: function */
+ 110               	/* frame size = 13 */
+ 111               	/* stack size = 15 */
+ 112               	.L__stack_usage = 15
+ 113               	.LVL4:
+ 114               	.LBB36:
+ 115               	.LBB37:
+ 116               		.file 2 "/usr/lib/avr/include/util/delay.h"
+   1:/usr/lib/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/lib/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/lib/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/lib/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/lib/avr/include/util/delay.h **** 
+   6:/usr/lib/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/lib/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/lib/avr/include/util/delay.h **** 
+   9:/usr/lib/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/lib/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/lib/avr/include/util/delay.h **** 
+  12:/usr/lib/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/lib/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/lib/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/lib/avr/include/util/delay.h ****      distribution.
+  16:/usr/lib/avr/include/util/delay.h **** 
+  17:/usr/lib/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/lib/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/lib/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/lib/avr/include/util/delay.h **** 
+  21:/usr/lib/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/lib/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/lib/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/lib/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/lib/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/lib/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/lib/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/lib/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/lib/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/lib/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/lib/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/lib/avr/include/util/delay.h **** 
+  33:/usr/lib/avr/include/util/delay.h **** /* $Id: delay.h.in 2251 2011-09-14 08:20:33Z joerg_wunsch $ */
+  34:/usr/lib/avr/include/util/delay.h **** 
+  35:/usr/lib/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/lib/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/lib/avr/include/util/delay.h **** 
+  38:/usr/lib/avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/usr/lib/avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/usr/lib/avr/include/util/delay.h **** #endif
+  41:/usr/lib/avr/include/util/delay.h **** 
+  42:/usr/lib/avr/include/util/delay.h **** #include <inttypes.h>
+  43:/usr/lib/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/usr/lib/avr/include/util/delay.h **** #include <math.h>
+  45:/usr/lib/avr/include/util/delay.h **** 
+  46:/usr/lib/avr/include/util/delay.h **** /** \file */
+  47:/usr/lib/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/usr/lib/avr/include/util/delay.h ****     \code
+  49:/usr/lib/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/usr/lib/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/usr/lib/avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/usr/lib/avr/include/util/delay.h ****     \endcode
+  53:/usr/lib/avr/include/util/delay.h **** 
+  54:/usr/lib/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/usr/lib/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/usr/lib/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/usr/lib/avr/include/util/delay.h ****     used.
+  58:/usr/lib/avr/include/util/delay.h **** 
+  59:/usr/lib/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/usr/lib/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/usr/lib/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/usr/lib/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/usr/lib/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/usr/lib/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/usr/lib/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/usr/lib/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/usr/lib/avr/include/util/delay.h **** 
+  68:/usr/lib/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/usr/lib/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/usr/lib/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/usr/lib/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/usr/lib/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/usr/lib/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/usr/lib/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/usr/lib/avr/include/util/delay.h ****     routines linked into the application.
+  76:/usr/lib/avr/include/util/delay.h **** 
+  77:/usr/lib/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/usr/lib/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/usr/lib/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/usr/lib/avr/include/util/delay.h **** 
+  81:/usr/lib/avr/include/util/delay.h **** */
+  82:/usr/lib/avr/include/util/delay.h **** 
+  83:/usr/lib/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/usr/lib/avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/usr/lib/avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/usr/lib/avr/include/util/delay.h **** #endif
+  87:/usr/lib/avr/include/util/delay.h **** 
+  88:/usr/lib/avr/include/util/delay.h **** #ifndef F_CPU
+  89:/usr/lib/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/usr/lib/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/usr/lib/avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/usr/lib/avr/include/util/delay.h **** #endif
+  93:/usr/lib/avr/include/util/delay.h **** 
+  94:/usr/lib/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/usr/lib/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/usr/lib/avr/include/util/delay.h **** #endif
+  97:/usr/lib/avr/include/util/delay.h **** 
+  98:/usr/lib/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/usr/lib/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/usr/lib/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/usr/lib/avr/include/util/delay.h **** #  include <math.h>
+ 102:/usr/lib/avr/include/util/delay.h **** #endif
+ 103:/usr/lib/avr/include/util/delay.h **** 
+ 104:/usr/lib/avr/include/util/delay.h **** /**
+ 105:/usr/lib/avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/usr/lib/avr/include/util/delay.h **** 
+ 107:/usr/lib/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/usr/lib/avr/include/util/delay.h **** 
+ 109:/usr/lib/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/usr/lib/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/usr/lib/avr/include/util/delay.h **** 
+ 112:/usr/lib/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/usr/lib/avr/include/util/delay.h **** 
+ 114:/usr/lib/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/usr/lib/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/usr/lib/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/usr/lib/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/usr/lib/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/usr/lib/avr/include/util/delay.h **** 
+ 120:/usr/lib/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/usr/lib/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/usr/lib/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/usr/lib/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/usr/lib/avr/include/util/delay.h **** 
+ 125:/usr/lib/avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/usr/lib/avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/usr/lib/avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/usr/lib/avr/include/util/delay.h **** 
+ 129:/usr/lib/avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/usr/lib/avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/usr/lib/avr/include/util/delay.h **** 
+ 132:/usr/lib/avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/usr/lib/avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/usr/lib/avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/usr/lib/avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/usr/lib/avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/usr/lib/avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/usr/lib/avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/usr/lib/avr/include/util/delay.h **** 
+ 140:/usr/lib/avr/include/util/delay.h ****  */
+ 141:/usr/lib/avr/include/util/delay.h **** void
+ 142:/usr/lib/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/usr/lib/avr/include/util/delay.h **** {
+ 144:/usr/lib/avr/include/util/delay.h **** 	uint16_t __ticks;
+ 145:/usr/lib/avr/include/util/delay.h **** 	double __tmp ; 
+ 146:/usr/lib/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 147:/usr/lib/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 148:/usr/lib/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 149:/usr/lib/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 150:/usr/lib/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 151:/usr/lib/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 152:/usr/lib/avr/include/util/delay.h **** 
+ 153:/usr/lib/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 154:/usr/lib/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 155:/usr/lib/avr/include/util/delay.h **** 
+ 156:/usr/lib/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 157:/usr/lib/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 158:/usr/lib/avr/include/util/delay.h **** 
+ 159:/usr/lib/avr/include/util/delay.h **** 	#else
+ 160:/usr/lib/avr/include/util/delay.h **** 		//round up by default
+ 161:/usr/lib/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 162:/usr/lib/avr/include/util/delay.h **** 	#endif
+ 163:/usr/lib/avr/include/util/delay.h **** 
+ 164:/usr/lib/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 117               		.loc 2 164 0
+ 118 0014 2FEF      		ldi r18,lo8(319999)
+ 119 0016 81EE      		ldi r24,hi8(319999)
+ 120 0018 94E0      		ldi r25,hlo8(319999)
+ 121 001a 2150      		1: subi r18,1
+ 122 001c 8040      		sbci r24,0
+ 123 001e 9040      		sbci r25,0
+ 124 0020 01F4      		brne 1b
+ 125 0022 00C0      		rjmp .
+ 126 0024 0000      		nop
+ 127               	.LBE37:
+ 128               	.LBE36:
+  58:main.c        **** unsigned char option, error, data, FAT32_active;
+  59:main.c        **** unsigned int i;
+  60:main.c        **** unsigned char fileName[13];
+  61:main.c        **** 
+  62:main.c        **** _delay_ms(100);  //delay for VCC stabilization
+  63:main.c        **** 
+  64:main.c        **** init_devices();
+ 129               		.loc 1 64 0
+ 130 0026 0E94 0000 		call init_devices
+ 131               	.LVL5:
+  65:main.c        **** 
+  66:main.c        **** PORTD |= 0x04; //switching ON the LED (for testing purpose only)
+ 132               		.loc 1 66 0
+ 133 002a 929A      		sbi 0x12,2
+  67:main.c        **** 
+  68:main.c        **** TX_NEWLINE;
+ 134               		.loc 1 68 0
+ 135 002c 8DE0      		ldi r24,lo8(13)
+ 136 002e 0E94 0000 		call transmitByte
+ 137               	.LVL6:
+ 138 0032 8AE0      		ldi r24,lo8(10)
+ 139 0034 0E94 0000 		call transmitByte
+ 140               	.LVL7:
+  69:main.c        **** TX_NEWLINE;
+ 141               		.loc 1 69 0
+ 142 0038 8DE0      		ldi r24,lo8(13)
+ 143 003a 0E94 0000 		call transmitByte
+ 144               	.LVL8:
+ 145 003e 8AE0      		ldi r24,lo8(10)
+ 146 0040 0E94 0000 		call transmitByte
+ 147               	.LVL9:
+  70:main.c        **** transmitString_F (PSTR("****************************************************"));
+ 148               		.loc 1 70 0
+ 149 0044 80E0      		ldi r24,lo8(__c.1996)
+ 150 0046 90E0      		ldi r25,hi8(__c.1996)
+ 151 0048 0E94 0000 		call transmitString_F
+ 152               	.LVL10:
+  71:main.c        **** TX_NEWLINE;
+ 153               		.loc 1 71 0
+ 154 004c 8DE0      		ldi r24,lo8(13)
+ 155 004e 0E94 0000 		call transmitByte
+ 156               	.LVL11:
+ 157 0052 8AE0      		ldi r24,lo8(10)
+ 158 0054 0E94 0000 		call transmitByte
+ 159               	.LVL12:
+  72:main.c        **** transmitString_F (PSTR("    Dharmani's microSD Card Testing..  "));
+ 160               		.loc 1 72 0
+ 161 0058 80E0      		ldi r24,lo8(__c.1998)
+ 162 005a 90E0      		ldi r25,hi8(__c.1998)
+ 163 005c 0E94 0000 		call transmitString_F
+ 164               	.LVL13:
+  73:main.c        **** TX_NEWLINE;
+ 165               		.loc 1 73 0
+ 166 0060 8DE0      		ldi r24,lo8(13)
+ 167 0062 0E94 0000 		call transmitByte
+ 168               	.LVL14:
+ 169 0066 8AE0      		ldi r24,lo8(10)
+ 170 0068 0E94 0000 		call transmitByte
+ 171               	.LVL15:
+  74:main.c        **** transmitString_F (PSTR("****************************************************"));
+ 172               		.loc 1 74 0
+ 173 006c 80E0      		ldi r24,lo8(__c.2000)
+ 174 006e 90E0      		ldi r25,hi8(__c.2000)
+ 175 0070 0E94 0000 		call transmitString_F
+ 176               	.LVL16:
+  75:main.c        **** TX_NEWLINE;
+ 177               		.loc 1 75 0
+ 178 0074 8DE0      		ldi r24,lo8(13)
+ 179 0076 0E94 0000 		call transmitByte
+ 180               	.LVL17:
+ 181 007a 8AE0      		ldi r24,lo8(10)
+ 182 007c 0E94 0000 		call transmitByte
+ 183               	.LVL18:
+  76:main.c        **** 
+  77:main.c        **** cardType = 0;
+ 184               		.loc 1 77 0
+ 185 0080 1092 0000 		sts cardType,__zero_reg__
+ 186               	.LVL19:
+ 187 0084 0AE0      		ldi r16,lo8(10)
+ 188 0086 10E0      		ldi r17,0
+ 189               	.LVL20:
+ 190               	.L6:
+  78:main.c        **** 
+  79:main.c        **** for (i=0; i<10; i++)
+  80:main.c        **** {
+  81:main.c        ****   error = SD_init();
+ 191               		.loc 1 81 0
+ 192 0088 0E94 0000 		call SD_init
+ 193               	.LVL21:
+  82:main.c        ****   if(!error) break;
+ 194               		.loc 1 82 0
+ 195 008c 8823      		tst r24
+ 196 008e 01F0      		breq .L4
+ 197               	.LVL22:
+ 198 0090 0150      		subi r16,1
+ 199 0092 1109      		sbc r17,__zero_reg__
+ 200               	.LVL23:
+  79:main.c        **** for (i=0; i<10; i++)
+ 201               		.loc 1 79 0
+ 202 0094 0115      		cp r16,__zero_reg__
+ 203 0096 1105      		cpc r17,__zero_reg__
+ 204 0098 01F4      		brne .L6
+  83:main.c        **** }
+  84:main.c        **** 
+  85:main.c        **** if(error)
+  86:main.c        **** {
+  87:main.c        ****   if(error == 1) transmitString_F(PSTR("SD card not detected.."));
+ 205               		.loc 1 87 0
+ 206 009a 8130      		cpi r24,lo8(1)
+ 207 009c 01F4      		brne .L7
+ 208               		.loc 1 87 0 is_stmt 0 discriminator 1
+ 209 009e 80E0      		ldi r24,lo8(__c.2005)
+ 210 00a0 90E0      		ldi r25,hi8(__c.2005)
+ 211               	.LVL24:
+ 212 00a2 0E94 0000 		call transmitString_F
+ 213               	.LVL25:
+ 214 00a6 00C0      		rjmp .L8
+ 215               	.LVL26:
+ 216               	.L7:
+  88:main.c        ****   if(error == 2) transmitString_F(PSTR("Card Initialization failed.."));
+ 217               		.loc 1 88 0 is_stmt 1
+ 218 00a8 8230      		cpi r24,lo8(2)
+ 219 00aa 01F0      		breq .L10
+ 220               	.LVL27:
+ 221               	.L8:
+ 222               	.L11:
+ 223 00ac 00C0      		rjmp .L11
+ 224               	.LVL28:
+ 225               	.L10:
+ 226               		.loc 1 88 0 is_stmt 0 discriminator 1
+ 227 00ae 80E0      		ldi r24,lo8(__c.2007)
+ 228 00b0 90E0      		ldi r25,hi8(__c.2007)
+ 229               	.LVL29:
+ 230 00b2 0E94 0000 		call transmitString_F
+ 231               	.LVL30:
+ 232 00b6 00C0      		rjmp .L8
+ 233               	.LVL31:
+ 234               	.L4:
+  89:main.c        **** 
+  90:main.c        ****   while(1);  //wait here forever if error in SD init 
+  91:main.c        **** }
+  92:main.c        **** 
+  93:main.c        **** switch (cardType)
+ 235               		.loc 1 93 0 is_stmt 1
+ 236 00b8 8091 0000 		lds r24,cardType
+ 237 00bc 8230      		cpi r24,lo8(2)
+ 238 00be 01F0      		breq .L13
+ 239 00c0 8330      		cpi r24,lo8(3)
+ 240 00c2 01F0      		breq .L14
+ 241 00c4 8130      		cpi r24,lo8(1)
+ 242 00c6 01F4      		brne .L85
+  94:main.c        **** {
+  95:main.c        ****   case 1:transmitString_F(PSTR("Standard Capacity Card (Ver 1.x) Detected!"));
+ 243               		.loc 1 95 0
+ 244 00c8 80E0      		ldi r24,lo8(__c.2011)
+ 245 00ca 90E0      		ldi r25,hi8(__c.2011)
+ 246 00cc 00C0      		rjmp .L88
+ 247               	.L13:
+  96:main.c        ****   		 break;
+  97:main.c        ****   case 2:transmitString_F(PSTR("High Capacity Card Detected!"));
+ 248               		.loc 1 97 0
+ 249 00ce 80E0      		ldi r24,lo8(__c.2015)
+ 250 00d0 90E0      		ldi r25,hi8(__c.2015)
+ 251 00d2 00C0      		rjmp .L88
+ 252               	.L14:
+  98:main.c        ****   		 break;
+  99:main.c        ****   case 3:transmitString_F(PSTR("Standard Capacity Card (Ver 2.x) Detected!"));
+ 253               		.loc 1 99 0
+ 254 00d4 80E0      		ldi r24,lo8(__c.2018)
+ 255 00d6 90E0      		ldi r25,hi8(__c.2018)
+ 256 00d8 00C0      		rjmp .L88
+ 257               	.L85:
+ 100:main.c        ****   		 break;
+ 101:main.c        ****   default:transmitString_F(PSTR("Unknown SD Card Detected!"));
+ 258               		.loc 1 101 0
+ 259 00da 80E0      		ldi r24,lo8(__c.2021)
+ 260 00dc 90E0      		ldi r25,hi8(__c.2021)
+ 261               	.L88:
+ 262 00de 0E94 0000 		call transmitString_F
+ 263               	.LVL32:
+ 102:main.c        ****   		 break; 
+ 103:main.c        **** }
+ 104:main.c        **** 
+ 105:main.c        **** 
+ 106:main.c        **** SPI_HIGH_SPEED;	//SCK - 4 MHz
+ 264               		.loc 1 106 0
+ 265 00e2 80E5      		ldi r24,lo8(80)
+ 266 00e4 8DB9      		out 0xd,r24
+ 267 00e6 709A      		sbi 0xe,0
+ 268               	.LVL33:
+ 269               	.LBB38:
+ 270               	.LBB39:
+ 271               		.loc 2 164 0
+ 272 00e8 8FE9      		ldi r24,lo8(3999)
+ 273 00ea 9FE0      		ldi r25,hi8(3999)
+ 274 00ec 0197      		1: sbiw r24,1
+ 275 00ee 01F4      		brne 1b
+ 276 00f0 00C0      		rjmp .
+ 277 00f2 0000      		nop
+ 278               	.LVL34:
+ 279               	.LBE39:
+ 280               	.LBE38:
+ 107:main.c        **** _delay_ms(1);   //some delay
+ 108:main.c        **** 
+ 109:main.c        **** 
+ 110:main.c        **** FAT32_active = 1;
+ 111:main.c        **** error = getBootSectorData (); //read boot sector and keep necessary data in global variables
+ 281               		.loc 1 111 0
+ 282 00f4 0E94 0000 		call getBootSectorData
+ 283               	.LVL35:
+ 112:main.c        **** if(error) 	
+ 284               		.loc 1 112 0
+ 285 00f8 8823      		tst r24
+ 286 00fa 01F0      		breq .L55
+ 113:main.c        **** {
+ 114:main.c        ****   TX_NEWLINE;
+ 287               		.loc 1 114 0
+ 288 00fc 8DE0      		ldi r24,lo8(13)
+ 289               	.LVL36:
+ 290 00fe 0E94 0000 		call transmitByte
+ 291               	.LVL37:
+ 292 0102 8AE0      		ldi r24,lo8(10)
+ 293 0104 0E94 0000 		call transmitByte
+ 294               	.LVL38:
+ 115:main.c        ****   transmitString_F (PSTR("FAT32 not found!"));  //FAT32 incompatible drive
+ 295               		.loc 1 115 0
+ 296 0108 80E0      		ldi r24,lo8(__c.2023)
+ 297 010a 90E0      		ldi r25,hi8(__c.2023)
+ 298 010c 0E94 0000 		call transmitString_F
+ 299               	.LVL39:
+ 116:main.c        ****   FAT32_active = 0;
+ 300               		.loc 1 116 0
+ 301 0110 D12C      		mov r13,__zero_reg__
+ 302 0112 00C0      		rjmp .L17
+ 303               	.LVL40:
+ 304               	.L55:
+ 110:main.c        **** FAT32_active = 1;
+ 305               		.loc 1 110 0
+ 306 0114 DD24      		clr r13
+ 307 0116 D394      		inc r13
+ 308               	.LVL41:
+ 309               	.L17:
+ 117:main.c        **** }
+ 118:main.c        **** 
+ 119:main.c        **** while(1)
+ 120:main.c        **** {
+ 121:main.c        **** TX_NEWLINE;
+ 122:main.c        **** transmitString_F(PSTR("Press any key..."));
+ 123:main.c        **** TX_NEWLINE;
+ 124:main.c        **** option = receiveByte();
+ 125:main.c        **** TX_NEWLINE;
+ 126:main.c        **** transmitString_F(PSTR("> 0: Erase Blocks "));
+ 127:main.c        **** TX_NEWLINE;
+ 128:main.c        **** transmitString_F(PSTR("> 1: Write single Block          2: Read single Block"));
+ 129:main.c        **** 
+ 130:main.c        **** #ifndef FAT_TESTING_ONLY
+ 131:main.c        **** TX_NEWLINE;
+ 132:main.c        **** transmitString_F(PSTR("> 3: Write multiple Blocks       4: Read multiple Blocks"));
+ 133:main.c        **** #endif
+ 134:main.c        **** 
+ 135:main.c        **** TX_NEWLINE;
+ 136:main.c        **** transmitString_F(PSTR("> 5: Get file list               6: Read File"));
+ 137:main.c        **** TX_NEWLINE;
+ 138:main.c        **** transmitString_F(PSTR("> 7: Write File                  8: Delete File"));
+ 139:main.c        **** TX_NEWLINE;
+ 140:main.c        **** transmitString_F(PSTR("> 9: Read SD Memory Capacity     a: Show Date & Time"));
+ 141:main.c        **** 
+ 142:main.c        **** TX_NEWLINE;
+ 143:main.c        **** transmitString_F(PSTR("> b: Update Date                 c: Update Time"));
+ 144:main.c        **** TX_NEWLINE;
+ 145:main.c        **** 
+ 146:main.c        **** TX_NEWLINE;
+ 147:main.c        **** TX_NEWLINE;
+ 148:main.c        **** transmitString_F(PSTR("> Select Option (0-9/a/b/c): "));
+ 149:main.c        **** 
+ 150:main.c        **** 
+ 151:main.c        **** /*WARNING: If option 0, 1 or 3 is selected, the card data may not be detected by PC/Laptop again,
+ 152:main.c        **** as it may disturb the FAT format. In such a case you will need to format the card again with FAT32.
+ 153:main.c        **** This options are given for learnig the raw data transfer to & from the SD Card*/
+ 154:main.c        **** 
+ 155:main.c        **** option = receiveByte();
+ 156:main.c        **** transmitByte(option);
+ 157:main.c        **** 
+ 158:main.c        **** if(option >=0x35 && option <=0x39)  //options 5 to 9 disabled if FAT32 not found
+ 159:main.c        **** {
+ 160:main.c        ****   if(!FAT32_active) 
+ 161:main.c        ****   {
+ 162:main.c        ****     TX_NEWLINE;
+ 163:main.c        ****     TX_NEWLINE;
+ 164:main.c        **** 	transmitString_F(PSTR("FAT32 options disabled!"));
+ 165:main.c        **** 	continue;
+ 166:main.c        ****   } 
+ 167:main.c        **** }
+ 168:main.c        **** 
+ 169:main.c        **** 
+ 170:main.c        **** if((option >= 0x30) && (option <=0x34)) //get starting block address for options 0 to 4
+ 171:main.c        **** {
+ 172:main.c        **** TX_NEWLINE;
+ 173:main.c        **** TX_NEWLINE;
+ 174:main.c        **** transmitString_F(PSTR("Enter the Block number (0000-9999):"));
+ 175:main.c        **** data = receiveByte(); transmitByte(data);
+ 176:main.c        **** startBlock = (data & 0x0f) * 1000;
+ 177:main.c        **** data = receiveByte(); transmitByte(data);
+ 178:main.c        **** startBlock += (data & 0x0f) * 100;
+ 179:main.c        **** data = receiveByte(); transmitByte(data);
+ 180:main.c        **** startBlock += (data & 0x0f) * 10;
+ 181:main.c        **** data = receiveByte(); transmitByte(data);
+ 182:main.c        **** startBlock += (data & 0x0f);
+ 183:main.c        **** TX_NEWLINE;
+ 184:main.c        **** }
+ 185:main.c        **** 
+ 186:main.c        **** totalBlocks = 1;
+ 310               		.loc 1 186 0
+ 311 0118 812C      		mov r8,__zero_reg__
+ 312 011a 912C      		mov r9,__zero_reg__
+ 313 011c 5401      		movw r10,r8
+ 314 011e 8394      		inc r8
+ 315 0120 1E01      		movw r2,r28
+ 316 0122 9EE0      		ldi r25,14
+ 317 0124 290E      		add r2,r25
+ 318 0126 311C      		adc r3,__zero_reg__
+ 176:main.c        **** startBlock = (data & 0x0f) * 1000;
+ 319               		.loc 1 176 0
+ 320 0128 98EE      		ldi r25,lo8(-24)
+ 321 012a E92E      		mov r14,r25
+ 322 012c 93E0      		ldi r25,lo8(3)
+ 323 012e F92E      		mov r15,r25
+ 324               	.LVL42:
+ 325               	.L18:
+ 121:main.c        **** TX_NEWLINE;
+ 326               		.loc 1 121 0
+ 327 0130 8DE0      		ldi r24,lo8(13)
+ 328 0132 0E94 0000 		call transmitByte
+ 329               	.LVL43:
+ 330 0136 8AE0      		ldi r24,lo8(10)
+ 331 0138 0E94 0000 		call transmitByte
+ 332               	.LVL44:
+ 122:main.c        **** transmitString_F(PSTR("Press any key..."));
+ 333               		.loc 1 122 0
+ 334 013c 80E0      		ldi r24,lo8(__c.2025)
+ 335 013e 90E0      		ldi r25,hi8(__c.2025)
+ 336 0140 0E94 0000 		call transmitString_F
+ 337               	.LVL45:
+ 123:main.c        **** TX_NEWLINE;
+ 338               		.loc 1 123 0
+ 339 0144 8DE0      		ldi r24,lo8(13)
+ 340 0146 0E94 0000 		call transmitByte
+ 341               	.LVL46:
+ 342 014a 8AE0      		ldi r24,lo8(10)
+ 343 014c 0E94 0000 		call transmitByte
+ 344               	.LVL47:
+ 124:main.c        **** option = receiveByte();
+ 345               		.loc 1 124 0
+ 346 0150 0E94 0000 		call receiveByte
+ 347               	.LVL48:
+ 125:main.c        **** TX_NEWLINE;
+ 348               		.loc 1 125 0
+ 349 0154 8DE0      		ldi r24,lo8(13)
+ 350 0156 0E94 0000 		call transmitByte
+ 351               	.LVL49:
+ 352 015a 8AE0      		ldi r24,lo8(10)
+ 353 015c 0E94 0000 		call transmitByte
+ 354               	.LVL50:
+ 126:main.c        **** transmitString_F(PSTR("> 0: Erase Blocks "));
+ 355               		.loc 1 126 0
+ 356 0160 80E0      		ldi r24,lo8(__c.2027)
+ 357 0162 90E0      		ldi r25,hi8(__c.2027)
+ 358 0164 0E94 0000 		call transmitString_F
+ 359               	.LVL51:
+ 127:main.c        **** TX_NEWLINE;
+ 360               		.loc 1 127 0
+ 361 0168 8DE0      		ldi r24,lo8(13)
+ 362 016a 0E94 0000 		call transmitByte
+ 363               	.LVL52:
+ 364 016e 8AE0      		ldi r24,lo8(10)
+ 365 0170 0E94 0000 		call transmitByte
+ 366               	.LVL53:
+ 128:main.c        **** transmitString_F(PSTR("> 1: Write single Block          2: Read single Block"));
+ 367               		.loc 1 128 0
+ 368 0174 80E0      		ldi r24,lo8(__c.2029)
+ 369 0176 90E0      		ldi r25,hi8(__c.2029)
+ 370 0178 0E94 0000 		call transmitString_F
+ 371               	.LVL54:
+ 135:main.c        **** TX_NEWLINE;
+ 372               		.loc 1 135 0
+ 373 017c 8DE0      		ldi r24,lo8(13)
+ 374 017e 0E94 0000 		call transmitByte
+ 375               	.LVL55:
+ 376 0182 8AE0      		ldi r24,lo8(10)
+ 377 0184 0E94 0000 		call transmitByte
+ 378               	.LVL56:
+ 136:main.c        **** transmitString_F(PSTR("> 5: Get file list               6: Read File"));
+ 379               		.loc 1 136 0
+ 380 0188 80E0      		ldi r24,lo8(__c.2031)
+ 381 018a 90E0      		ldi r25,hi8(__c.2031)
+ 382 018c 0E94 0000 		call transmitString_F
+ 383               	.LVL57:
+ 137:main.c        **** TX_NEWLINE;
+ 384               		.loc 1 137 0
+ 385 0190 8DE0      		ldi r24,lo8(13)
+ 386 0192 0E94 0000 		call transmitByte
+ 387               	.LVL58:
+ 388 0196 8AE0      		ldi r24,lo8(10)
+ 389 0198 0E94 0000 		call transmitByte
+ 390               	.LVL59:
+ 138:main.c        **** transmitString_F(PSTR("> 7: Write File                  8: Delete File"));
+ 391               		.loc 1 138 0
+ 392 019c 80E0      		ldi r24,lo8(__c.2033)
+ 393 019e 90E0      		ldi r25,hi8(__c.2033)
+ 394 01a0 0E94 0000 		call transmitString_F
+ 395               	.LVL60:
+ 139:main.c        **** TX_NEWLINE;
+ 396               		.loc 1 139 0
+ 397 01a4 8DE0      		ldi r24,lo8(13)
+ 398 01a6 0E94 0000 		call transmitByte
+ 399               	.LVL61:
+ 400 01aa 8AE0      		ldi r24,lo8(10)
+ 401 01ac 0E94 0000 		call transmitByte
+ 402               	.LVL62:
+ 140:main.c        **** transmitString_F(PSTR("> 9: Read SD Memory Capacity     a: Show Date & Time"));
+ 403               		.loc 1 140 0
+ 404 01b0 80E0      		ldi r24,lo8(__c.2035)
+ 405 01b2 90E0      		ldi r25,hi8(__c.2035)
+ 406 01b4 0E94 0000 		call transmitString_F
+ 407               	.LVL63:
+ 142:main.c        **** TX_NEWLINE;
+ 408               		.loc 1 142 0
+ 409 01b8 8DE0      		ldi r24,lo8(13)
+ 410 01ba 0E94 0000 		call transmitByte
+ 411               	.LVL64:
+ 412 01be 8AE0      		ldi r24,lo8(10)
+ 413 01c0 0E94 0000 		call transmitByte
+ 414               	.LVL65:
+ 143:main.c        **** transmitString_F(PSTR("> b: Update Date                 c: Update Time"));
+ 415               		.loc 1 143 0
+ 416 01c4 80E0      		ldi r24,lo8(__c.2037)
+ 417 01c6 90E0      		ldi r25,hi8(__c.2037)
+ 418 01c8 0E94 0000 		call transmitString_F
+ 419               	.LVL66:
+ 144:main.c        **** TX_NEWLINE;
+ 420               		.loc 1 144 0
+ 421 01cc 8DE0      		ldi r24,lo8(13)
+ 422 01ce 0E94 0000 		call transmitByte
+ 423               	.LVL67:
+ 424 01d2 8AE0      		ldi r24,lo8(10)
+ 425 01d4 0E94 0000 		call transmitByte
+ 426               	.LVL68:
+ 146:main.c        **** TX_NEWLINE;
+ 427               		.loc 1 146 0
+ 428 01d8 8DE0      		ldi r24,lo8(13)
+ 429 01da 0E94 0000 		call transmitByte
+ 430               	.LVL69:
+ 431 01de 8AE0      		ldi r24,lo8(10)
+ 432 01e0 0E94 0000 		call transmitByte
+ 433               	.LVL70:
+ 147:main.c        **** TX_NEWLINE;
+ 434               		.loc 1 147 0
+ 435 01e4 8DE0      		ldi r24,lo8(13)
+ 436 01e6 0E94 0000 		call transmitByte
+ 437               	.LVL71:
+ 438 01ea 8AE0      		ldi r24,lo8(10)
+ 439 01ec 0E94 0000 		call transmitByte
+ 440               	.LVL72:
+ 148:main.c        **** transmitString_F(PSTR("> Select Option (0-9/a/b/c): "));
+ 441               		.loc 1 148 0
+ 442 01f0 80E0      		ldi r24,lo8(__c.2039)
+ 443 01f2 90E0      		ldi r25,hi8(__c.2039)
+ 444 01f4 0E94 0000 		call transmitString_F
+ 445               	.LVL73:
+ 155:main.c        **** option = receiveByte();
+ 446               		.loc 1 155 0
+ 447 01f8 0E94 0000 		call receiveByte
+ 448               	.LVL74:
+ 449 01fc 182F      		mov r17,r24
+ 450               	.LVL75:
+ 156:main.c        **** transmitByte(option);
+ 451               		.loc 1 156 0
+ 452 01fe 0E94 0000 		call transmitByte
+ 453               	.LVL76:
+ 158:main.c        **** if(option >=0x35 && option <=0x39)  //options 5 to 9 disabled if FAT32 not found
+ 454               		.loc 1 158 0
+ 455 0202 8BEC      		ldi r24,lo8(-53)
+ 456 0204 810F      		add r24,r17
+ 457 0206 8530      		cpi r24,lo8(5)
+ 458 0208 00F4      		brsh .L19
+ 160:main.c        ****   if(!FAT32_active) 
+ 459               		.loc 1 160 0
+ 460 020a D110      		cpse r13,__zero_reg__
+ 461 020c 00C0      		rjmp .L19
+ 162:main.c        ****     TX_NEWLINE;
+ 462               		.loc 1 162 0
+ 463 020e 8DE0      		ldi r24,lo8(13)
+ 464 0210 0E94 0000 		call transmitByte
+ 465               	.LVL77:
+ 466 0214 8AE0      		ldi r24,lo8(10)
+ 467 0216 0E94 0000 		call transmitByte
+ 468               	.LVL78:
+ 163:main.c        ****     TX_NEWLINE;
+ 469               		.loc 1 163 0
+ 470 021a 8DE0      		ldi r24,lo8(13)
+ 471 021c 0E94 0000 		call transmitByte
+ 472               	.LVL79:
+ 473 0220 8AE0      		ldi r24,lo8(10)
+ 474 0222 0E94 0000 		call transmitByte
+ 475               	.LVL80:
+ 164:main.c        **** 	transmitString_F(PSTR("FAT32 options disabled!"));
+ 476               		.loc 1 164 0
+ 477 0226 80E0      		ldi r24,lo8(__c.2041)
+ 478 0228 90E0      		ldi r25,hi8(__c.2041)
+ 479 022a 0E94 0000 		call transmitString_F
+ 480               	.LVL81:
+ 165:main.c        **** 	continue;
+ 481               		.loc 1 165 0
+ 482 022e 00C0      		rjmp .L18
+ 483               	.L19:
+ 170:main.c        **** if((option >= 0x30) && (option <=0x34)) //get starting block address for options 0 to 4
+ 484               		.loc 1 170 0
+ 485 0230 80ED      		ldi r24,lo8(-48)
+ 486 0232 810F      		add r24,r17
+ 487 0234 8530      		cpi r24,lo8(5)
+ 488 0236 00F0      		brlo .+2
+ 489 0238 00C0      		rjmp .L21
+ 172:main.c        **** TX_NEWLINE;
+ 490               		.loc 1 172 0
+ 491 023a 8DE0      		ldi r24,lo8(13)
+ 492 023c 0E94 0000 		call transmitByte
+ 493               	.LVL82:
+ 494 0240 8AE0      		ldi r24,lo8(10)
+ 495 0242 0E94 0000 		call transmitByte
+ 496               	.LVL83:
+ 173:main.c        **** TX_NEWLINE;
+ 497               		.loc 1 173 0
+ 498 0246 8DE0      		ldi r24,lo8(13)
+ 499 0248 0E94 0000 		call transmitByte
+ 500               	.LVL84:
+ 501 024c 8AE0      		ldi r24,lo8(10)
+ 502 024e 0E94 0000 		call transmitByte
+ 503               	.LVL85:
+ 174:main.c        **** transmitString_F(PSTR("Enter the Block number (0000-9999):"));
+ 504               		.loc 1 174 0
+ 505 0252 80E0      		ldi r24,lo8(__c.2044)
+ 506 0254 90E0      		ldi r25,hi8(__c.2044)
+ 507 0256 0E94 0000 		call transmitString_F
+ 508               	.LVL86:
+ 175:main.c        **** data = receiveByte(); transmitByte(data);
+ 509               		.loc 1 175 0
+ 510 025a 0E94 0000 		call receiveByte
+ 511               	.LVL87:
+ 512 025e 082F      		mov r16,r24
+ 513               	.LVL88:
+ 514 0260 0E94 0000 		call transmitByte
+ 515               	.LVL89:
+ 176:main.c        **** startBlock = (data & 0x0f) * 1000;
+ 516               		.loc 1 176 0
+ 517 0264 302F      		mov r19,r16
+ 518 0266 3F70      		andi r19,lo8(15)
+ 519 0268 3E9D      		mul r19,r14
+ 520 026a C001      		movw r24,r0
+ 521 026c 3F9D      		mul r19,r15
+ 522 026e 900D      		add r25,r0
+ 523 0270 1124      		clr __zero_reg__
+ 524 0272 AA27      		clr r26
+ 525 0274 97FD      		sbrc r25,7
+ 526 0276 A095      		com r26
+ 527 0278 BA2F      		mov r27,r26
+ 528 027a 8093 0000 		sts startBlock,r24
+ 529 027e 9093 0000 		sts startBlock+1,r25
+ 530 0282 A093 0000 		sts startBlock+2,r26
+ 531 0286 B093 0000 		sts startBlock+3,r27
+ 177:main.c        **** data = receiveByte(); transmitByte(data);
+ 532               		.loc 1 177 0
+ 533 028a 0E94 0000 		call receiveByte
+ 534               	.LVL90:
+ 535 028e 082F      		mov r16,r24
+ 536               	.LVL91:
+ 537 0290 0E94 0000 		call transmitByte
+ 538               	.LVL92:
+ 178:main.c        **** startBlock += (data & 0x0f) * 100;
+ 539               		.loc 1 178 0
+ 540 0294 4090 0000 		lds r4,startBlock
+ 541 0298 5090 0000 		lds r5,startBlock+1
+ 542 029c 6090 0000 		lds r6,startBlock+2
+ 543 02a0 7090 0000 		lds r7,startBlock+3
+ 544 02a4 402F      		mov r20,r16
+ 545 02a6 4F70      		andi r20,lo8(15)
+ 546 02a8 24E6      		ldi r18,lo8(100)
+ 547 02aa 429F      		mul r20,r18
+ 548 02ac A001      		movw r20,r0
+ 549 02ae 1124      		clr __zero_reg__
+ 550 02b0 6627      		clr r22
+ 551 02b2 57FD      		sbrc r21,7
+ 552 02b4 6095      		com r22
+ 553 02b6 762F      		mov r23,r22
+ 554 02b8 440D      		add r20,r4
+ 555 02ba 551D      		adc r21,r5
+ 556 02bc 661D      		adc r22,r6
+ 557 02be 771D      		adc r23,r7
+ 558 02c0 4093 0000 		sts startBlock,r20
+ 559 02c4 5093 0000 		sts startBlock+1,r21
+ 560 02c8 6093 0000 		sts startBlock+2,r22
+ 561 02cc 7093 0000 		sts startBlock+3,r23
+ 179:main.c        **** data = receiveByte(); transmitByte(data);
+ 562               		.loc 1 179 0
+ 563 02d0 0E94 0000 		call receiveByte
+ 564               	.LVL93:
+ 565 02d4 082F      		mov r16,r24
+ 566               	.LVL94:
+ 567 02d6 0E94 0000 		call transmitByte
+ 568               	.LVL95:
+ 180:main.c        **** startBlock += (data & 0x0f) * 10;
+ 569               		.loc 1 180 0
+ 570 02da 4090 0000 		lds r4,startBlock
+ 571 02de 5090 0000 		lds r5,startBlock+1
+ 572 02e2 6090 0000 		lds r6,startBlock+2
+ 573 02e6 7090 0000 		lds r7,startBlock+3
+ 574 02ea 402F      		mov r20,r16
+ 575 02ec 4F70      		andi r20,lo8(15)
+ 576 02ee 8AE0      		ldi r24,lo8(10)
+ 577 02f0 489F      		mul r20,r24
+ 578 02f2 A001      		movw r20,r0
+ 579 02f4 1124      		clr __zero_reg__
+ 580 02f6 6627      		clr r22
+ 581 02f8 57FD      		sbrc r21,7
+ 582 02fa 6095      		com r22
+ 583 02fc 762F      		mov r23,r22
+ 584 02fe 440D      		add r20,r4
+ 585 0300 551D      		adc r21,r5
+ 586 0302 661D      		adc r22,r6
+ 587 0304 771D      		adc r23,r7
+ 588 0306 4093 0000 		sts startBlock,r20
+ 589 030a 5093 0000 		sts startBlock+1,r21
+ 590 030e 6093 0000 		sts startBlock+2,r22
+ 591 0312 7093 0000 		sts startBlock+3,r23
+ 181:main.c        **** data = receiveByte(); transmitByte(data);
+ 592               		.loc 1 181 0
+ 593 0316 0E94 0000 		call receiveByte
+ 594               	.LVL96:
+ 595 031a 082F      		mov r16,r24
+ 596               	.LVL97:
+ 597 031c 0E94 0000 		call transmitByte
+ 598               	.LVL98:
+ 182:main.c        **** startBlock += (data & 0x0f);
+ 599               		.loc 1 182 0
+ 600 0320 4091 0000 		lds r20,startBlock
+ 601 0324 5091 0000 		lds r21,startBlock+1
+ 602 0328 6091 0000 		lds r22,startBlock+2
+ 603 032c 7091 0000 		lds r23,startBlock+3
+ 604 0330 802F      		mov r24,r16
+ 605 0332 8F70      		andi r24,lo8(15)
+ 606 0334 480F      		add r20,r24
+ 607 0336 511D      		adc r21,__zero_reg__
+ 608 0338 611D      		adc r22,__zero_reg__
+ 609 033a 711D      		adc r23,__zero_reg__
+ 610 033c 4093 0000 		sts startBlock,r20
+ 611 0340 5093 0000 		sts startBlock+1,r21
+ 612 0344 6093 0000 		sts startBlock+2,r22
+ 613 0348 7093 0000 		sts startBlock+3,r23
+ 183:main.c        **** TX_NEWLINE;
+ 614               		.loc 1 183 0
+ 615 034c 8DE0      		ldi r24,lo8(13)
+ 616 034e 0E94 0000 		call transmitByte
+ 617               	.LVL99:
+ 618 0352 8AE0      		ldi r24,lo8(10)
+ 619 0354 0E94 0000 		call transmitByte
+ 620               	.LVL100:
+ 621               	.L21:
+ 622               		.loc 1 186 0
+ 623 0358 8092 0000 		sts totalBlocks,r8
+ 624 035c 9092 0000 		sts totalBlocks+1,r9
+ 625 0360 A092 0000 		sts totalBlocks+2,r10
+ 626 0364 B092 0000 		sts totalBlocks+3,r11
+ 187:main.c        **** 
+ 188:main.c        **** #ifndef FAT_TESTING_ONLY
+ 189:main.c        **** 
+ 190:main.c        **** if((option == 0x30) || (option == 0x33) || (option == 0x34)) //get total number of blocks for optio
+ 191:main.c        **** {
+ 192:main.c        **** TX_NEWLINE;
+ 193:main.c        **** TX_NEWLINE;
+ 194:main.c        **** transmitString_F(PSTR("How many blocks? (000-999):"));
+ 195:main.c        **** data = receiveByte(); transmitByte(data);
+ 196:main.c        **** totalBlocks = (data & 0x0f) * 100;
+ 197:main.c        **** data = receiveByte(); transmitByte(data);
+ 198:main.c        **** totalBlocks += (data & 0x0f) * 10;
+ 199:main.c        **** data = receiveByte(); transmitByte(data);
+ 200:main.c        **** totalBlocks += (data & 0x0f);
+ 201:main.c        **** TX_NEWLINE;
+ 202:main.c        **** }
+ 203:main.c        **** #endif
+ 204:main.c        **** 
+ 205:main.c        **** switch (option)
+ 627               		.loc 1 205 0
+ 628 0368 1933      		cpi r17,lo8(57)
+ 629 036a 01F4      		brne .+2
+ 630 036c 00C0      		rjmp .L23
+ 631 036e 00F4      		brsh .L24
+ 632 0370 1233      		cpi r17,lo8(50)
+ 633 0372 01F4      		brne .+2
+ 634 0374 00C0      		rjmp .L25
+ 635 0376 00F4      		brsh .L26
+ 636 0378 1033      		cpi r17,lo8(48)
+ 637 037a 01F0      		breq .L27
+ 638 037c 1133      		cpi r17,lo8(49)
+ 639 037e 01F0      		breq .+2
+ 640 0380 00C0      		rjmp .L22
+ 206:main.c        **** {
+ 207:main.c        **** case '0': //error = SD_erase (block, totalBlocks);
+ 208:main.c        ****           error = SD_erase (startBlock, totalBlocks);
+ 209:main.c        ****           TX_NEWLINE;
+ 210:main.c        ****           if(error)
+ 211:main.c        ****               transmitString_F(PSTR("Erase failed.."));
+ 212:main.c        ****           else
+ 213:main.c        ****               transmitString_F(PSTR("Erased!"));
+ 214:main.c        ****           break;
+ 215:main.c        **** 
+ 216:main.c        **** case '1': TX_NEWLINE;
+ 641               		.loc 1 216 0
+ 642 0382 8DE0      		ldi r24,lo8(13)
+ 643 0384 0E94 0000 		call transmitByte
+ 644               	.LVL101:
+ 645 0388 8AE0      		ldi r24,lo8(10)
+ 646 038a 0E94 0000 		call transmitByte
+ 647               	.LVL102:
+ 217:main.c        ****           transmitString_F(PSTR(" Enter text (End with ~):"));
+ 648               		.loc 1 217 0
+ 649 038e 80E0      		ldi r24,lo8(__c.2053)
+ 650 0390 90E0      		ldi r25,hi8(__c.2053)
+ 651 0392 0E94 0000 		call transmitString_F
+ 652               	.LVL103:
+ 218:main.c        ****           i=0;
+ 653               		.loc 1 218 0
+ 654 0396 612C      		mov r6,__zero_reg__
+ 655 0398 712C      		mov r7,__zero_reg__
+ 656 039a 00C0      		rjmp .L37
+ 657               	.LVL104:
+ 658               	.L26:
+ 205:main.c        **** switch (option)
+ 659               		.loc 1 205 0
+ 660 039c 1533      		cpi r17,lo8(53)
+ 661 039e 01F4      		brne .+2
+ 662 03a0 00C0      		rjmp .L29
+ 663 03a2 00F4      		brsh .+2
+ 664 03a4 00C0      		rjmp .L22
+ 219:main.c        ****             do
+ 220:main.c        ****             {
+ 221:main.c        ****                 data = receiveByte();
+ 222:main.c        ****                 transmitByte(data);
+ 223:main.c        ****                 buffer[i++] = data;
+ 224:main.c        ****                 if(data == 0x0d)
+ 225:main.c        ****                 {
+ 226:main.c        ****                     transmitByte(0x0a);
+ 227:main.c        ****                     buffer[i++] = 0x0a;
+ 228:main.c        ****                 }
+ 229:main.c        ****                 if(i == 512) break;
+ 230:main.c        ****             }while (data != '~');
+ 231:main.c        **** 
+ 232:main.c        ****             error = SD_writeSingleBlock (startBlock);
+ 233:main.c        ****             TX_NEWLINE;
+ 234:main.c        ****             TX_NEWLINE;
+ 235:main.c        ****             if(error)
+ 236:main.c        ****                 transmitString_F(PSTR("Write failed.."));
+ 237:main.c        ****             else
+ 238:main.c        ****                 transmitString_F(PSTR("Write successful!"));
+ 239:main.c        ****             break;
+ 240:main.c        **** 
+ 241:main.c        **** case '2': error = SD_readSingleBlock (startBlock);
+ 242:main.c        ****           TX_NEWLINE;
+ 243:main.c        ****           if(error)
+ 244:main.c        ****             transmitString_F(PSTR("Read failed.."));
+ 245:main.c        ****           else
+ 246:main.c        ****           {
+ 247:main.c        ****             for(i=0;i<512;i++)
+ 248:main.c        ****             {
+ 249:main.c        ****                 if(buffer[i] == '~') break;
+ 250:main.c        ****                 transmitByte(buffer[i]);
+ 251:main.c        ****             }
+ 252:main.c        ****             TX_NEWLINE;
+ 253:main.c        ****             TX_NEWLINE;
+ 254:main.c        ****             transmitString_F(PSTR("Read successful!"));
+ 255:main.c        ****           }
+ 256:main.c        **** 
+ 257:main.c        ****           break;
+ 258:main.c        **** //next two options will work only if following macro is cleared from SD_routines.h
+ 259:main.c        **** #ifndef FAT_TESTING_ONLY
+ 260:main.c        **** 
+ 261:main.c        **** case '3': 
+ 262:main.c        ****           error = SD_writeMultipleBlock (startBlock, totalBlocks);
+ 263:main.c        ****           TX_NEWLINE;
+ 264:main.c        ****           if(error)
+ 265:main.c        ****             transmitString_F(PSTR("Write failed.."));
+ 266:main.c        ****           else
+ 267:main.c        ****             transmitString_F(PSTR("Write successful!"));
+ 268:main.c        ****           break;
+ 269:main.c        **** 
+ 270:main.c        **** case '4': error = SD_readMultipleBlock (startBlock, totalBlocks);
+ 271:main.c        ****           TX_NEWLINE;
+ 272:main.c        ****           if(error)
+ 273:main.c        ****             transmitString_F(PSTR("Read failed.."));
+ 274:main.c        ****           else
+ 275:main.c        ****             transmitString_F(PSTR("Read successful!"));
+ 276:main.c        ****           break;
+ 277:main.c        **** #endif
+ 278:main.c        **** 
+ 279:main.c        **** case '5': TX_NEWLINE;
+ 280:main.c        ****   		  findFiles(GET_LIST,0);
+ 281:main.c        ****           break;
+ 282:main.c        **** 
+ 283:main.c        **** case '6': 
+ 284:main.c        **** case '7': 
+ 285:main.c        **** case '8': TX_NEWLINE;
+ 665               		.loc 1 285 0
+ 666 03a6 8DE0      		ldi r24,lo8(13)
+ 667 03a8 0E94 0000 		call transmitByte
+ 668               	.LVL105:
+ 669 03ac 8AE0      		ldi r24,lo8(10)
+ 670 03ae 0E94 0000 		call transmitByte
+ 671               	.LVL106:
+ 286:main.c        **** 		  TX_NEWLINE;
+ 672               		.loc 1 286 0
+ 673 03b2 8DE0      		ldi r24,lo8(13)
+ 674 03b4 0E94 0000 		call transmitByte
+ 675               	.LVL107:
+ 676 03b8 8AE0      		ldi r24,lo8(10)
+ 677 03ba 0E94 0000 		call transmitByte
+ 678               	.LVL108:
+ 287:main.c        ****           transmitString_F(PSTR("Enter file name: "));
+ 679               		.loc 1 287 0
+ 680 03be 80E0      		ldi r24,lo8(__c.2073)
+ 681 03c0 90E0      		ldi r25,hi8(__c.2073)
+ 682 03c2 0E94 0000 		call transmitString_F
+ 683               	.LVL109:
+ 684 03c6 FE01      		movw r30,r28
+ 685 03c8 3196      		adiw r30,1
+ 686 03ca 00C0      		rjmp .L49
+ 687               	.LVL110:
+ 688               	.L24:
+ 205:main.c        **** switch (option)
+ 689               		.loc 1 205 0
+ 690 03cc 1334      		cpi r17,lo8(67)
+ 691 03ce 01F4      		brne .+2
+ 692 03d0 00C0      		rjmp .L31
+ 693 03d2 00F4      		brsh .L32
+ 694 03d4 1134      		cpi r17,lo8(65)
+ 695 03d6 01F4      		brne .+2
+ 696 03d8 00C0      		rjmp .L33
+ 697 03da 1234      		cpi r17,lo8(66)
+ 698 03dc 01F4      		brne .+2
+ 699 03de 00C0      		rjmp .L34
+ 700 03e0 00C0      		rjmp .L22
+ 701               	.L32:
+ 702 03e2 1236      		cpi r17,lo8(98)
+ 703 03e4 01F4      		brne .+2
+ 704 03e6 00C0      		rjmp .L34
+ 705 03e8 1336      		cpi r17,lo8(99)
+ 706 03ea 01F4      		brne .+2
+ 707 03ec 00C0      		rjmp .L31
+ 708 03ee 1136      		cpi r17,lo8(97)
+ 709 03f0 01F0      		breq .+2
+ 710 03f2 00C0      		rjmp .L22
+ 711 03f4 00C0      		rjmp .L33
+ 712               	.L27:
+ 208:main.c        ****           error = SD_erase (startBlock, totalBlocks);
+ 713               		.loc 1 208 0
+ 714 03f6 2091 0000 		lds r18,totalBlocks
+ 715 03fa 3091 0000 		lds r19,totalBlocks+1
+ 716 03fe 4091 0000 		lds r20,totalBlocks+2
+ 717 0402 5091 0000 		lds r21,totalBlocks+3
+ 718 0406 6091 0000 		lds r22,startBlock
+ 719 040a 7091 0000 		lds r23,startBlock+1
+ 720 040e 8091 0000 		lds r24,startBlock+2
+ 721 0412 9091 0000 		lds r25,startBlock+3
+ 722 0416 0E94 0000 		call SD_erase
+ 723               	.LVL111:
+ 724 041a C82E      		mov r12,r24
+ 725               	.LVL112:
+ 209:main.c        ****           TX_NEWLINE;
+ 726               		.loc 1 209 0
+ 727 041c 8DE0      		ldi r24,lo8(13)
+ 728 041e 0E94 0000 		call transmitByte
+ 729               	.LVL113:
+ 730 0422 8AE0      		ldi r24,lo8(10)
+ 731 0424 0E94 0000 		call transmitByte
+ 732               	.LVL114:
+ 210:main.c        ****           if(error)
+ 733               		.loc 1 210 0
+ 734 0428 CC20      		tst r12
+ 735 042a 01F0      		breq .L35
+ 211:main.c        ****               transmitString_F(PSTR("Erase failed.."));
+ 736               		.loc 1 211 0
+ 737 042c 80E0      		ldi r24,lo8(__c.2047)
+ 738 042e 90E0      		ldi r25,hi8(__c.2047)
+ 739 0430 00C0      		rjmp .L89
+ 740               	.L35:
+ 213:main.c        ****               transmitString_F(PSTR("Erased!"));
+ 741               		.loc 1 213 0
+ 742 0432 80E0      		ldi r24,lo8(__c.2049)
+ 743 0434 90E0      		ldi r25,hi8(__c.2049)
+ 744 0436 00C0      		rjmp .L89
+ 745               	.LVL115:
+ 746               	.L91:
+ 226:main.c        ****                     transmitByte(0x0a);
+ 747               		.loc 1 226 0
+ 748 0438 8AE0      		ldi r24,lo8(10)
+ 749 043a 0E94 0000 		call transmitByte
+ 750               	.LVL116:
+ 227:main.c        ****                     buffer[i++] = 0x0a;
+ 751               		.loc 1 227 0
+ 752 043e 22E0      		ldi r18,2
+ 753 0440 620E      		add r6,r18
+ 754 0442 711C      		adc r7,__zero_reg__
+ 755               	.LVL117:
+ 756 0444 F201      		movw r30,r4
+ 757 0446 E050      		subi r30,lo8(-(buffer))
+ 758 0448 F040      		sbci r31,hi8(-(buffer))
+ 759 044a 8AE0      		ldi r24,lo8(10)
+ 760 044c 8083      		st Z,r24
+ 229:main.c        ****                 if(i == 512) break;
+ 761               		.loc 1 229 0
+ 762 044e 6114      		cp r6,__zero_reg__
+ 763 0450 82E0      		ldi r24,2
+ 764 0452 7806      		cpc r7,r24
+ 765 0454 01F0      		breq .L42
+ 766 0456 2301      		movw r4,r6
+ 767               	.LVL118:
+ 768               	.L39:
+ 769 0458 3201      		movw r6,r4
+ 770               	.LVL119:
+ 771               	.L37:
+ 221:main.c        ****                 data = receiveByte();
+ 772               		.loc 1 221 0
+ 773 045a 0E94 0000 		call receiveByte
+ 774               	.LVL120:
+ 775 045e 182F      		mov r17,r24
+ 776               	.LVL121:
+ 222:main.c        ****                 transmitByte(data);
+ 777               		.loc 1 222 0
+ 778 0460 0E94 0000 		call transmitByte
+ 779               	.LVL122:
+ 223:main.c        ****                 buffer[i++] = data;
+ 780               		.loc 1 223 0
+ 781 0464 2301      		movw r4,r6
+ 782 0466 9FEF      		ldi r25,-1
+ 783 0468 491A      		sub r4,r25
+ 784 046a 590A      		sbc r5,r25
+ 785               	.LVL123:
+ 786 046c F301      		movw r30,r6
+ 787 046e E050      		subi r30,lo8(-(buffer))
+ 788 0470 F040      		sbci r31,hi8(-(buffer))
+ 789 0472 1083      		st Z,r17
+ 224:main.c        ****                 if(data == 0x0d)
+ 790               		.loc 1 224 0
+ 791 0474 1D30      		cpi r17,lo8(13)
+ 792 0476 01F0      		breq .L91
+ 229:main.c        ****                 if(i == 512) break;
+ 793               		.loc 1 229 0
+ 794 0478 4114      		cp r4,__zero_reg__
+ 795 047a 92E0      		ldi r25,2
+ 796 047c 5906      		cpc r5,r25
+ 797 047e 01F4      		brne .L92
+ 798               	.LVL124:
+ 799               	.L42:
+ 232:main.c        ****             error = SD_writeSingleBlock (startBlock);
+ 800               		.loc 1 232 0
+ 801 0480 6091 0000 		lds r22,startBlock
+ 802 0484 7091 0000 		lds r23,startBlock+1
+ 803 0488 8091 0000 		lds r24,startBlock+2
+ 804 048c 9091 0000 		lds r25,startBlock+3
+ 805 0490 0E94 0000 		call SD_writeSingleBlock
+ 806               	.LVL125:
+ 807 0494 C82E      		mov r12,r24
+ 808               	.LVL126:
+ 233:main.c        ****             TX_NEWLINE;
+ 809               		.loc 1 233 0
+ 810 0496 8DE0      		ldi r24,lo8(13)
+ 811 0498 0E94 0000 		call transmitByte
+ 812               	.LVL127:
+ 813 049c 8AE0      		ldi r24,lo8(10)
+ 814 049e 0E94 0000 		call transmitByte
+ 815               	.LVL128:
+ 234:main.c        ****             TX_NEWLINE;
+ 816               		.loc 1 234 0
+ 817 04a2 8DE0      		ldi r24,lo8(13)
+ 818 04a4 0E94 0000 		call transmitByte
+ 819               	.LVL129:
+ 820 04a8 8AE0      		ldi r24,lo8(10)
+ 821 04aa 0E94 0000 		call transmitByte
+ 822               	.LVL130:
+ 235:main.c        ****             if(error)
+ 823               		.loc 1 235 0
+ 824 04ae CC20      		tst r12
+ 825 04b0 01F0      		breq .L93
+ 236:main.c        ****                 transmitString_F(PSTR("Write failed.."));
+ 826               		.loc 1 236 0
+ 827 04b2 80E0      		ldi r24,lo8(__c.2057)
+ 828 04b4 90E0      		ldi r25,hi8(__c.2057)
+ 829 04b6 00C0      		rjmp .L89
+ 830               	.LVL131:
+ 831               	.L92:
+ 230:main.c        ****             }while (data != '~');
+ 832               		.loc 1 230 0
+ 833 04b8 1E37      		cpi r17,lo8(126)
+ 834 04ba 01F4      		brne .L39
+ 835 04bc 00C0      		rjmp .L42
+ 836               	.LVL132:
+ 837               	.L93:
+ 238:main.c        ****                 transmitString_F(PSTR("Write successful!"));
+ 838               		.loc 1 238 0
+ 839 04be 80E0      		ldi r24,lo8(__c.2059)
+ 840 04c0 90E0      		ldi r25,hi8(__c.2059)
+ 841               	.LVL133:
+ 842               	.L89:
+ 236:main.c        ****                 transmitString_F(PSTR("Write failed.."));
+ 843               		.loc 1 236 0
+ 844 04c2 0E94 0000 		call transmitString_F
+ 845               	.LVL134:
+ 846 04c6 00C0      		rjmp .L36
+ 847               	.LVL135:
+ 848               	.L25:
+ 241:main.c        **** case '2': error = SD_readSingleBlock (startBlock);
+ 849               		.loc 1 241 0
+ 850 04c8 6091 0000 		lds r22,startBlock
+ 851 04cc 7091 0000 		lds r23,startBlock+1
+ 852 04d0 8091 0000 		lds r24,startBlock+2
+ 853 04d4 9091 0000 		lds r25,startBlock+3
+ 854 04d8 0E94 0000 		call SD_readSingleBlock
+ 855               	.LVL136:
+ 856 04dc C82E      		mov r12,r24
+ 857               	.LVL137:
+ 242:main.c        ****           TX_NEWLINE;
+ 858               		.loc 1 242 0
+ 859 04de 8DE0      		ldi r24,lo8(13)
+ 860 04e0 0E94 0000 		call transmitByte
+ 861               	.LVL138:
+ 862 04e4 8AE0      		ldi r24,lo8(10)
+ 863 04e6 0E94 0000 		call transmitByte
+ 864               	.LVL139:
+ 243:main.c        ****           if(error)
+ 865               		.loc 1 243 0
+ 866 04ea CC20      		tst r12
+ 867 04ec 01F0      		breq .L43
+ 244:main.c        ****             transmitString_F(PSTR("Read failed.."));
+ 868               		.loc 1 244 0
+ 869 04ee 80E0      		ldi r24,lo8(__c.2062)
+ 870 04f0 90E0      		ldi r25,hi8(__c.2062)
+ 871 04f2 00C0      		rjmp .L89
+ 872               	.L43:
+ 243:main.c        ****           if(error)
+ 873               		.loc 1 243 0
+ 874 04f4 00E0      		ldi r16,0
+ 875 04f6 10E0      		ldi r17,0
+ 876               	.L46:
+ 877               	.LVL140:
+ 249:main.c        ****                 if(buffer[i] == '~') break;
+ 878               		.loc 1 249 0
+ 879 04f8 F801      		movw r30,r16
+ 880 04fa E050      		subi r30,lo8(-(buffer))
+ 881 04fc F040      		sbci r31,hi8(-(buffer))
+ 882 04fe 8081      		ld r24,Z
+ 883 0500 8E37      		cpi r24,lo8(126)
+ 884 0502 01F4      		brne .L44
+ 885               	.L45:
+ 252:main.c        ****             TX_NEWLINE;
+ 886               		.loc 1 252 0
+ 887 0504 8DE0      		ldi r24,lo8(13)
+ 888 0506 0E94 0000 		call transmitByte
+ 889               	.LVL141:
+ 890 050a 8AE0      		ldi r24,lo8(10)
+ 891 050c 0E94 0000 		call transmitByte
+ 892               	.LVL142:
+ 253:main.c        ****             TX_NEWLINE;
+ 893               		.loc 1 253 0
+ 894 0510 8DE0      		ldi r24,lo8(13)
+ 895 0512 0E94 0000 		call transmitByte
+ 896               	.LVL143:
+ 897 0516 8AE0      		ldi r24,lo8(10)
+ 898 0518 0E94 0000 		call transmitByte
+ 899               	.LVL144:
+ 254:main.c        ****             transmitString_F(PSTR("Read successful!"));
+ 900               		.loc 1 254 0
+ 901 051c 80E0      		ldi r24,lo8(__c.2067)
+ 902 051e 90E0      		ldi r25,hi8(__c.2067)
+ 903 0520 00C0      		rjmp .L89
+ 904               	.L44:
+ 250:main.c        ****                 transmitByte(buffer[i]);
+ 905               		.loc 1 250 0
+ 906 0522 8081      		ld r24,Z
+ 907 0524 0E94 0000 		call transmitByte
+ 908               	.LVL145:
+ 247:main.c        ****             for(i=0;i<512;i++)
+ 909               		.loc 1 247 0
+ 910 0528 0F5F      		subi r16,-1
+ 911 052a 1F4F      		sbci r17,-1
+ 912               	.LVL146:
+ 913 052c 0115      		cp r16,__zero_reg__
+ 914 052e 22E0      		ldi r18,2
+ 915 0530 1207      		cpc r17,r18
+ 916 0532 01F4      		brne .L46
+ 917 0534 00C0      		rjmp .L45
+ 918               	.LVL147:
+ 919               	.L29:
+ 279:main.c        **** case '5': TX_NEWLINE;
+ 920               		.loc 1 279 0
+ 921 0536 8DE0      		ldi r24,lo8(13)
+ 922 0538 0E94 0000 		call transmitByte
+ 923               	.LVL148:
+ 924 053c 8AE0      		ldi r24,lo8(10)
+ 925 053e 0E94 0000 		call transmitByte
+ 926               	.LVL149:
+ 280:main.c        ****   		  findFiles(GET_LIST,0);
+ 927               		.loc 1 280 0
+ 928 0542 60E0      		ldi r22,0
+ 929 0544 70E0      		ldi r23,0
+ 930 0546 80E0      		ldi r24,0
+ 931 0548 0E94 0000 		call findFiles
+ 932               	.LVL150:
+ 281:main.c        ****           break;
+ 933               		.loc 1 281 0
+ 934 054c 00C0      		rjmp .L36
+ 935               	.L49:
+ 288:main.c        ****           for(i=0; i<13; i++)
+ 289:main.c        **** 			fileName[i] = 0x00;   //clearing any previously stored file name
+ 936               		.loc 1 289 0 discriminator 2
+ 937 054e 1192      		st Z+,__zero_reg__
+ 288:main.c        ****           for(i=0; i<13; i++)
+ 938               		.loc 1 288 0 discriminator 2
+ 939 0550 E215      		cp r30,r2
+ 940 0552 F305      		cpc r31,r3
+ 941 0554 01F4      		brne .L49
+ 288:main.c        ****           for(i=0; i<13; i++)
+ 942               		.loc 1 288 0 is_stmt 0
+ 943 0556 612C      		mov r6,__zero_reg__
+ 944 0558 712C      		mov r7,__zero_reg__
+ 945               	.L48:
+ 946               	.LVL151:
+ 290:main.c        ****           i=0;
+ 291:main.c        ****           while(1)
+ 292:main.c        ****           {
+ 293:main.c        ****             data = receiveByte();
+ 947               		.loc 1 293 0 is_stmt 1
+ 948 055a 0E94 0000 		call receiveByte
+ 949               	.LVL152:
+ 950 055e 082F      		mov r16,r24
+ 951               	.LVL153:
+ 294:main.c        ****             if(data == 0x0d) break;  //'ENTER' key pressed
+ 952               		.loc 1 294 0
+ 953 0560 8D30      		cpi r24,lo8(13)
+ 954 0562 01F0      		breq .L50
+ 295:main.c        **** 			if(data == 0x08)	//'Back Space' key pressed
+ 955               		.loc 1 295 0
+ 956 0564 8830      		cpi r24,lo8(8)
+ 957 0566 01F4      		brne .L51
+ 296:main.c        **** 	 		{ 
+ 297:main.c        **** 	   			if(i != 0)
+ 958               		.loc 1 297 0
+ 959 0568 6114      		cp r6,__zero_reg__
+ 960 056a 7104      		cpc r7,__zero_reg__
+ 961 056c 01F0      		breq .L48
+ 298:main.c        **** 	   			{ 
+ 299:main.c        **** 	     			transmitByte(data);
+ 962               		.loc 1 299 0
+ 963 056e 88E0      		ldi r24,lo8(8)
+ 964 0570 0E94 0000 		call transmitByte
+ 965               	.LVL154:
+ 300:main.c        **** 					transmitByte(' '); 
+ 966               		.loc 1 300 0
+ 967 0574 80E2      		ldi r24,lo8(32)
+ 968 0576 0E94 0000 		call transmitByte
+ 969               	.LVL155:
+ 301:main.c        **** 	     			transmitByte(data); 
+ 970               		.loc 1 301 0
+ 971 057a 88E0      		ldi r24,lo8(8)
+ 972 057c 0E94 0000 		call transmitByte
+ 973               	.LVL156:
+ 302:main.c        **** 	     			i--; 
+ 974               		.loc 1 302 0
+ 975 0580 81E0      		ldi r24,1
+ 976 0582 681A      		sub r6,r24
+ 977 0584 7108      		sbc r7,__zero_reg__
+ 978               	.LVL157:
+ 979 0586 00C0      		rjmp .L48
+ 980               	.L51:
+ 303:main.c        **** 	   			} 
+ 304:main.c        **** 	   			continue;     
+ 305:main.c        **** 	 		}
+ 306:main.c        **** 			if(data <0x20 || data > 0x7e) continue;  //check for valid English text character
+ 981               		.loc 1 306 0
+ 982 0588 80EE      		ldi r24,lo8(-32)
+ 983 058a 800F      		add r24,r16
+ 984 058c 8F35      		cpi r24,lo8(95)
+ 985 058e 00F4      		brsh .L48
+ 307:main.c        **** 			transmitByte(data);
+ 986               		.loc 1 307 0
+ 987 0590 802F      		mov r24,r16
+ 988 0592 0E94 0000 		call transmitByte
+ 989               	.LVL158:
+ 308:main.c        ****             fileName[i++] = data;
+ 990               		.loc 1 308 0
+ 991 0596 A301      		movw r20,r6
+ 992 0598 4F5F      		subi r20,-1
+ 993 059a 5F4F      		sbci r21,-1
+ 994               	.LVL159:
+ 995 059c E1E0      		ldi r30,lo8(1)
+ 996 059e F0E0      		ldi r31,0
+ 997 05a0 EC0F      		add r30,r28
+ 998 05a2 FD1F      		adc r31,r29
+ 999 05a4 E60D      		add r30,r6
+ 1000 05a6 F71D      		adc r31,r7
+ 1001 05a8 0083      		st Z,r16
+ 309:main.c        ****             if(i==13){transmitString_F(PSTR(" file name too long..")); break;}
+ 1002               		.loc 1 309 0
+ 1003 05aa 4D30      		cpi r20,13
+ 1004 05ac 5105      		cpc r21,__zero_reg__
+ 1005 05ae 01F0      		breq .L94
+ 1006 05b0 3A01      		movw r6,r20
+ 1007 05b2 00C0      		rjmp .L48
+ 1008               	.L94:
+ 1009               		.loc 1 309 0 is_stmt 0 discriminator 1
+ 1010 05b4 80E0      		ldi r24,lo8(__c.2080)
+ 1011 05b6 90E0      		ldi r25,hi8(__c.2080)
+ 1012 05b8 00C0      		rjmp .L89
+ 1013               	.LVL160:
+ 1014               	.L50:
+ 310:main.c        ****           }
+ 311:main.c        ****           if(i>12) break;
+ 1015               		.loc 1 311 0 is_stmt 1
+ 1016 05ba 9DE0      		ldi r25,13
+ 1017 05bc 6916      		cp r6,r25
+ 1018 05be 7104      		cpc r7,__zero_reg__
+ 1019 05c0 00F4      		brsh .L36
+ 312:main.c        ****        
+ 313:main.c        **** 	      TX_NEWLINE;
+ 1020               		.loc 1 313 0
+ 1021 05c2 8DE0      		ldi r24,lo8(13)
+ 1022 05c4 0E94 0000 		call transmitByte
+ 1023               	.LVL161:
+ 1024 05c8 8AE0      		ldi r24,lo8(10)
+ 1025 05ca 0E94 0000 		call transmitByte
+ 1026               	.LVL162:
+ 314:main.c        **** 		  if(option == '6')
+ 1027               		.loc 1 314 0
+ 1028 05ce 1633      		cpi r17,lo8(54)
+ 1029 05d0 01F4      		brne .L53
+ 315:main.c        **** 		     readFile( READ, fileName);
+ 1030               		.loc 1 315 0
+ 1031 05d2 BE01      		movw r22,r28
+ 1032 05d4 6F5F      		subi r22,-1
+ 1033 05d6 7F4F      		sbci r23,-1
+ 1034 05d8 80E0      		ldi r24,0
+ 1035 05da 0E94 0000 		call readFile
+ 1036               	.LVL163:
+ 1037 05de 00C0      		rjmp .L36
+ 1038               	.L53:
+ 316:main.c        **** 		  if(option == '7')
+ 317:main.c        **** 		  	 writeFile(fileName);
+ 1039               		.loc 1 317 0
+ 1040 05e0 CE01      		movw r24,r28
+ 1041 05e2 0196      		adiw r24,1
+ 316:main.c        **** 		  if(option == '7')
+ 1042               		.loc 1 316 0
+ 1043 05e4 1733      		cpi r17,lo8(55)
+ 1044 05e6 01F4      		brne .L54
+ 1045               		.loc 1 317 0
+ 1046 05e8 0E94 0000 		call writeFile
+ 1047               	.LVL164:
+ 1048 05ec 00C0      		rjmp .L36
+ 1049               	.L54:
+ 318:main.c        ****  		  if(option == '8')
+ 319:main.c        **** 		     deleteFile(fileName);
+ 1050               		.loc 1 319 0
+ 1051 05ee 0E94 0000 		call deleteFile
+ 1052               	.LVL165:
+ 1053 05f2 00C0      		rjmp .L36
+ 1054               	.LVL166:
+ 1055               	.L23:
+ 320:main.c        ****           break;
+ 321:main.c        **** 
+ 322:main.c        **** case '9': memoryStatistics();
+ 1056               		.loc 1 322 0
+ 1057 05f4 0E94 0000 		call memoryStatistics
+ 1058               	.LVL167:
+ 323:main.c        ****           break;
+ 1059               		.loc 1 323 0
+ 1060 05f8 00C0      		rjmp .L36
+ 1061               	.L33:
+ 324:main.c        **** 
+ 325:main.c        **** case 'a': 
+ 326:main.c        **** case 'A': RTC_displayDate();
+ 1062               		.loc 1 326 0
+ 1063 05fa 0E94 0000 		call RTC_displayDate
+ 1064               	.LVL168:
+ 327:main.c        **** 		  RTC_displayTime();
+ 1065               		.loc 1 327 0
+ 1066 05fe 0E94 0000 		call RTC_displayTime
+ 1067               	.LVL169:
+ 328:main.c        **** 		  break;
+ 1068               		.loc 1 328 0
+ 1069 0602 00C0      		rjmp .L36
+ 1070               	.L34:
+ 329:main.c        **** case 'b': 
+ 330:main.c        **** case 'B': RTC_updateDate();
+ 1071               		.loc 1 330 0
+ 1072 0604 0E94 0000 		call RTC_updateDate
+ 1073               	.LVL170:
+ 331:main.c        **** 		  break;
+ 1074               		.loc 1 331 0
+ 1075 0608 00C0      		rjmp .L36
+ 1076               	.L31:
+ 332:main.c        **** case 'c': 
+ 333:main.c        **** case 'C': RTC_updateTime();
+ 1077               		.loc 1 333 0
+ 1078 060a 0E94 0000 		call RTC_updateTime
+ 1079               	.LVL171:
+ 334:main.c        **** 	      break;
+ 1080               		.loc 1 334 0
+ 1081 060e 00C0      		rjmp .L36
+ 1082               	.L22:
+ 335:main.c        **** 
+ 336:main.c        **** default: TX_NEWLINE;
+ 1083               		.loc 1 336 0
+ 1084 0610 8DE0      		ldi r24,lo8(13)
+ 1085 0612 0E94 0000 		call transmitByte
+ 1086               	.LVL172:
+ 1087 0616 8AE0      		ldi r24,lo8(10)
+ 1088 0618 0E94 0000 		call transmitByte
+ 1089               	.LVL173:
+ 337:main.c        ****          TX_NEWLINE;
+ 1090               		.loc 1 337 0
+ 1091 061c 8DE0      		ldi r24,lo8(13)
+ 1092 061e 0E94 0000 		call transmitByte
+ 1093               	.LVL174:
+ 1094 0622 8AE0      		ldi r24,lo8(10)
+ 1095 0624 0E94 0000 		call transmitByte
+ 1096               	.LVL175:
+ 338:main.c        ****          transmitString_F(PSTR(" Invalid option!"));
+ 1097               		.loc 1 338 0
+ 1098 0628 80E0      		ldi r24,lo8(__c.2091)
+ 1099 062a 90E0      		ldi r25,hi8(__c.2091)
+ 1100 062c 0E94 0000 		call transmitString_F
+ 1101               	.LVL176:
+ 339:main.c        ****          TX_NEWLINE;
+ 1102               		.loc 1 339 0
+ 1103 0630 8DE0      		ldi r24,lo8(13)
+ 1104 0632 0E94 0000 		call transmitByte
+ 1105               	.LVL177:
+ 1106 0636 8AE0      		ldi r24,lo8(10)
+ 1107 0638 0E94 0000 		call transmitByte
+ 1108               	.LVL178:
+ 1109               	.L36:
+ 340:main.c        **** }
+ 341:main.c        **** 
+ 342:main.c        **** TX_NEWLINE;
+ 1110               		.loc 1 342 0
+ 1111 063c 8DE0      		ldi r24,lo8(13)
+ 1112 063e 0E94 0000 		call transmitByte
+ 1113               	.LVL179:
+ 1114 0642 8AE0      		ldi r24,lo8(10)
+ 1115 0644 0E94 0000 		call transmitByte
+ 1116               	.LVL180:
+ 1117 0648 00C0      		rjmp .L18
+ 1118               		.cfi_endproc
+ 1119               	.LFE9:
+ 1121               		.section	.progmem.data,"a",@progbits
+ 1124               	__c.2091:
+ 1125 0000 2049 6E76 		.string	" Invalid option!"
+ 1125      616C 6964 
+ 1125      206F 7074 
+ 1125      696F 6E21 
+ 1125      00
+ 1128               	__c.2080:
+ 1129 0011 2066 696C 		.string	" file name too long.."
+ 1129      6520 6E61 
+ 1129      6D65 2074 
+ 1129      6F6F 206C 
+ 1129      6F6E 672E 
+ 1132               	__c.2073:
+ 1133 0027 456E 7465 		.string	"Enter file name: "
+ 1133      7220 6669 
+ 1133      6C65 206E 
+ 1133      616D 653A 
+ 1133      2000 
+ 1136               	__c.2067:
+ 1137 0039 5265 6164 		.string	"Read successful!"
+ 1137      2073 7563 
+ 1137      6365 7373 
+ 1137      6675 6C21 
+ 1137      00
+ 1140               	__c.2062:
+ 1141 004a 5265 6164 		.string	"Read failed.."
+ 1141      2066 6169 
+ 1141      6C65 642E 
+ 1141      2E00 
+ 1144               	__c.2059:
+ 1145 0058 5772 6974 		.string	"Write successful!"
+ 1145      6520 7375 
+ 1145      6363 6573 
+ 1145      7366 756C 
+ 1145      2100 
+ 1148               	__c.2057:
+ 1149 006a 5772 6974 		.string	"Write failed.."
+ 1149      6520 6661 
+ 1149      696C 6564 
+ 1149      2E2E 00
+ 1152               	__c.2053:
+ 1153 0079 2045 6E74 		.string	" Enter text (End with ~):"
+ 1153      6572 2074 
+ 1153      6578 7420 
+ 1153      2845 6E64 
+ 1153      2077 6974 
+ 1156               	__c.2049:
+ 1157 0093 4572 6173 		.string	"Erased!"
+ 1157      6564 2100 
+ 1160               	__c.2047:
+ 1161 009b 4572 6173 		.string	"Erase failed.."
+ 1161      6520 6661 
+ 1161      696C 6564 
+ 1161      2E2E 00
+ 1164               	__c.2044:
+ 1165 00aa 456E 7465 		.string	"Enter the Block number (0000-9999):"
+ 1165      7220 7468 
+ 1165      6520 426C 
+ 1165      6F63 6B20 
+ 1165      6E75 6D62 
+ 1168               	__c.2041:
+ 1169 00ce 4641 5433 		.string	"FAT32 options disabled!"
+ 1169      3220 6F70 
+ 1169      7469 6F6E 
+ 1169      7320 6469 
+ 1169      7361 626C 
+ 1172               	__c.2039:
+ 1173 00e6 3E20 5365 		.string	"> Select Option (0-9/a/b/c): "
+ 1173      6C65 6374 
+ 1173      204F 7074 
+ 1173      696F 6E20 
+ 1173      2830 2D39 
+ 1176               	__c.2037:
+ 1177 0104 3E20 623A 		.string	"> b: Update Date                 c: Update Time"
+ 1177      2055 7064 
+ 1177      6174 6520 
+ 1177      4461 7465 
+ 1177      2020 2020 
+ 1180               	__c.2035:
+ 1181 0134 3E20 393A 		.string	"> 9: Read SD Memory Capacity     a: Show Date & Time"
+ 1181      2052 6561 
+ 1181      6420 5344 
+ 1181      204D 656D 
+ 1181      6F72 7920 
+ 1184               	__c.2033:
+ 1185 0169 3E20 373A 		.string	"> 7: Write File                  8: Delete File"
+ 1185      2057 7269 
+ 1185      7465 2046 
+ 1185      696C 6520 
+ 1185      2020 2020 
+ 1188               	__c.2031:
+ 1189 0199 3E20 353A 		.string	"> 5: Get file list               6: Read File"
+ 1189      2047 6574 
+ 1189      2066 696C 
+ 1189      6520 6C69 
+ 1189      7374 2020 
+ 1192               	__c.2029:
+ 1193 01c7 3E20 313A 		.string	"> 1: Write single Block          2: Read single Block"
+ 1193      2057 7269 
+ 1193      7465 2073 
+ 1193      696E 676C 
+ 1193      6520 426C 
+ 1196               	__c.2027:
+ 1197 01fd 3E20 303A 		.string	"> 0: Erase Blocks "
+ 1197      2045 7261 
+ 1197      7365 2042 
+ 1197      6C6F 636B 
+ 1197      7320 00
+ 1200               	__c.2025:
+ 1201 0210 5072 6573 		.string	"Press any key..."
+ 1201      7320 616E 
+ 1201      7920 6B65 
+ 1201      792E 2E2E 
+ 1201      00
+ 1204               	__c.2023:
+ 1205 0221 4641 5433 		.string	"FAT32 not found!"
+ 1205      3220 6E6F 
+ 1205      7420 666F 
+ 1205      756E 6421 
+ 1205      00
+ 1208               	__c.2021:
+ 1209 0232 556E 6B6E 		.string	"Unknown SD Card Detected!"
+ 1209      6F77 6E20 
+ 1209      5344 2043 
+ 1209      6172 6420 
+ 1209      4465 7465 
+ 1212               	__c.2018:
+ 1213 024c 5374 616E 		.string	"Standard Capacity Card (Ver 2.x) Detected!"
+ 1213      6461 7264 
+ 1213      2043 6170 
+ 1213      6163 6974 
+ 1213      7920 4361 
+ 1216               	__c.2015:
+ 1217 0277 4869 6768 		.string	"High Capacity Card Detected!"
+ 1217      2043 6170 
+ 1217      6163 6974 
+ 1217      7920 4361 
+ 1217      7264 2044 
+ 1220               	__c.2011:
+ 1221 0294 5374 616E 		.string	"Standard Capacity Card (Ver 1.x) Detected!"
+ 1221      6461 7264 
+ 1221      2043 6170 
+ 1221      6163 6974 
+ 1221      7920 4361 
+ 1224               	__c.2007:
+ 1225 02bf 4361 7264 		.string	"Card Initialization failed.."
+ 1225      2049 6E69 
+ 1225      7469 616C 
+ 1225      697A 6174 
+ 1225      696F 6E20 
+ 1228               	__c.2005:
+ 1229 02dc 5344 2063 		.string	"SD card not detected.."
+ 1229      6172 6420 
+ 1229      6E6F 7420 
+ 1229      6465 7465 
+ 1229      6374 6564 
+ 1232               	__c.2000:
+ 1233 02f3 2A2A 2A2A 		.string	"****************************************************"
+ 1233      2A2A 2A2A 
+ 1233      2A2A 2A2A 
+ 1233      2A2A 2A2A 
+ 1233      2A2A 2A2A 
+ 1236               	__c.1998:
+ 1237 0328 2020 2020 		.string	"    Dharmani's microSD Card Testing..  "
+ 1237      4468 6172 
+ 1237      6D61 6E69 
+ 1237      2773 206D 
+ 1237      6963 726F 
+ 1240               	__c.1996:
+ 1241 0350 2A2A 2A2A 		.string	"****************************************************"
+ 1241      2A2A 2A2A 
+ 1241      2A2A 2A2A 
+ 1241      2A2A 2A2A 
+ 1241      2A2A 2A2A 
+ 1242               		.comm	freeClusterCountUpdated,1,1
+ 1243               		.comm	appendStartCluster,4,1
+ 1244               		.comm	fileSize,4,1
+ 1245               		.comm	appendFileLocation,4,1
+ 1246               		.comm	appendFileSector,4,1
+ 1247               		.comm	unusedSectors,4,1
+ 1248               		.comm	reservedSectorCount,2,1
+ 1249               		.comm	sectorPerCluster,2,1
+ 1250               		.comm	bytesPerSector,2,1
+ 1251               		.comm	totalClusters,4,1
+ 1252               		.comm	rootCluster,4,1
+ 1253               		.comm	firstDataSector,4,1
+ 1254               		.comm	rtc_register,7,1
+ 1255               		.comm	timeFAT,2,1
+ 1256               		.comm	dateFAT,2,1
+ 1257               		.comm	buffer,512,1
+ 1258               		.comm	cardType,1,1
+ 1259               		.comm	SDHC_flag,1,1
+ 1260               		.comm	totalBlocks,4,1
+ 1261               		.comm	startBlock,4,1
+ 1262               		.text
+ 1263               	.Letext0:
+ 1264               		.file 3 "/usr/lib/avr/include/stdint.h"
+ 1265               		.file 4 "FAT32.h"
+ 1266               		.file 5 "SD_routines.h"
+ 1267               		.file 6 "RTC_routines.h"
+ 1268               		.file 7 "SPI_routines.h"
+ 1269               		.file 8 "i2c_routines.h"
+ 1270               		.file 9 "UART_routines.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 main.c
+     /tmp/ccMrf8Gm.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccMrf8Gm.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccMrf8Gm.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccMrf8Gm.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccMrf8Gm.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccMrf8Gm.s:12     .text:0000000000000000 port_init
+     /tmp/ccMrf8Gm.s:46     .text:0000000000000018 init_devices
+     /tmp/ccMrf8Gm.s:85     .text.startup:0000000000000000 main
+     /tmp/ccMrf8Gm.s:1240   .progmem.data:0000000000000350 __c.1996
+     /tmp/ccMrf8Gm.s:1236   .progmem.data:0000000000000328 __c.1998
+     /tmp/ccMrf8Gm.s:1232   .progmem.data:00000000000002f3 __c.2000
+                            *COM*:0000000000000001 cardType
+     /tmp/ccMrf8Gm.s:1228   .progmem.data:00000000000002dc __c.2005
+     /tmp/ccMrf8Gm.s:1224   .progmem.data:00000000000002bf __c.2007
+     /tmp/ccMrf8Gm.s:1220   .progmem.data:0000000000000294 __c.2011
+     /tmp/ccMrf8Gm.s:1216   .progmem.data:0000000000000277 __c.2015
+     /tmp/ccMrf8Gm.s:1212   .progmem.data:000000000000024c __c.2018
+     /tmp/ccMrf8Gm.s:1208   .progmem.data:0000000000000232 __c.2021
+     /tmp/ccMrf8Gm.s:1204   .progmem.data:0000000000000221 __c.2023
+     /tmp/ccMrf8Gm.s:1200   .progmem.data:0000000000000210 __c.2025
+     /tmp/ccMrf8Gm.s:1196   .progmem.data:00000000000001fd __c.2027
+     /tmp/ccMrf8Gm.s:1192   .progmem.data:00000000000001c7 __c.2029
+     /tmp/ccMrf8Gm.s:1188   .progmem.data:0000000000000199 __c.2031
+     /tmp/ccMrf8Gm.s:1184   .progmem.data:0000000000000169 __c.2033
+     /tmp/ccMrf8Gm.s:1180   .progmem.data:0000000000000134 __c.2035
+     /tmp/ccMrf8Gm.s:1176   .progmem.data:0000000000000104 __c.2037
+     /tmp/ccMrf8Gm.s:1172   .progmem.data:00000000000000e6 __c.2039
+     /tmp/ccMrf8Gm.s:1168   .progmem.data:00000000000000ce __c.2041
+     /tmp/ccMrf8Gm.s:1164   .progmem.data:00000000000000aa __c.2044
+                            *COM*:0000000000000004 startBlock
+                            *COM*:0000000000000004 totalBlocks
+     /tmp/ccMrf8Gm.s:1152   .progmem.data:0000000000000079 __c.2053
+     /tmp/ccMrf8Gm.s:1132   .progmem.data:0000000000000027 __c.2073
+     /tmp/ccMrf8Gm.s:1160   .progmem.data:000000000000009b __c.2047
+     /tmp/ccMrf8Gm.s:1156   .progmem.data:0000000000000093 __c.2049
+                            *COM*:0000000000000200 buffer
+     /tmp/ccMrf8Gm.s:1148   .progmem.data:000000000000006a __c.2057
+     /tmp/ccMrf8Gm.s:1144   .progmem.data:0000000000000058 __c.2059
+     /tmp/ccMrf8Gm.s:1140   .progmem.data:000000000000004a __c.2062
+     /tmp/ccMrf8Gm.s:1136   .progmem.data:0000000000000039 __c.2067
+     /tmp/ccMrf8Gm.s:1128   .progmem.data:0000000000000011 __c.2080
+     /tmp/ccMrf8Gm.s:1124   .progmem.data:0000000000000000 __c.2091
+                            *COM*:0000000000000001 freeClusterCountUpdated
+                            *COM*:0000000000000004 appendStartCluster
+                            *COM*:0000000000000004 fileSize
+                            *COM*:0000000000000004 appendFileLocation
+                            *COM*:0000000000000004 appendFileSector
+                            *COM*:0000000000000004 unusedSectors
+                            *COM*:0000000000000002 reservedSectorCount
+                            *COM*:0000000000000002 sectorPerCluster
+                            *COM*:0000000000000002 bytesPerSector
+                            *COM*:0000000000000004 totalClusters
+                            *COM*:0000000000000004 rootCluster
+                            *COM*:0000000000000004 firstDataSector
+                            *COM*:0000000000000007 rtc_register
+                            *COM*:0000000000000002 timeFAT
+                            *COM*:0000000000000002 dateFAT
+                            *COM*:0000000000000001 SDHC_flag
+
+UNDEFINED SYMBOLS
+spi_init
+twi_init
+uart0_init
+transmitByte
+transmitString_F
+SD_init
+getBootSectorData
+receiveByte
+SD_erase
+SD_writeSingleBlock
+SD_readSingleBlock
+findFiles
+readFile
+writeFile
+deleteFile
+memoryStatistics
+RTC_displayDate
+RTC_displayTime
+RTC_updateDate
+RTC_updateTime
+__do_clear_bss

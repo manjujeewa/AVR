@@ -1,0 +1,652 @@
+   1               		.file	"SD_routines.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	SD_sendCommand
+  18               	SD_sendCommand:
+  19               	.LFB3:
+  20               	.LM1:
+  21               	.LVL0:
+  22 0000 DF92      		push r13
+  23 0002 EF92      		push r14
+  24 0004 FF92      		push r15
+  25 0006 0F93      		push r16
+  26 0008 1F93      		push r17
+  27               	/* prologue: function */
+  28               	/* frame size = 0 */
+  29 000a D82E      		mov r13,r24
+  30 000c 7A01      		movw r14,r20
+  31 000e 8B01      		movw r16,r22
+  32               	.LM2:
+  33 0010 8091 0000 		lds r24,SDHC_flag
+  34               	.LVL1:
+  35 0014 8823      		tst r24
+  36 0016 01F4      		brne .L2
+  37               	.LVL2:
+  38               	.LM3:
+  39 0018 8D2D      		mov r24,r13
+  40 001a 8151      		subi r24,lo8(-(-17))
+  41 001c 8230      		cpi r24,lo8(2)
+  42 001e 00F0      		brlo .L3
+  43 0020 88E1      		ldi r24,lo8(24)
+  44 0022 D816      		cp r13,r24
+  45 0024 01F0      		breq .L3
+  46 0026 89E1      		ldi r24,lo8(25)
+  47 0028 D816      		cp r13,r24
+  48 002a 01F0      		breq .L3
+  49 002c 80E2      		ldi r24,lo8(32)
+  50 002e D816      		cp r13,r24
+  51 0030 01F0      		breq .L3
+  52 0032 81E2      		ldi r24,lo8(33)
+  53 0034 D816      		cp r13,r24
+  54 0036 01F4      		brne .L2
+  55               	.L3:
+  56               	.LM4:
+  57 0038 39E0      		ldi r19,9
+  58 003a EE0C      	1:	lsl r14
+  59 003c FF1C      		rol r15
+  60 003e 001F      		rol r16
+  61 0040 111F      		rol r17
+  62 0042 3A95      		dec r19
+  63 0044 01F4      		brne 1b
+  64               	.LVL3:
+  65               	.L2:
+  66               	.LM5:
+  67 0046 C498      		cbi 56-32,4
+  68               	.LM6:
+  69 0048 8D2D      		mov r24,r13
+  70 004a 8064      		ori r24,lo8(64)
+  71 004c 0E94 0000 		call SPI_transmit
+  72               	.LM7:
+  73 0050 812F      		mov r24,r17
+  74 0052 9927      		clr r25
+  75 0054 AA27      		clr r26
+  76 0056 BB27      		clr r27
+  77 0058 0E94 0000 		call SPI_transmit
+  78               	.LM8:
+  79 005c C801      		movw r24,r16
+  80 005e AA27      		clr r26
+  81 0060 BB27      		clr r27
+  82 0062 0E94 0000 		call SPI_transmit
+  83               	.LM9:
+  84 0066 BB27      		clr r27
+  85 0068 A12F      		mov r26,r17
+  86 006a 902F      		mov r25,r16
+  87 006c 8F2D      		mov r24,r15
+  88 006e 0E94 0000 		call SPI_transmit
+  89               	.LM10:
+  90 0072 8E2D      		mov r24,r14
+  91 0074 0E94 0000 		call SPI_transmit
+  92               	.LM11:
+  93 0078 88E0      		ldi r24,lo8(8)
+  94 007a D816      		cp r13,r24
+  95 007c 01F4      		brne .L4
+  96               	.LM12:
+  97 007e 87E8      		ldi r24,lo8(-121)
+  98 0080 00C0      		rjmp .L13
+  99               	.L4:
+ 100               	.LM13:
+ 101 0082 85E9      		ldi r24,lo8(-107)
+ 102               	.L13:
+ 103 0084 0E94 0000 		call SPI_transmit
+ 104               	.LM14:
+ 105 0088 10E0      		ldi r17,lo8(0)
+ 106 008a 00C0      		rjmp .L7
+ 107               	.LVL4:
+ 108               	.L8:
+ 109               	.LM15:
+ 110 008c 1150      		subi r17,lo8(-(-1))
+ 111               	.LM16:
+ 112 008e 01F0      		breq .L9
+ 113               	.L7:
+ 114               	.LM17:
+ 115 0090 0E94 0000 		call SPI_receive
+ 116               	.LVL5:
+ 117 0094 082F      		mov r16,r24
+ 118 0096 8F3F      		cpi r24,lo8(-1)
+ 119 0098 01F0      		breq .L8
+ 120               	.LVL6:
+ 121               	.LM18:
+ 122 009a 8823      		tst r24
+ 123 009c 01F4      		brne .L9
+ 124 009e 8AE3      		ldi r24,lo8(58)
+ 125               	.LVL7:
+ 126 00a0 D816      		cp r13,r24
+ 127 00a2 01F4      		brne .L9
+ 128               	.LM19:
+ 129 00a4 0E94 0000 		call SPI_receive
+ 130               	.LM20:
+ 131 00a8 86FF      		sbrs r24,6
+ 132 00aa 00C0      		rjmp .L10
+ 133 00ac 81E0      		ldi r24,lo8(1)
+ 134 00ae 8093 0000 		sts SDHC_flag,r24
+ 135 00b2 00C0      		rjmp .L11
+ 136               	.L10:
+ 137               	.LM21:
+ 138 00b4 1092 0000 		sts SDHC_flag,__zero_reg__
+ 139               	.L11:
+ 140               	.LM22:
+ 141 00b8 0E94 0000 		call SPI_receive
+ 142               	.LM23:
+ 143 00bc 0E94 0000 		call SPI_receive
+ 144               	.LM24:
+ 145 00c0 0E94 0000 		call SPI_receive
+ 146               	.LVL8:
+ 147               	.L9:
+ 148               	.LM25:
+ 149 00c4 0E94 0000 		call SPI_receive
+ 150               	.LM26:
+ 151 00c8 C49A      		sbi 56-32,4
+ 152               	.LM27:
+ 153 00ca 802F      		mov r24,r16
+ 154               	/* epilogue start */
+ 155 00cc 1F91      		pop r17
+ 156 00ce 0F91      		pop r16
+ 157               	.LVL9:
+ 158 00d0 FF90      		pop r15
+ 159 00d2 EF90      		pop r14
+ 160               	.LVL10:
+ 161 00d4 DF90      		pop r13
+ 162               	.LVL11:
+ 163 00d6 0895      		ret
+ 164               	.LFE3:
+ 166               	.global	SD_erase
+ 168               	SD_erase:
+ 169               	.LFB4:
+ 170               	.LM28:
+ 171               	.LVL12:
+ 172 00d8 AF92      		push r10
+ 173 00da BF92      		push r11
+ 174 00dc CF92      		push r12
+ 175 00de DF92      		push r13
+ 176 00e0 EF92      		push r14
+ 177 00e2 FF92      		push r15
+ 178 00e4 0F93      		push r16
+ 179 00e6 1F93      		push r17
+ 180               	/* prologue: function */
+ 181               	/* frame size = 0 */
+ 182 00e8 7B01      		movw r14,r22
+ 183 00ea 8C01      		movw r16,r24
+ 184 00ec 5901      		movw r10,r18
+ 185 00ee 6A01      		movw r12,r20
+ 186               	.LM29:
+ 187 00f0 80E2      		ldi r24,lo8(32)
+ 188 00f2 B801      		movw r22,r16
+ 189 00f4 A701      		movw r20,r14
+ 190 00f6 0E94 0000 		call SD_sendCommand
+ 191               	.LVL13:
+ 192               	.LM30:
+ 193 00fa 8823      		tst r24
+ 194               	.LVL14:
+ 195 00fc 01F4      		brne .L15
+ 196               	.LM31:
+ 197 00fe 0894      		sec
+ 198 0100 E108      		sbc r14,__zero_reg__
+ 199 0102 F108      		sbc r15,__zero_reg__
+ 200 0104 0109      		sbc r16,__zero_reg__
+ 201 0106 1109      		sbc r17,__zero_reg__
+ 202 0108 EA0C      		add r14,r10
+ 203 010a FB1C      		adc r15,r11
+ 204 010c 0C1D      		adc r16,r12
+ 205 010e 1D1D      		adc r17,r13
+ 206 0110 81E2      		ldi r24,lo8(33)
+ 207               	.LVL15:
+ 208 0112 B801      		movw r22,r16
+ 209 0114 A701      		movw r20,r14
+ 210 0116 0E94 0000 		call SD_sendCommand
+ 211               	.LM32:
+ 212 011a 8823      		tst r24
+ 213               	.LVL16:
+ 214 011c 01F4      		brne .L15
+ 215               	.LM33:
+ 216 011e 86E2      		ldi r24,lo8(38)
+ 217               	.LVL17:
+ 218 0120 40E0      		ldi r20,lo8(0)
+ 219 0122 50E0      		ldi r21,hi8(0)
+ 220 0124 60E0      		ldi r22,hlo8(0)
+ 221 0126 70E0      		ldi r23,hhi8(0)
+ 222 0128 0E94 0000 		call SD_sendCommand
+ 223               	.LVL18:
+ 224               	.L15:
+ 225               	.LVL19:
+ 226               	/* epilogue start */
+ 227               	.LM34:
+ 228 012c 1F91      		pop r17
+ 229 012e 0F91      		pop r16
+ 230 0130 FF90      		pop r15
+ 231 0132 EF90      		pop r14
+ 232               	.LVL20:
+ 233 0134 DF90      		pop r13
+ 234 0136 CF90      		pop r12
+ 235 0138 BF90      		pop r11
+ 236 013a AF90      		pop r10
+ 237               	.LVL21:
+ 238 013c 0895      		ret
+ 239               	.LFE4:
+ 241               	.global	SD_writeSingleBlock
+ 243               	SD_writeSingleBlock:
+ 244               	.LFB6:
+ 245               	.LM35:
+ 246               	.LVL22:
+ 247 013e CF93      		push r28
+ 248 0140 DF93      		push r29
+ 249               	/* prologue: function */
+ 250               	/* frame size = 0 */
+ 251 0142 AB01      		movw r20,r22
+ 252 0144 BC01      		movw r22,r24
+ 253               	.LM36:
+ 254 0146 88E1      		ldi r24,lo8(24)
+ 255 0148 0E94 0000 		call SD_sendCommand
+ 256               	.LVL23:
+ 257               	.LM37:
+ 258 014c 8823      		tst r24
+ 259               	.LVL24:
+ 260 014e 01F0      		breq .L18
+ 261 0150 982F      		mov r25,r24
+ 262 0152 00C0      		rjmp .L19
+ 263               	.LVL25:
+ 264               	.L18:
+ 265               	.LM38:
+ 266 0154 C498      		cbi 56-32,4
+ 267               	.LM39:
+ 268 0156 8EEF      		ldi r24,lo8(-2)
+ 269               	.LVL26:
+ 270 0158 0E94 0000 		call SPI_transmit
+ 271 015c C0E0      		ldi r28,lo8(0)
+ 272 015e D0E0      		ldi r29,hi8(0)
+ 273               	.LVL27:
+ 274               	.L20:
+ 275               	.LM40:
+ 276 0160 FE01      		movw r30,r28
+ 277 0162 E050      		subi r30,lo8(-(buffer))
+ 278 0164 F040      		sbci r31,hi8(-(buffer))
+ 279 0166 8081      		ld r24,Z
+ 280 0168 0E94 0000 		call SPI_transmit
+ 281               	.LM41:
+ 282 016c 2196      		adiw r28,1
+ 283 016e 82E0      		ldi r24,hi8(512)
+ 284 0170 C030      		cpi r28,lo8(512)
+ 285 0172 D807      		cpc r29,r24
+ 286 0174 01F4      		brne .L20
+ 287               	.LM42:
+ 288 0176 8FEF      		ldi r24,lo8(-1)
+ 289 0178 0E94 0000 		call SPI_transmit
+ 290               	.LM43:
+ 291 017c 8FEF      		ldi r24,lo8(-1)
+ 292 017e 0E94 0000 		call SPI_transmit
+ 293               	.LM44:
+ 294 0182 0E94 0000 		call SPI_receive
+ 295 0186 982F      		mov r25,r24
+ 296               	.LVL28:
+ 297               	.LM45:
+ 298 0188 8F71      		andi r24,lo8(31)
+ 299 018a 8530      		cpi r24,lo8(5)
+ 300 018c 01F0      		breq .L21
+ 301               	.LM46:
+ 302 018e C49A      		sbi 56-32,4
+ 303 0190 00C0      		rjmp .L19
+ 304               	.LVL29:
+ 305               	.L24:
+ 306               	.LM47:
+ 307 0192 8FEF      		ldi r24,hi8(-1)
+ 308 0194 CF3F      		cpi r28,lo8(-1)
+ 309 0196 D807      		cpc r29,r24
+ 310 0198 01F0      		breq .L30
+ 311 019a 2196      		adiw r28,1
+ 312 019c 00C0      		rjmp .L23
+ 313               	.LVL30:
+ 314               	.L21:
+ 315 019e C0E0      		ldi r28,lo8(0)
+ 316 01a0 D0E0      		ldi r29,hi8(0)
+ 317               	.LVL31:
+ 318               	.L23:
+ 319               	.LM48:
+ 320 01a2 0E94 0000 		call SPI_receive
+ 321               	.LVL32:
+ 322 01a6 8823      		tst r24
+ 323 01a8 01F0      		breq .L24
+ 324               	.LM49:
+ 325 01aa C49A      		sbi 56-32,4
+ 326               	.LM50:
+ 327 01ac 8FEF      		ldi r24,lo8(-1)
+ 328 01ae 0E94 0000 		call SPI_transmit
+ 329               	.LM51:
+ 330 01b2 C498      		cbi 56-32,4
+ 331 01b4 00C0      		rjmp .L25
+ 332               	.L27:
+ 333               	.LM52:
+ 334 01b6 8FEF      		ldi r24,hi8(-1)
+ 335 01b8 CF3F      		cpi r28,lo8(-1)
+ 336 01ba D807      		cpc r29,r24
+ 337 01bc 01F4      		brne .L26
+ 338               	.L30:
+ 339 01be C49A      		sbi 56-32,4
+ 340 01c0 91E0      		ldi r25,lo8(1)
+ 341               	.LVL33:
+ 342 01c2 00C0      		rjmp .L19
+ 343               	.LVL34:
+ 344               	.L26:
+ 345 01c4 2196      		adiw r28,1
+ 346               	.L25:
+ 347               	.LM53:
+ 348 01c6 0E94 0000 		call SPI_receive
+ 349 01ca 8823      		tst r24
+ 350 01cc 01F0      		breq .L27
+ 351               	.LM54:
+ 352 01ce C49A      		sbi 56-32,4
+ 353 01d0 90E0      		ldi r25,lo8(0)
+ 354               	.LVL35:
+ 355               	.L19:
+ 356               	.LM55:
+ 357 01d2 892F      		mov r24,r25
+ 358               	/* epilogue start */
+ 359 01d4 DF91      		pop r29
+ 360 01d6 CF91      		pop r28
+ 361               	.LVL36:
+ 362 01d8 0895      		ret
+ 363               	.LFE6:
+ 365               	.global	SD_readSingleBlock
+ 367               	SD_readSingleBlock:
+ 368               	.LFB5:
+ 369               	.LM56:
+ 370               	.LVL37:
+ 371 01da 1F93      		push r17
+ 372 01dc CF93      		push r28
+ 373 01de DF93      		push r29
+ 374               	/* prologue: function */
+ 375               	/* frame size = 0 */
+ 376 01e0 AB01      		movw r20,r22
+ 377 01e2 BC01      		movw r22,r24
+ 378               	.LM57:
+ 379 01e4 81E1      		ldi r24,lo8(17)
+ 380 01e6 0E94 0000 		call SD_sendCommand
+ 381               	.LVL38:
+ 382 01ea 182F      		mov r17,r24
+ 383               	.LVL39:
+ 384               	.LM58:
+ 385 01ec 8823      		tst r24
+ 386 01ee 01F4      		brne .L32
+ 387               	.LVL40:
+ 388               	.LM59:
+ 389 01f0 C498      		cbi 56-32,4
+ 390 01f2 C0E0      		ldi r28,lo8(0)
+ 391 01f4 D0E0      		ldi r29,hi8(0)
+ 392 01f6 00C0      		rjmp .L33
+ 393               	.LVL41:
+ 394               	.L34:
+ 395               	.LM60:
+ 396 01f8 2197      		sbiw r28,1
+ 397               	.LM61:
+ 398 01fa 01F4      		brne .L33
+ 399 01fc C49A      		sbi 56-32,4
+ 400 01fe 11E0      		ldi r17,lo8(1)
+ 401 0200 00C0      		rjmp .L32
+ 402               	.LVL42:
+ 403               	.L33:
+ 404               	.LM62:
+ 405 0202 0E94 0000 		call SPI_receive
+ 406 0206 8E3F      		cpi r24,lo8(-2)
+ 407 0208 01F4      		brne .L34
+ 408 020a C0E0      		ldi r28,lo8(0)
+ 409 020c D0E0      		ldi r29,hi8(0)
+ 410               	.LVL43:
+ 411               	.L35:
+ 412               	.LM63:
+ 413 020e 0E94 0000 		call SPI_receive
+ 414 0212 FE01      		movw r30,r28
+ 415 0214 E050      		subi r30,lo8(-(buffer))
+ 416 0216 F040      		sbci r31,hi8(-(buffer))
+ 417 0218 8083      		st Z,r24
+ 418               	.LM64:
+ 419 021a 2196      		adiw r28,1
+ 420 021c 82E0      		ldi r24,hi8(512)
+ 421 021e C030      		cpi r28,lo8(512)
+ 422 0220 D807      		cpc r29,r24
+ 423 0222 01F4      		brne .L35
+ 424               	.LM65:
+ 425 0224 0E94 0000 		call SPI_receive
+ 426               	.LM66:
+ 427 0228 0E94 0000 		call SPI_receive
+ 428               	.LM67:
+ 429 022c 0E94 0000 		call SPI_receive
+ 430               	.LM68:
+ 431 0230 C49A      		sbi 56-32,4
+ 432               	.LVL44:
+ 433               	.L32:
+ 434               	.LM69:
+ 435 0232 812F      		mov r24,r17
+ 436               	/* epilogue start */
+ 437 0234 DF91      		pop r29
+ 438 0236 CF91      		pop r28
+ 439               	.LVL45:
+ 440 0238 1F91      		pop r17
+ 441               	.LVL46:
+ 442 023a 0895      		ret
+ 443               	.LFE5:
+ 445               	.global	SD_init
+ 447               	SD_init:
+ 448               	.LFB2:
+ 449               	.LM70:
+ 450 023c 1F93      		push r17
+ 451 023e CF93      		push r28
+ 452 0240 DF93      		push r29
+ 453               	/* prologue: function */
+ 454               	/* frame size = 0 */
+ 455               	.LM71:
+ 456 0242 10E0      		ldi r17,lo8(0)
+ 457               	.LVL47:
+ 458               	.L40:
+ 459               	.LM72:
+ 460 0244 8FEF      		ldi r24,lo8(-1)
+ 461 0246 0E94 0000 		call SPI_transmit
+ 462               	.LM73:
+ 463 024a 1F5F      		subi r17,lo8(-(1))
+ 464 024c 1A30      		cpi r17,lo8(10)
+ 465 024e 01F4      		brne .L40
+ 466               	.LM74:
+ 467 0250 C498      		cbi 56-32,4
+ 468 0252 C0E0      		ldi r28,lo8(0)
+ 469 0254 D0E0      		ldi r29,hi8(0)
+ 470               	.LVL48:
+ 471               	.L43:
+ 472               	.LM75:
+ 473 0256 80E0      		ldi r24,lo8(0)
+ 474               	.LVL49:
+ 475 0258 40E0      		ldi r20,lo8(0)
+ 476 025a 50E0      		ldi r21,hi8(0)
+ 477 025c 60E0      		ldi r22,hlo8(0)
+ 478 025e 70E0      		ldi r23,hhi8(0)
+ 479 0260 0E94 0000 		call SD_sendCommand
+ 480               	.LM76:
+ 481 0264 2196      		adiw r28,1
+ 482               	.LM77:
+ 483 0266 C132      		cpi r28,33
+ 484 0268 D105      		cpc r29,__zero_reg__
+ 485 026a 01F4      		brne .L41
+ 486 026c 81E0      		ldi r24,lo8(1)
+ 487 026e 00C0      		rjmp .L42
+ 488               	.L41:
+ 489               	.LM78:
+ 490 0270 8130      		cpi r24,lo8(1)
+ 491               	.LVL50:
+ 492 0272 01F4      		brne .L43
+ 493               	.LM79:
+ 494 0274 C49A      		sbi 56-32,4
+ 495               	.LM80:
+ 496 0276 8FEF      		ldi r24,lo8(-1)
+ 497               	.LVL51:
+ 498 0278 0E94 0000 		call SPI_transmit
+ 499               	.LM81:
+ 500 027c 8FEF      		ldi r24,lo8(-1)
+ 501 027e 0E94 0000 		call SPI_transmit
+ 502 0282 C0E0      		ldi r28,lo8(0)
+ 503 0284 D0E0      		ldi r29,hi8(0)
+ 504               	.LVL52:
+ 505               	.L46:
+ 506               	.LM82:
+ 507 0286 88E0      		ldi r24,lo8(8)
+ 508               	.LVL53:
+ 509 0288 4AEA      		ldi r20,lo8(426)
+ 510 028a 51E0      		ldi r21,hi8(426)
+ 511 028c 60E0      		ldi r22,hlo8(426)
+ 512 028e 70E0      		ldi r23,hhi8(426)
+ 513 0290 0E94 0000 		call SD_sendCommand
+ 514               	.LM83:
+ 515 0294 2196      		adiw r28,1
+ 516               	.LM84:
+ 517 0296 CF3F      		cpi r28,255
+ 518 0298 D105      		cpc r29,__zero_reg__
+ 519 029a 01F4      		brne .L44
+ 520               	.LM85:
+ 521 029c 8DE0      		ldi r24,lo8(13)
+ 522 029e 0E94 0000 		call transmitByte
+ 523 02a2 8AE0      		ldi r24,lo8(10)
+ 524 02a4 0E94 0000 		call transmitByte
+ 525               	.LM86:
+ 526 02a8 81E0      		ldi r24,lo8(1)
+ 527 02aa 8093 0000 		sts cardType,r24
+ 528 02ae 11E0      		ldi r17,lo8(1)
+ 529               	.LVL54:
+ 530 02b0 00C0      		rjmp .L45
+ 531               	.LVL55:
+ 532               	.L44:
+ 533               	.LM87:
+ 534 02b2 8130      		cpi r24,lo8(1)
+ 535               	.LVL56:
+ 536 02b4 01F4      		brne .L46
+ 537 02b6 12E0      		ldi r17,lo8(2)
+ 538               	.LVL57:
+ 539               	.L45:
+ 540 02b8 C0E0      		ldi r28,lo8(0)
+ 541 02ba D0E0      		ldi r29,hi8(0)
+ 542               	.LVL58:
+ 543               	.L48:
+ 544               	.LM88:
+ 545 02bc 87E3      		ldi r24,lo8(55)
+ 546               	.LVL59:
+ 547 02be 40E0      		ldi r20,lo8(0)
+ 548 02c0 50E0      		ldi r21,hi8(0)
+ 549 02c2 60E0      		ldi r22,hlo8(0)
+ 550 02c4 70E0      		ldi r23,hhi8(0)
+ 551 02c6 0E94 0000 		call SD_sendCommand
+ 552               	.LM89:
+ 553 02ca 89E2      		ldi r24,lo8(41)
+ 554 02cc 40E0      		ldi r20,lo8(1073741824)
+ 555 02ce 50E0      		ldi r21,hi8(1073741824)
+ 556 02d0 60E0      		ldi r22,hlo8(1073741824)
+ 557 02d2 70E4      		ldi r23,hhi8(1073741824)
+ 558 02d4 0E94 0000 		call SD_sendCommand
+ 559               	.LM90:
+ 560 02d8 2196      		adiw r28,1
+ 561               	.LM91:
+ 562 02da CF3F      		cpi r28,255
+ 563 02dc D105      		cpc r29,__zero_reg__
+ 564 02de 01F4      		brne .L47
+ 565               	.LM92:
+ 566 02e0 8DE0      		ldi r24,lo8(13)
+ 567 02e2 0E94 0000 		call transmitByte
+ 568 02e6 8AE0      		ldi r24,lo8(10)
+ 569 02e8 0E94 0000 		call transmitByte
+ 570 02ec 82E0      		ldi r24,lo8(2)
+ 571 02ee 00C0      		rjmp .L42
+ 572               	.L47:
+ 573               	.LM93:
+ 574 02f0 8823      		tst r24
+ 575               	.LVL60:
+ 576 02f2 01F4      		brne .L48
+ 577               	.LM94:
+ 578 02f4 1092 0000 		sts SDHC_flag,__zero_reg__
+ 579               	.LM95:
+ 580 02f8 1230      		cpi r17,lo8(2)
+ 581 02fa 01F4      		brne .L42
+ 582 02fc C0E0      		ldi r28,lo8(0)
+ 583 02fe D0E0      		ldi r29,hi8(0)
+ 584               	.LVL61:
+ 585               	.L52:
+ 586               	.LM96:
+ 587 0300 8AE3      		ldi r24,lo8(58)
+ 588               	.LVL62:
+ 589 0302 40E0      		ldi r20,lo8(0)
+ 590 0304 50E0      		ldi r21,hi8(0)
+ 591 0306 60E0      		ldi r22,hlo8(0)
+ 592 0308 70E0      		ldi r23,hhi8(0)
+ 593 030a 0E94 0000 		call SD_sendCommand
+ 594               	.LM97:
+ 595 030e 2196      		adiw r28,1
+ 596               	.LM98:
+ 597 0310 CF3F      		cpi r28,255
+ 598 0312 D105      		cpc r29,__zero_reg__
+ 599 0314 01F4      		brne .L50
+ 600               	.LM99:
+ 601 0316 8DE0      		ldi r24,lo8(13)
+ 602 0318 0E94 0000 		call transmitByte
+ 603 031c 8AE0      		ldi r24,lo8(10)
+ 604 031e 0E94 0000 		call transmitByte
+ 605               	.LM100:
+ 606 0322 1092 0000 		sts cardType,__zero_reg__
+ 607 0326 00C0      		rjmp .L51
+ 608               	.L50:
+ 609               	.LM101:
+ 610 0328 8823      		tst r24
+ 611               	.LVL63:
+ 612 032a 01F4      		brne .L52
+ 613               	.L51:
+ 614               	.LM102:
+ 615 032c 8091 0000 		lds r24,SDHC_flag
+ 616               	.LVL64:
+ 617 0330 8130      		cpi r24,lo8(1)
+ 618 0332 01F4      		brne .L53
+ 619 0334 82E0      		ldi r24,lo8(2)
+ 620 0336 00C0      		rjmp .L60
+ 621               	.L53:
+ 622               	.LM103:
+ 623 0338 83E0      		ldi r24,lo8(3)
+ 624               	.L60:
+ 625 033a 8093 0000 		sts cardType,r24
+ 626 033e 80E0      		ldi r24,lo8(0)
+ 627               	.LVL65:
+ 628               	.L42:
+ 629               	.LVL66:
+ 630               	/* epilogue start */
+ 631               	.LM104:
+ 632 0340 DF91      		pop r29
+ 633 0342 CF91      		pop r28
+ 634               	.LVL67:
+ 635 0344 1F91      		pop r17
+ 636               	.LVL68:
+ 637 0346 0895      		ret
+ 638               	.LFE2:
+ 640               		.comm startBlock,4,1
+ 641               		.comm totalBlocks,4,1
+ 642               		.comm SDHC_flag,1,1
+ 643               		.comm cardType,1,1
+ 644               		.comm buffer,512,1
+ 701               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 SD_routines.c
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:2      *ABS*:0000003f __SREG__
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:5      *ABS*:00000034 __CCP__
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:18     .text:00000000 SD_sendCommand
+                            *COM*:00000001 SDHC_flag
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:168    .text:000000d8 SD_erase
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:243    .text:0000013e SD_writeSingleBlock
+                            *COM*:00000200 buffer
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:367    .text:000001da SD_readSingleBlock
+C:\Users\Hiran\AppData\Local\Temp/ccp7LbYA.s:447    .text:0000023c SD_init
+                            *COM*:00000001 cardType
+                            *COM*:00000004 startBlock
+                            *COM*:00000004 totalBlocks
+
+UNDEFINED SYMBOLS
+SPI_transmit
+SPI_receive
+transmitByte
+__do_clear_bss

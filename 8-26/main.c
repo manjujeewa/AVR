@@ -1,0 +1,33 @@
+#define F_CPU 8000000UL
+#define DATA PORTC 
+#define DATA_DDR DDRC
+
+#include <avr/io.h>
+#include <util/delay.h>
+
+unsigned char array[10] = {0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f};
+
+int main(void){
+		
+	DATA_DDR = 0xff;
+	DDRA = 0b00110000;
+	PORTA = 0b00110000;
+	
+	//unsigned char array[16] = {0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f,0x77,0x7c,0x39,0x5e,0x79,0x71};
+		
+	while(1){
+	
+		unsigned char i ;
+	
+		for(i=0;i<10;i++){
+		
+			DATA=array[i];	
+			_delay_ms(1000);
+		}
+		
+	}
+	
+	
+	
+return 0;
+}

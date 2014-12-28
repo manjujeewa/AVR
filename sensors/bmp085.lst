@@ -1,0 +1,1138 @@
+   1               		.file	"bmp085.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	bmp085_avaragefilter
+  18               	bmp085_avaragefilter:
+  19               	.LFB11:
+  20               	.LM1:
+  21               	.LVL0:
+  22               	/* prologue: function */
+  23               	/* frame size = 0 */
+  24 0000 9B01      		movw r18,r22
+  25 0002 AC01      		movw r20,r24
+  26               	.LM2:
+  27 0004 E0E0      		ldi r30,lo8(k)
+  28 0006 F0E0      		ldi r31,hi8(k)
+  29               	.LVL1:
+  30               	.L2:
+  31               	.LM3:
+  32 0008 8481      		ldd r24,Z+4
+  33 000a 9581      		ldd r25,Z+5
+  34 000c A681      		ldd r26,Z+6
+  35 000e B781      		ldd r27,Z+7
+  36 0010 8193      		st Z+,r24
+  37 0012 9193      		st Z+,r25
+  38 0014 A193      		st Z+,r26
+  39 0016 B193      		st Z+,r27
+  40               	.LM4:
+  41 0018 80E0      		ldi r24,hi8(k+84)
+  42 001a E030      		cpi r30,lo8(k+84)
+  43 001c F807      		cpc r31,r24
+  44 001e 01F4      		brne .L2
+  45               	.LM5:
+  46 0020 2093 0000 		sts k+80,r18
+  47 0024 3093 0000 		sts (k+80)+1,r19
+  48 0028 4093 0000 		sts (k+80)+2,r20
+  49 002c 5093 0000 		sts (k+80)+3,r21
+  50 0030 E0E0      		ldi r30,lo8(k)
+  51 0032 F0E0      		ldi r31,hi8(k)
+  52 0034 20E0      		ldi r18,lo8(0)
+  53 0036 30E0      		ldi r19,hi8(0)
+  54 0038 40E0      		ldi r20,hlo8(0)
+  55 003a 50E0      		ldi r21,hhi8(0)
+  56               	.LVL2:
+  57               	.L3:
+  58               	.LM6:
+  59 003c 8191      		ld r24,Z+
+  60 003e 9191      		ld r25,Z+
+  61 0040 A191      		ld r26,Z+
+  62 0042 B191      		ld r27,Z+
+  63 0044 280F      		add r18,r24
+  64 0046 391F      		adc r19,r25
+  65 0048 4A1F      		adc r20,r26
+  66 004a 5B1F      		adc r21,r27
+  67               	.LM7:
+  68 004c 80E0      		ldi r24,hi8(k+84)
+  69 004e E030      		cpi r30,lo8(k+84)
+  70 0050 F807      		cpc r31,r24
+  71 0052 01F4      		brne .L3
+  72 0054 CA01      		movw r24,r20
+  73 0056 B901      		movw r22,r18
+  74               	.LVL3:
+  75 0058 25E1      		ldi r18,lo8(21)
+  76 005a 30E0      		ldi r19,hi8(21)
+  77 005c 40E0      		ldi r20,hlo8(21)
+  78 005e 50E0      		ldi r21,hhi8(21)
+  79               	.LVL4:
+  80 0060 0E94 0000 		call __divmodsi4
+  81 0064 CA01      		movw r24,r20
+  82               	.LM8:
+  83 0066 B901      		movw r22,r18
+  84               	/* epilogue start */
+  85 0068 0895      		ret
+  86               	.LFE11:
+  88               	.global	bmp085_readmem
+  90               	bmp085_readmem:
+  91               	.LFB10:
+  92               	.LM9:
+  93               	.LVL5:
+  94 006a EF92      		push r14
+  95 006c FF92      		push r15
+  96 006e 0F93      		push r16
+  97 0070 1F93      		push r17
+  98 0072 CF93      		push r28
+  99 0074 DF93      		push r29
+ 100               	/* prologue: function */
+ 101               	/* frame size = 0 */
+ 102 0076 182F      		mov r17,r24
+ 103 0078 062F      		mov r16,r22
+ 104 007a F72E      		mov r15,r23
+ 105               	.LVL6:
+ 106 007c E42E      		mov r14,r20
+ 107               	.LM10:
+ 108 007e 8EEE      		ldi r24,lo8(-18)
+ 109               	.LVL7:
+ 110 0080 0E94 0000 		call i2c_start_wait
+ 111               	.LVL8:
+ 112               	.LM11:
+ 113 0084 812F      		mov r24,r17
+ 114 0086 0E94 0000 		call i2c_write
+ 115               	.LM12:
+ 116 008a 8FEE      		ldi r24,lo8(-17)
+ 117 008c 0E94 0000 		call i2c_rep_start
+ 118 0090 202F      		mov r18,r16
+ 119 0092 3F2D      		mov r19,r15
+ 120 0094 C901      		movw r24,r18
+ 121 0096 EC01      		movw r28,r24
+ 122 0098 FF24      		clr r15
+ 123               	.LVL9:
+ 124               	.LM13:
+ 125 009a 0E2D      		mov r16,r14
+ 126               	.LVL10:
+ 127 009c 10E0      		ldi r17,lo8(0)
+ 128               	.LVL11:
+ 129 009e 0150      		subi r16,lo8(-(-1))
+ 130 00a0 1040      		sbci r17,hi8(-(-1))
+ 131 00a2 00C0      		rjmp .L8
+ 132               	.L11:
+ 133 00a4 8F2D      		mov r24,r15
+ 134 00a6 90E0      		ldi r25,lo8(0)
+ 135               	.LVL12:
+ 136 00a8 8017      		cp r24,r16
+ 137 00aa 9107      		cpc r25,r17
+ 138 00ac 01F4      		brne .L9
+ 139               	.LVL13:
+ 140               	.LM14:
+ 141 00ae 0E94 0000 		call i2c_readNak
+ 142               	.LVL14:
+ 143 00b2 00C0      		rjmp .L13
+ 144               	.LVL15:
+ 145               	.L9:
+ 146               	.LM15:
+ 147 00b4 0E94 0000 		call i2c_readAck
+ 148               	.LVL16:
+ 149               	.L13:
+ 150 00b8 8883      		st Y,r24
+ 151               	.LM16:
+ 152 00ba F394      		inc r15
+ 153 00bc 2196      		adiw r28,1
+ 154               	.L8:
+ 155 00be FE14      		cp r15,r14
+ 156 00c0 00F0      		brlo .L11
+ 157               	.LM17:
+ 158 00c2 0E94 0000 		call i2c_stop
+ 159               	/* epilogue start */
+ 160               	.LM18:
+ 161 00c6 DF91      		pop r29
+ 162 00c8 CF91      		pop r28
+ 163 00ca 1F91      		pop r17
+ 164 00cc 0F91      		pop r16
+ 165 00ce FF90      		pop r15
+ 166               	.LVL17:
+ 167 00d0 EF90      		pop r14
+ 168               	.LVL18:
+ 169 00d2 0895      		ret
+ 170               	.LFE10:
+ 172               	.global	bmp085_getcalibration
+ 174               	bmp085_getcalibration:
+ 175               	.LFB12:
+ 176               	.LM19:
+ 177 00d4 0F93      		push r16
+ 178 00d6 1F93      		push r17
+ 179 00d8 DF93      		push r29
+ 180 00da CF93      		push r28
+ 181 00dc 00D0      		rcall .
+ 182 00de CDB7      		in r28,__SP_L__
+ 183 00e0 DEB7      		in r29,__SP_H__
+ 184               	/* prologue: function */
+ 185               	/* frame size = 2 */
+ 186               	.LM20:
+ 187 00e2 1A82      		std Y+2,__zero_reg__
+ 188 00e4 1982      		std Y+1,__zero_reg__
+ 189               	.LM21:
+ 190 00e6 8AEA      		ldi r24,lo8(-86)
+ 191 00e8 8E01      		movw r16,r28
+ 192 00ea 0F5F      		subi r16,lo8(-(1))
+ 193 00ec 1F4F      		sbci r17,hi8(-(1))
+ 194 00ee B801      		movw r22,r16
+ 195 00f0 42E0      		ldi r20,lo8(2)
+ 196 00f2 0E94 0000 		call bmp085_readmem
+ 197               	.LM22:
+ 198 00f6 9981      		ldd r25,Y+1
+ 199 00f8 80E0      		ldi r24,lo8(0)
+ 200 00fa 2A81      		ldd r18,Y+2
+ 201 00fc 30E0      		ldi r19,lo8(0)
+ 202 00fe 822B      		or r24,r18
+ 203 0100 932B      		or r25,r19
+ 204 0102 9093 0000 		sts (bmp085_regac1)+1,r25
+ 205 0106 8093 0000 		sts bmp085_regac1,r24
+ 206               	.LM23:
+ 207 010a 8CEA      		ldi r24,lo8(-84)
+ 208 010c B801      		movw r22,r16
+ 209 010e 42E0      		ldi r20,lo8(2)
+ 210 0110 0E94 0000 		call bmp085_readmem
+ 211               	.LM24:
+ 212 0114 9981      		ldd r25,Y+1
+ 213 0116 80E0      		ldi r24,lo8(0)
+ 214 0118 2A81      		ldd r18,Y+2
+ 215 011a 30E0      		ldi r19,lo8(0)
+ 216 011c 822B      		or r24,r18
+ 217 011e 932B      		or r25,r19
+ 218 0120 9093 0000 		sts (bmp085_regac2)+1,r25
+ 219 0124 8093 0000 		sts bmp085_regac2,r24
+ 220               	.LM25:
+ 221 0128 8EEA      		ldi r24,lo8(-82)
+ 222 012a B801      		movw r22,r16
+ 223 012c 42E0      		ldi r20,lo8(2)
+ 224 012e 0E94 0000 		call bmp085_readmem
+ 225               	.LM26:
+ 226 0132 9981      		ldd r25,Y+1
+ 227 0134 80E0      		ldi r24,lo8(0)
+ 228 0136 2A81      		ldd r18,Y+2
+ 229 0138 30E0      		ldi r19,lo8(0)
+ 230 013a 822B      		or r24,r18
+ 231 013c 932B      		or r25,r19
+ 232 013e 9093 0000 		sts (bmp085_regac3)+1,r25
+ 233 0142 8093 0000 		sts bmp085_regac3,r24
+ 234               	.LM27:
+ 235 0146 80EB      		ldi r24,lo8(-80)
+ 236 0148 B801      		movw r22,r16
+ 237 014a 42E0      		ldi r20,lo8(2)
+ 238 014c 0E94 0000 		call bmp085_readmem
+ 239               	.LM28:
+ 240 0150 9981      		ldd r25,Y+1
+ 241 0152 80E0      		ldi r24,lo8(0)
+ 242 0154 2A81      		ldd r18,Y+2
+ 243 0156 30E0      		ldi r19,lo8(0)
+ 244 0158 822B      		or r24,r18
+ 245 015a 932B      		or r25,r19
+ 246 015c 9093 0000 		sts (bmp085_regac4)+1,r25
+ 247 0160 8093 0000 		sts bmp085_regac4,r24
+ 248               	.LM29:
+ 249 0164 82EB      		ldi r24,lo8(-78)
+ 250 0166 B801      		movw r22,r16
+ 251 0168 42E0      		ldi r20,lo8(2)
+ 252 016a 0E94 0000 		call bmp085_readmem
+ 253               	.LM30:
+ 254 016e 9981      		ldd r25,Y+1
+ 255 0170 80E0      		ldi r24,lo8(0)
+ 256 0172 2A81      		ldd r18,Y+2
+ 257 0174 30E0      		ldi r19,lo8(0)
+ 258 0176 822B      		or r24,r18
+ 259 0178 932B      		or r25,r19
+ 260 017a 9093 0000 		sts (bmp085_regac5)+1,r25
+ 261 017e 8093 0000 		sts bmp085_regac5,r24
+ 262               	.LM31:
+ 263 0182 84EB      		ldi r24,lo8(-76)
+ 264 0184 B801      		movw r22,r16
+ 265 0186 42E0      		ldi r20,lo8(2)
+ 266 0188 0E94 0000 		call bmp085_readmem
+ 267               	.LM32:
+ 268 018c 9981      		ldd r25,Y+1
+ 269 018e 80E0      		ldi r24,lo8(0)
+ 270 0190 2A81      		ldd r18,Y+2
+ 271 0192 30E0      		ldi r19,lo8(0)
+ 272 0194 822B      		or r24,r18
+ 273 0196 932B      		or r25,r19
+ 274 0198 9093 0000 		sts (bmp085_regac6)+1,r25
+ 275 019c 8093 0000 		sts bmp085_regac6,r24
+ 276               	.LM33:
+ 277 01a0 86EB      		ldi r24,lo8(-74)
+ 278 01a2 B801      		movw r22,r16
+ 279 01a4 42E0      		ldi r20,lo8(2)
+ 280 01a6 0E94 0000 		call bmp085_readmem
+ 281               	.LM34:
+ 282 01aa 9981      		ldd r25,Y+1
+ 283 01ac 80E0      		ldi r24,lo8(0)
+ 284 01ae 2A81      		ldd r18,Y+2
+ 285 01b0 30E0      		ldi r19,lo8(0)
+ 286 01b2 822B      		or r24,r18
+ 287 01b4 932B      		or r25,r19
+ 288 01b6 9093 0000 		sts (bmp085_regb1)+1,r25
+ 289 01ba 8093 0000 		sts bmp085_regb1,r24
+ 290               	.LM35:
+ 291 01be 88EB      		ldi r24,lo8(-72)
+ 292 01c0 B801      		movw r22,r16
+ 293 01c2 42E0      		ldi r20,lo8(2)
+ 294 01c4 0E94 0000 		call bmp085_readmem
+ 295               	.LM36:
+ 296 01c8 9981      		ldd r25,Y+1
+ 297 01ca 80E0      		ldi r24,lo8(0)
+ 298 01cc 2A81      		ldd r18,Y+2
+ 299 01ce 30E0      		ldi r19,lo8(0)
+ 300 01d0 822B      		or r24,r18
+ 301 01d2 932B      		or r25,r19
+ 302 01d4 9093 0000 		sts (bmp085_regb2)+1,r25
+ 303 01d8 8093 0000 		sts bmp085_regb2,r24
+ 304               	.LM37:
+ 305 01dc 8AEB      		ldi r24,lo8(-70)
+ 306 01de B801      		movw r22,r16
+ 307 01e0 42E0      		ldi r20,lo8(2)
+ 308 01e2 0E94 0000 		call bmp085_readmem
+ 309               	.LM38:
+ 310 01e6 9981      		ldd r25,Y+1
+ 311 01e8 80E0      		ldi r24,lo8(0)
+ 312 01ea 2A81      		ldd r18,Y+2
+ 313 01ec 30E0      		ldi r19,lo8(0)
+ 314 01ee 822B      		or r24,r18
+ 315 01f0 932B      		or r25,r19
+ 316 01f2 9093 0000 		sts (bmp085_regmb)+1,r25
+ 317 01f6 8093 0000 		sts bmp085_regmb,r24
+ 318               	.LM39:
+ 319 01fa 8CEB      		ldi r24,lo8(-68)
+ 320 01fc B801      		movw r22,r16
+ 321 01fe 42E0      		ldi r20,lo8(2)
+ 322 0200 0E94 0000 		call bmp085_readmem
+ 323               	.LM40:
+ 324 0204 9981      		ldd r25,Y+1
+ 325 0206 80E0      		ldi r24,lo8(0)
+ 326 0208 2A81      		ldd r18,Y+2
+ 327 020a 30E0      		ldi r19,lo8(0)
+ 328 020c 822B      		or r24,r18
+ 329 020e 932B      		or r25,r19
+ 330 0210 9093 0000 		sts (bmp085_regmc)+1,r25
+ 331 0214 8093 0000 		sts bmp085_regmc,r24
+ 332               	.LM41:
+ 333 0218 8EEB      		ldi r24,lo8(-66)
+ 334 021a B801      		movw r22,r16
+ 335 021c 42E0      		ldi r20,lo8(2)
+ 336 021e 0E94 0000 		call bmp085_readmem
+ 337               	.LM42:
+ 338 0222 9981      		ldd r25,Y+1
+ 339 0224 80E0      		ldi r24,lo8(0)
+ 340 0226 2A81      		ldd r18,Y+2
+ 341 0228 30E0      		ldi r19,lo8(0)
+ 342 022a 822B      		or r24,r18
+ 343 022c 932B      		or r25,r19
+ 344 022e 9093 0000 		sts (bmp085_regmd)+1,r25
+ 345 0232 8093 0000 		sts bmp085_regmd,r24
+ 346               	/* epilogue start */
+ 347               	.LM43:
+ 348 0236 0F90      		pop __tmp_reg__
+ 349 0238 0F90      		pop __tmp_reg__
+ 350 023a CF91      		pop r28
+ 351 023c DF91      		pop r29
+ 352 023e 1F91      		pop r17
+ 353 0240 0F91      		pop r16
+ 354 0242 0895      		ret
+ 355               	.LFE12:
+ 357               	.global	bmp085_writemem
+ 359               	bmp085_writemem:
+ 360               	.LFB9:
+ 361               	.LM44:
+ 362               	.LVL19:
+ 363 0244 0F93      		push r16
+ 364 0246 1F93      		push r17
+ 365               	/* prologue: function */
+ 366               	/* frame size = 0 */
+ 367 0248 182F      		mov r17,r24
+ 368 024a 062F      		mov r16,r22
+ 369               	.LM45:
+ 370 024c 8EEE      		ldi r24,lo8(-18)
+ 371               	.LVL20:
+ 372 024e 0E94 0000 		call i2c_start_wait
+ 373               	.LVL21:
+ 374               	.LM46:
+ 375 0252 812F      		mov r24,r17
+ 376 0254 0E94 0000 		call i2c_write
+ 377               	.LM47:
+ 378 0258 802F      		mov r24,r16
+ 379 025a 0E94 0000 		call i2c_write
+ 380               	.LM48:
+ 381 025e 0E94 0000 		call i2c_stop
+ 382               	/* epilogue start */
+ 383               	.LM49:
+ 384 0262 1F91      		pop r17
+ 385               	.LVL22:
+ 386 0264 0F91      		pop r16
+ 387               	.LVL23:
+ 388 0266 0895      		ret
+ 389               	.LFE9:
+ 391               	.global	bmp085_getrawtemperature
+ 393               	bmp085_getrawtemperature:
+ 394               	.LFB13:
+ 395               	.LM50:
+ 396 0268 EF92      		push r14
+ 397 026a FF92      		push r15
+ 398 026c 0F93      		push r16
+ 399 026e 1F93      		push r17
+ 400 0270 DF93      		push r29
+ 401 0272 CF93      		push r28
+ 402 0274 00D0      		rcall .
+ 403 0276 CDB7      		in r28,__SP_L__
+ 404 0278 DEB7      		in r29,__SP_H__
+ 405               	/* prologue: function */
+ 406               	/* frame size = 2 */
+ 407               	.LM51:
+ 408 027a 1A82      		std Y+2,__zero_reg__
+ 409 027c 1982      		std Y+1,__zero_reg__
+ 410               	.LM52:
+ 411 027e 84EF      		ldi r24,lo8(-12)
+ 412 0280 6EE2      		ldi r22,lo8(46)
+ 413 0282 0E94 0000 		call bmp085_writemem
+ 414               	.LBB36:
+ 415               	.LBB37:
+ 416               	.LBB38:
+ 417               	.LBB39:
+ 418               	.LM53:
+ 419 0286 80E2      		ldi r24,lo8(20000)
+ 420 0288 9EE4      		ldi r25,hi8(20000)
+ 421               	.LVL24:
+ 422               	/* #APP */
+ 423               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 424 028a 0197      		1: sbiw r24,1
+ 425 028c 01F4      		brne 1b
+ 426               	 ;  0 "" 2
+ 427               	/* #NOAPP */
+ 428               	.LBE39:
+ 429               	.LBE38:
+ 430               	.LBE37:
+ 431               	.LBE36:
+ 432               	.LM54:
+ 433 028e 86EF      		ldi r24,lo8(-10)
+ 434               	.LVL25:
+ 435 0290 BE01      		movw r22,r28
+ 436 0292 6F5F      		subi r22,lo8(-(1))
+ 437 0294 7F4F      		sbci r23,hi8(-(1))
+ 438 0296 42E0      		ldi r20,lo8(2)
+ 439 0298 0E94 0000 		call bmp085_readmem
+ 440               	.LM55:
+ 441 029c 6981      		ldd r22,Y+1
+ 442 029e 70E0      		ldi r23,lo8(0)
+ 443 02a0 80E0      		ldi r24,lo8(0)
+ 444 02a2 90E0      		ldi r25,hi8(0)
+ 445 02a4 982F      		mov r25,r24
+ 446 02a6 872F      		mov r24,r23
+ 447 02a8 762F      		mov r23,r22
+ 448 02aa 6627      		clr r22
+ 449 02ac 2A81      		ldd r18,Y+2
+ 450 02ae 30E0      		ldi r19,lo8(0)
+ 451 02b0 40E0      		ldi r20,lo8(0)
+ 452 02b2 50E0      		ldi r21,hi8(0)
+ 453 02b4 622B      		or r22,r18
+ 454 02b6 732B      		or r23,r19
+ 455 02b8 842B      		or r24,r20
+ 456 02ba 952B      		or r25,r21
+ 457 02bc 2091 0000 		lds r18,bmp085_regac6
+ 458 02c0 3091 0000 		lds r19,(bmp085_regac6)+1
+ 459 02c4 40E0      		ldi r20,lo8(0)
+ 460 02c6 50E0      		ldi r21,hi8(0)
+ 461 02c8 621B      		sub r22,r18
+ 462 02ca 730B      		sbc r23,r19
+ 463 02cc 840B      		sbc r24,r20
+ 464 02ce 950B      		sbc r25,r21
+ 465 02d0 2091 0000 		lds r18,bmp085_regac5
+ 466 02d4 3091 0000 		lds r19,(bmp085_regac5)+1
+ 467 02d8 40E0      		ldi r20,lo8(0)
+ 468 02da 50E0      		ldi r21,hi8(0)
+ 469 02dc 0E94 0000 		call __mulsi3
+ 470 02e0 7B01      		movw r14,r22
+ 471 02e2 8C01      		movw r16,r24
+ 472               	.LVL26:
+ 473 02e4 3FE0      		ldi r19,15
+ 474 02e6 1595      	1:	asr r17
+ 475 02e8 0795      		ror r16
+ 476 02ea F794      		ror r15
+ 477 02ec E794      		ror r14
+ 478 02ee 3A95      		dec r19
+ 479 02f0 01F4      		brne 1b
+ 480               	.LM56:
+ 481 02f2 6091 0000 		lds r22,bmp085_regmc
+ 482 02f6 7091 0000 		lds r23,(bmp085_regmc)+1
+ 483 02fa 8827      		clr r24
+ 484 02fc 77FD      		sbrc r23,7
+ 485 02fe 8095      		com r24
+ 486 0300 982F      		mov r25,r24
+ 487 0302 2BE0      		ldi r18,11
+ 488 0304 660F      	1:	lsl r22
+ 489 0306 771F      		rol r23
+ 490 0308 881F      		rol r24
+ 491 030a 991F      		rol r25
+ 492 030c 2A95      		dec r18
+ 493 030e 01F4      		brne 1b
+ 494 0310 2091 0000 		lds r18,bmp085_regmd
+ 495 0314 3091 0000 		lds r19,(bmp085_regmd)+1
+ 496 0318 4427      		clr r20
+ 497 031a 37FD      		sbrc r19,7
+ 498 031c 4095      		com r20
+ 499 031e 542F      		mov r21,r20
+ 500 0320 2E0D      		add r18,r14
+ 501 0322 3F1D      		adc r19,r15
+ 502 0324 401F      		adc r20,r16
+ 503 0326 511F      		adc r21,r17
+ 504 0328 0E94 0000 		call __divmodsi4
+ 505 032c E20E      		add r14,r18
+ 506 032e F31E      		adc r15,r19
+ 507 0330 041F      		adc r16,r20
+ 508 0332 151F      		adc r17,r21
+ 509 0334 E092 0000 		sts bmp085_rawtemperature,r14
+ 510 0338 F092 0000 		sts (bmp085_rawtemperature)+1,r15
+ 511 033c 0093 0000 		sts (bmp085_rawtemperature)+2,r16
+ 512 0340 1093 0000 		sts (bmp085_rawtemperature)+3,r17
+ 513               	/* epilogue start */
+ 514               	.LM57:
+ 515 0344 0F90      		pop __tmp_reg__
+ 516 0346 0F90      		pop __tmp_reg__
+ 517 0348 CF91      		pop r28
+ 518 034a DF91      		pop r29
+ 519 034c 1F91      		pop r17
+ 520 034e 0F91      		pop r16
+ 521 0350 FF90      		pop r15
+ 522 0352 EF90      		pop r14
+ 523               	.LVL27:
+ 524 0354 0895      		ret
+ 525               	.LFE13:
+ 527               	.global	bmp085_gettemperature
+ 529               	bmp085_gettemperature:
+ 530               	.LFB15:
+ 531               	.LM58:
+ 532               	/* prologue: function */
+ 533               	/* frame size = 0 */
+ 534               	.LM59:
+ 535 0356 0E94 0000 		call bmp085_getrawtemperature
+ 536               	.LM60:
+ 537 035a 6091 0000 		lds r22,bmp085_rawtemperature
+ 538 035e 7091 0000 		lds r23,(bmp085_rawtemperature)+1
+ 539 0362 8091 0000 		lds r24,(bmp085_rawtemperature)+2
+ 540 0366 9091 0000 		lds r25,(bmp085_rawtemperature)+3
+ 541 036a 685F      		subi r22,lo8(-(8))
+ 542 036c 7F4F      		sbci r23,hi8(-(8))
+ 543 036e 8F4F      		sbci r24,hlo8(-(8))
+ 544 0370 9F4F      		sbci r25,hhi8(-(8))
+ 545 0372 54E0      		ldi r21,4
+ 546 0374 9595      	1:	asr r25
+ 547 0376 8795      		ror r24
+ 548 0378 7795      		ror r23
+ 549 037a 6795      		ror r22
+ 550 037c 5A95      		dec r21
+ 551 037e 01F4      		brne 1b
+ 552 0380 0E94 0000 		call __floatsisf
+ 553 0384 20E0      		ldi r18,lo8(0x41200000)
+ 554 0386 30E0      		ldi r19,hi8(0x41200000)
+ 555 0388 40E2      		ldi r20,hlo8(0x41200000)
+ 556 038a 51E4      		ldi r21,hhi8(0x41200000)
+ 557 038c 0E94 0000 		call __divsf3
+ 558               	/* epilogue start */
+ 559               	.LM61:
+ 560 0390 0895      		ret
+ 561               	.LFE15:
+ 563               	.global	bmp085_getrawpressure
+ 565               	bmp085_getrawpressure:
+ 566               	.LFB14:
+ 567               	.LM62:
+ 568 0392 2F92      		push r2
+ 569 0394 3F92      		push r3
+ 570 0396 4F92      		push r4
+ 571 0398 5F92      		push r5
+ 572 039a 6F92      		push r6
+ 573 039c 7F92      		push r7
+ 574 039e 8F92      		push r8
+ 575 03a0 9F92      		push r9
+ 576 03a2 AF92      		push r10
+ 577 03a4 BF92      		push r11
+ 578 03a6 CF92      		push r12
+ 579 03a8 DF92      		push r13
+ 580 03aa EF92      		push r14
+ 581 03ac FF92      		push r15
+ 582 03ae 0F93      		push r16
+ 583 03b0 1F93      		push r17
+ 584 03b2 DF93      		push r29
+ 585 03b4 CF93      		push r28
+ 586 03b6 CDB7      		in r28,__SP_L__
+ 587 03b8 DEB7      		in r29,__SP_H__
+ 588 03ba 2797      		sbiw r28,7
+ 589 03bc 0FB6      		in __tmp_reg__,__SREG__
+ 590 03be F894      		cli
+ 591 03c0 DEBF      		out __SP_H__,r29
+ 592 03c2 0FBE      		out __SREG__,__tmp_reg__
+ 593 03c4 CDBF      		out __SP_L__,r28
+ 594               	/* prologue: function */
+ 595               	/* frame size = 7 */
+ 596               	.LM63:
+ 597 03c6 FE01      		movw r30,r28
+ 598 03c8 3196      		adiw r30,1
+ 599 03ca 83E0      		ldi r24,lo8(3)
+ 600 03cc DF01      		movw r26,r30
+ 601 03ce 1D92      		st X+,__zero_reg__
+ 602 03d0 8A95      	        dec r24
+ 603 03d2 01F4      		brne .-6
+ 604               	.LM64:
+ 605 03d4 0E94 0000 		call bmp085_getrawtemperature
+ 606               	.LM65:
+ 607 03d8 84EF      		ldi r24,lo8(-12)
+ 608 03da 64EF      		ldi r22,lo8(-12)
+ 609 03dc 0E94 0000 		call bmp085_writemem
+ 610 03e0 84E0      		ldi r24,lo8(260)
+ 611 03e2 91E0      		ldi r25,hi8(260)
+ 612               	.LVL28:
+ 613               	.LBB40:
+ 614               	.LBB41:
+ 615               	.LBB42:
+ 616               	.LBB43:
+ 617               	.LM66:
+ 618 03e4 20E9      		ldi r18,lo8(400)
+ 619 03e6 31E0      		ldi r19,hi8(400)
+ 620               	.L23:
+ 621 03e8 F901      		movw r30,r18
+ 622               	.LVL29:
+ 623               	/* #APP */
+ 624               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 625 03ea 3197      		1: sbiw r30,1
+ 626 03ec 01F4      		brne 1b
+ 627               	 ;  0 "" 2
+ 628               	/* #NOAPP */
+ 629               	.LBE43:
+ 630               	.LBE42:
+ 631               	.LM67:
+ 632 03ee 0197      		sbiw r24,1
+ 633               	.LM68:
+ 634 03f0 01F4      		brne .L23
+ 635               	.LBE41:
+ 636               	.LBE40:
+ 637               	.LM69:
+ 638 03f2 86EF      		ldi r24,lo8(-10)
+ 639               	.LVL30:
+ 640 03f4 BE01      		movw r22,r28
+ 641 03f6 6F5F      		subi r22,lo8(-(1))
+ 642 03f8 7F4F      		sbci r23,hi8(-(1))
+ 643 03fa 43E0      		ldi r20,lo8(3)
+ 644 03fc 0E94 0000 		call bmp085_readmem
+ 645               	.LVL31:
+ 646               	.LM70:
+ 647 0400 6090 0000 		lds r6,bmp085_rawtemperature
+ 648 0404 7090 0000 		lds r7,(bmp085_rawtemperature)+1
+ 649 0408 8090 0000 		lds r8,(bmp085_rawtemperature)+2
+ 650 040c 9090 0000 		lds r9,(bmp085_rawtemperature)+3
+ 651               	.LVL32:
+ 652 0410 80E6      		ldi r24,lo8(-4000)
+ 653 0412 90EF      		ldi r25,hi8(-4000)
+ 654 0414 AFEF      		ldi r26,hlo8(-4000)
+ 655 0416 BFEF      		ldi r27,hhi8(-4000)
+ 656 0418 680E      		add r6,r24
+ 657 041a 791E      		adc r7,r25
+ 658 041c 8A1E      		adc r8,r26
+ 659 041e 9B1E      		adc r9,r27
+ 660               	.LM71:
+ 661 0420 C401      		movw r24,r8
+ 662 0422 B301      		movw r22,r6
+ 663 0424 A401      		movw r20,r8
+ 664 0426 9301      		movw r18,r6
+ 665 0428 0E94 0000 		call __mulsi3
+ 666 042c 1B01      		movw r2,r22
+ 667 042e 2C01      		movw r4,r24
+ 668               	.LM72:
+ 669 0430 6091 0000 		lds r22,bmp085_regac3
+ 670 0434 7091 0000 		lds r23,(bmp085_regac3)+1
+ 671 0438 8827      		clr r24
+ 672 043a 77FD      		sbrc r23,7
+ 673 043c 8095      		com r24
+ 674 043e 982F      		mov r25,r24
+ 675 0440 0E94 0000 		call __mulsi3
+ 676 0444 7B01      		movw r14,r22
+ 677 0446 8C01      		movw r16,r24
+ 678 0448 8DE0      		ldi r24,13
+ 679 044a 1595      	1:	asr r17
+ 680 044c 0795      		ror r16
+ 681 044e F794      		ror r15
+ 682 0450 E794      		ror r14
+ 683 0452 8A95      		dec r24
+ 684 0454 01F4      		brne 1b
+ 685 0456 82E0      		ldi r24,lo8(2)
+ 686 0458 90E0      		ldi r25,hi8(2)
+ 687 045a A0E0      		ldi r26,hlo8(2)
+ 688 045c B0E0      		ldi r27,hhi8(2)
+ 689 045e E80E      		add r14,r24
+ 690 0460 F91E      		adc r15,r25
+ 691 0462 0A1F      		adc r16,r26
+ 692 0464 1B1F      		adc r17,r27
+ 693 0466 C201      		movw r24,r4
+ 694 0468 B101      		movw r22,r2
+ 695 046a BCE0      		ldi r27,12
+ 696 046c 9595      	1:	asr r25
+ 697 046e 8795      		ror r24
+ 698 0470 7795      		ror r23
+ 699 0472 6795      		ror r22
+ 700 0474 BA95      		dec r27
+ 701 0476 01F4      		brne 1b
+ 702 0478 2091 0000 		lds r18,bmp085_regb1
+ 703 047c 3091 0000 		lds r19,(bmp085_regb1)+1
+ 704 0480 4427      		clr r20
+ 705 0482 37FD      		sbrc r19,7
+ 706 0484 4095      		com r20
+ 707 0486 542F      		mov r21,r20
+ 708 0488 0E94 0000 		call __mulsi3
+ 709 048c BC01      		movw r22,r24
+ 710 048e 9927      		clr r25
+ 711 0490 77FD      		sbrc r23,7
+ 712 0492 9095      		com r25
+ 713 0494 892F      		mov r24,r25
+ 714 0496 E60E      		add r14,r22
+ 715 0498 F71E      		adc r15,r23
+ 716 049a 081F      		adc r16,r24
+ 717 049c 191F      		adc r17,r25
+ 718 049e F2E0      		ldi r31,2
+ 719 04a0 1595      	1:	asr r17
+ 720 04a2 0795      		ror r16
+ 721 04a4 F794      		ror r15
+ 722 04a6 E794      		ror r14
+ 723 04a8 FA95      		dec r31
+ 724 04aa 01F4      		brne 1b
+ 725 04ac 80E0      		ldi r24,lo8(32768)
+ 726 04ae 90E8      		ldi r25,hi8(32768)
+ 727 04b0 A0E0      		ldi r26,hlo8(32768)
+ 728 04b2 B0E0      		ldi r27,hhi8(32768)
+ 729 04b4 E80E      		add r14,r24
+ 730 04b6 F91E      		adc r15,r25
+ 731 04b8 0A1F      		adc r16,r26
+ 732 04ba 1B1F      		adc r17,r27
+ 733 04bc 2091 0000 		lds r18,bmp085_regac4
+ 734 04c0 3091 0000 		lds r19,(bmp085_regac4)+1
+ 735 04c4 40E0      		ldi r20,lo8(0)
+ 736 04c6 50E0      		ldi r21,hi8(0)
+ 737 04c8 C801      		movw r24,r16
+ 738 04ca B701      		movw r22,r14
+ 739 04cc 0E94 0000 		call __mulsi3
+ 740 04d0 DC01      		movw r26,r24
+ 741 04d2 CB01      		movw r24,r22
+ 742 04d4 EFE0      		ldi r30,15
+ 743 04d6 B695      	1:	lsr r27
+ 744 04d8 A795      		ror r26
+ 745 04da 9795      		ror r25
+ 746 04dc 8795      		ror r24
+ 747 04de EA95      		dec r30
+ 748 04e0 01F4      		brne 1b
+ 749 04e2 8C83      		std Y+4,r24
+ 750 04e4 9D83      		std Y+5,r25
+ 751 04e6 AE83      		std Y+6,r26
+ 752 04e8 BF83      		std Y+7,r27
+ 753               	.LVL33:
+ 754               	.LM73:
+ 755 04ea A980      		ldd r10,Y+1
+ 756 04ec BB24      		clr r11
+ 757 04ee CC24      		clr r12
+ 758 04f0 DD24      		clr r13
+ 759 04f2 6501      		movw r12,r10
+ 760 04f4 BB24      		clr r11
+ 761 04f6 AA24      		clr r10
+ 762 04f8 8A81      		ldd r24,Y+2
+ 763 04fa 90E0      		ldi r25,lo8(0)
+ 764 04fc A0E0      		ldi r26,lo8(0)
+ 765 04fe B0E0      		ldi r27,hi8(0)
+ 766 0500 BA2F      		mov r27,r26
+ 767 0502 A92F      		mov r26,r25
+ 768 0504 982F      		mov r25,r24
+ 769 0506 8827      		clr r24
+ 770 0508 A82A      		or r10,r24
+ 771 050a B92A      		or r11,r25
+ 772 050c CA2A      		or r12,r26
+ 773 050e DB2A      		or r13,r27
+ 774 0510 8B81      		ldd r24,Y+3
+ 775 0512 90E0      		ldi r25,lo8(0)
+ 776 0514 A0E0      		ldi r26,lo8(0)
+ 777 0516 B0E0      		ldi r27,hi8(0)
+ 778 0518 A82A      		or r10,r24
+ 779 051a B92A      		or r11,r25
+ 780 051c CA2A      		or r12,r26
+ 781 051e DB2A      		or r13,r27
+ 782 0520 55E0      		ldi r21,5
+ 783 0522 D594      	1:	asr r13
+ 784 0524 C794      		ror r12
+ 785 0526 B794      		ror r11
+ 786 0528 A794      		ror r10
+ 787 052a 5A95      		dec r21
+ 788 052c 01F4      		brne 1b
+ 789 052e 6091 0000 		lds r22,bmp085_regac2
+ 790 0532 7091 0000 		lds r23,(bmp085_regac2)+1
+ 791 0536 8827      		clr r24
+ 792 0538 77FD      		sbrc r23,7
+ 793 053a 8095      		com r24
+ 794 053c 982F      		mov r25,r24
+ 795 053e A401      		movw r20,r8
+ 796 0540 9301      		movw r18,r6
+ 797 0542 0E94 0000 		call __mulsi3
+ 798 0546 7B01      		movw r14,r22
+ 799 0548 8C01      		movw r16,r24
+ 800 054a 4BE0      		ldi r20,11
+ 801 054c 1595      	1:	asr r17
+ 802 054e 0795      		ror r16
+ 803 0550 F794      		ror r15
+ 804 0552 E794      		ror r14
+ 805 0554 4A95      		dec r20
+ 806 0556 01F4      		brne 1b
+ 807 0558 8091 0000 		lds r24,bmp085_regac1
+ 808 055c 9091 0000 		lds r25,(bmp085_regac1)+1
+ 809 0560 AA27      		clr r26
+ 810 0562 97FD      		sbrc r25,7
+ 811 0564 A095      		com r26
+ 812 0566 BA2F      		mov r27,r26
+ 813 0568 32E0      		ldi r19,2
+ 814 056a 880F      	1:	lsl r24
+ 815 056c 991F      		rol r25
+ 816 056e AA1F      		rol r26
+ 817 0570 BB1F      		rol r27
+ 818 0572 3A95      		dec r19
+ 819 0574 01F4      		brne 1b
+ 820 0576 E80E      		add r14,r24
+ 821 0578 F91E      		adc r15,r25
+ 822 057a 0A1F      		adc r16,r26
+ 823 057c 1B1F      		adc r17,r27
+ 824 057e 2091 0000 		lds r18,bmp085_regb2
+ 825 0582 3091 0000 		lds r19,(bmp085_regb2)+1
+ 826 0586 4427      		clr r20
+ 827 0588 37FD      		sbrc r19,7
+ 828 058a 4095      		com r20
+ 829 058c 542F      		mov r21,r20
+ 830 058e C201      		movw r24,r4
+ 831 0590 B101      		movw r22,r2
+ 832 0592 0E94 0000 		call __mulsi3
+ 833 0596 27E1      		ldi r18,23
+ 834 0598 9595      	1:	asr r25
+ 835 059a 8795      		ror r24
+ 836 059c 7795      		ror r23
+ 837 059e 6795      		ror r22
+ 838 05a0 2A95      		dec r18
+ 839 05a2 01F4      		brne 1b
+ 840 05a4 E60E      		add r14,r22
+ 841 05a6 F71E      		adc r15,r23
+ 842 05a8 081F      		adc r16,r24
+ 843 05aa 191F      		adc r17,r25
+ 844 05ac EE0C      		lsl r14
+ 845 05ae FF1C      		rol r15
+ 846 05b0 001F      		rol r16
+ 847 05b2 111F      		rol r17
+ 848 05b4 AE18      		sub r10,r14
+ 849 05b6 BF08      		sbc r11,r15
+ 850 05b8 C00A      		sbc r12,r16
+ 851 05ba D10A      		sbc r13,r17
+ 852 05bc C601      		movw r24,r12
+ 853 05be B501      		movw r22,r10
+ 854 05c0 2AE6      		ldi r18,lo8(6250)
+ 855 05c2 38E1      		ldi r19,hi8(6250)
+ 856 05c4 40E0      		ldi r20,hlo8(6250)
+ 857 05c6 50E0      		ldi r21,hhi8(6250)
+ 858 05c8 0E94 0000 		call __mulsi3
+ 859               	.LM74:
+ 860 05cc 97FD      		sbrc r25,7
+ 861 05ce 00C0      		rjmp .L24
+ 862               	.LVL34:
+ 863 05d0 660F      		lsl r22
+ 864 05d2 771F      		rol r23
+ 865 05d4 881F      		rol r24
+ 866 05d6 991F      		rol r25
+ 867               	.LVL35:
+ 868 05d8 2C81      		ldd r18,Y+4
+ 869 05da 3D81      		ldd r19,Y+5
+ 870 05dc 4E81      		ldd r20,Y+6
+ 871 05de 5F81      		ldd r21,Y+7
+ 872 05e0 0E94 0000 		call __udivmodsi4
+ 873 05e4 C901      		movw r24,r18
+ 874 05e6 DA01      		movw r26,r20
+ 875 05e8 5C01      		movw r10,r24
+ 876 05ea 6D01      		movw r12,r26
+ 877 05ec 00C0      		rjmp .L25
+ 878               	.LVL36:
+ 879               	.L24:
+ 880 05ee 2C81      		ldd r18,Y+4
+ 881 05f0 3D81      		ldd r19,Y+5
+ 882 05f2 4E81      		ldd r20,Y+6
+ 883 05f4 5F81      		ldd r21,Y+7
+ 884 05f6 0E94 0000 		call __udivmodsi4
+ 885               	.LVL37:
+ 886 05fa 5901      		movw r10,r18
+ 887 05fc 6A01      		movw r12,r20
+ 888 05fe AA0C      		lsl r10
+ 889 0600 BB1C      		rol r11
+ 890 0602 CC1C      		rol r12
+ 891 0604 DD1C      		rol r13
+ 892               	.L25:
+ 893               	.LM75:
+ 894 0606 5527      		clr r21
+ 895 0608 D7FC      		sbrc r13,7
+ 896 060a 5A95      		dec r21
+ 897 060c 4D2D      		mov r20,r13
+ 898 060e 3C2D      		mov r19,r12
+ 899 0610 2B2D      		mov r18,r11
+ 900               	.LM76:
+ 901 0612 CA01      		movw r24,r20
+ 902 0614 B901      		movw r22,r18
+ 903 0616 0E94 0000 		call __mulsi3
+ 904 061a 2EED      		ldi r18,lo8(3038)
+ 905 061c 3BE0      		ldi r19,hi8(3038)
+ 906 061e 40E0      		ldi r20,hlo8(3038)
+ 907 0620 50E0      		ldi r21,hhi8(3038)
+ 908 0622 0E94 0000 		call __mulsi3
+ 909 0626 7B01      		movw r14,r22
+ 910 0628 8C01      		movw r16,r24
+ 911               	.LM77:
+ 912 062a C601      		movw r24,r12
+ 913 062c B501      		movw r22,r10
+ 914 062e 23E4      		ldi r18,lo8(-7357)
+ 915 0630 33EE      		ldi r19,hi8(-7357)
+ 916 0632 4FEF      		ldi r20,hlo8(-7357)
+ 917 0634 5FEF      		ldi r21,hhi8(-7357)
+ 918 0636 0E94 0000 		call __mulsi3
+ 919 063a BC01      		movw r22,r24
+ 920 063c 9927      		clr r25
+ 921 063e 77FD      		sbrc r23,7
+ 922 0640 9095      		com r25
+ 923 0642 892F      		mov r24,r25
+ 924 0644 6153      		subi r22,lo8(-(3791))
+ 925 0646 714F      		sbci r23,hi8(-(3791))
+ 926 0648 8F4F      		sbci r24,hlo8(-(3791))
+ 927 064a 9F4F      		sbci r25,hhi8(-(3791))
+ 928 064c 7801      		movw r14,r16
+ 929 064e 1127      		clr r17
+ 930 0650 F7FC      		sbrc r15,7
+ 931 0652 1095      		com r17
+ 932 0654 012F      		mov r16,r17
+ 933 0656 6E0D      		add r22,r14
+ 934 0658 7F1D      		adc r23,r15
+ 935 065a 801F      		adc r24,r16
+ 936 065c 911F      		adc r25,r17
+ 937 065e E4E0      		ldi r30,4
+ 938 0660 9595      	1:	asr r25
+ 939 0662 8795      		ror r24
+ 940 0664 7795      		ror r23
+ 941 0666 6795      		ror r22
+ 942 0668 EA95      		dec r30
+ 943 066a 01F4      		brne 1b
+ 944 066c 6A0D      		add r22,r10
+ 945 066e 7B1D      		adc r23,r11
+ 946 0670 8C1D      		adc r24,r12
+ 947 0672 9D1D      		adc r25,r13
+ 948 0674 6093 0000 		sts bmp085_rawpressure,r22
+ 949 0678 7093 0000 		sts (bmp085_rawpressure)+1,r23
+ 950 067c 8093 0000 		sts (bmp085_rawpressure)+2,r24
+ 951 0680 9093 0000 		sts (bmp085_rawpressure)+3,r25
+ 952               	.LM78:
+ 953 0684 0E94 0000 		call bmp085_avaragefilter
+ 954 0688 6093 0000 		sts bmp085_rawpressure,r22
+ 955 068c 7093 0000 		sts (bmp085_rawpressure)+1,r23
+ 956 0690 8093 0000 		sts (bmp085_rawpressure)+2,r24
+ 957 0694 9093 0000 		sts (bmp085_rawpressure)+3,r25
+ 958               	/* epilogue start */
+ 959               	.LM79:
+ 960 0698 2796      		adiw r28,7
+ 961 069a 0FB6      		in __tmp_reg__,__SREG__
+ 962 069c F894      		cli
+ 963 069e DEBF      		out __SP_H__,r29
+ 964 06a0 0FBE      		out __SREG__,__tmp_reg__
+ 965 06a2 CDBF      		out __SP_L__,r28
+ 966 06a4 CF91      		pop r28
+ 967 06a6 DF91      		pop r29
+ 968 06a8 1F91      		pop r17
+ 969 06aa 0F91      		pop r16
+ 970 06ac FF90      		pop r15
+ 971 06ae EF90      		pop r14
+ 972 06b0 DF90      		pop r13
+ 973 06b2 CF90      		pop r12
+ 974 06b4 BF90      		pop r11
+ 975 06b6 AF90      		pop r10
+ 976 06b8 9F90      		pop r9
+ 977 06ba 8F90      		pop r8
+ 978 06bc 7F90      		pop r7
+ 979 06be 6F90      		pop r6
+ 980               	.LVL38:
+ 981 06c0 5F90      		pop r5
+ 982 06c2 4F90      		pop r4
+ 983 06c4 3F90      		pop r3
+ 984 06c6 2F90      		pop r2
+ 985 06c8 0895      		ret
+ 986               	.LFE14:
+ 988               	.global	bmp085_init
+ 990               	bmp085_init:
+ 991               	.LFB18:
+ 992               	.LM80:
+ 993 06ca 1F93      		push r17
+ 994               	/* prologue: function */
+ 995               	/* frame size = 0 */
+ 996               	.LM81:
+ 997 06cc 0E94 0000 		call i2c_init
+ 998               	.LBB44:
+ 999               	.LBB45:
+ 1000               	.LBB46:
+ 1001               	.LBB47:
+ 1002               	.LM82:
+ 1003 06d0 85E3      		ldi r24,lo8(53)
+ 1004               	.LVL39:
+ 1005               	/* #APP */
+ 1006               	 ;  83 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 1007 06d2 8A95      		1: dec r24
+ 1008 06d4 01F4      		brne 1b
+ 1009               	 ;  0 "" 2
+ 1010               	/* #NOAPP */
+ 1011               	.LBE47:
+ 1012               	.LBE46:
+ 1013               	.LBE45:
+ 1014               	.LBE44:
+ 1015               	.LM83:
+ 1016 06d6 0E94 0000 		call bmp085_getcalibration
+ 1017               	.LVL40:
+ 1018               	.LM84:
+ 1019 06da 0E94 0000 		call bmp085_getrawtemperature
+ 1020 06de 10E0      		ldi r17,lo8(0)
+ 1021               	.LVL41:
+ 1022               	.L29:
+ 1023               	.LM85:
+ 1024 06e0 0E94 0000 		call bmp085_getrawpressure
+ 1025               	.LM86:
+ 1026 06e4 1F5F      		subi r17,lo8(-(1))
+ 1027 06e6 1531      		cpi r17,lo8(21)
+ 1028 06e8 01F4      		brne .L29
+ 1029               	/* epilogue start */
+ 1030               	.LM87:
+ 1031 06ea 1F91      		pop r17
+ 1032               	.LVL42:
+ 1033 06ec 0895      		ret
+ 1034               	.LFE18:
+ 1036               	.global	bmp085_getaltitude
+ 1038               	bmp085_getaltitude:
+ 1039               	.LFB17:
+ 1040               	.LM88:
+ 1041               	/* prologue: function */
+ 1042               	/* frame size = 0 */
+ 1043               	.LM89:
+ 1044 06ee 0E94 0000 		call bmp085_getrawpressure
+ 1045               	.LM90:
+ 1046 06f2 6091 0000 		lds r22,bmp085_rawpressure
+ 1047 06f6 7091 0000 		lds r23,(bmp085_rawpressure)+1
+ 1048 06fa 8091 0000 		lds r24,(bmp085_rawpressure)+2
+ 1049 06fe 9091 0000 		lds r25,(bmp085_rawpressure)+3
+ 1050 0702 0E94 0000 		call __floatsisf
+ 1051 0706 20E8      		ldi r18,lo8(0x47c5e680)
+ 1052 0708 36EE      		ldi r19,hi8(0x47c5e680)
+ 1053 070a 45EC      		ldi r20,hlo8(0x47c5e680)
+ 1054 070c 57E4      		ldi r21,hhi8(0x47c5e680)
+ 1055 070e 0E94 0000 		call __divsf3
+ 1056 0712 21E0      		ldi r18,lo8(0x3e42de01)
+ 1057 0714 3EED      		ldi r19,hi8(0x3e42de01)
+ 1058 0716 42E4      		ldi r20,hlo8(0x3e42de01)
+ 1059 0718 5EE3      		ldi r21,hhi8(0x3e42de01)
+ 1060 071a 0E94 0000 		call pow
+ 1061 071e 9B01      		movw r18,r22
+ 1062 0720 AC01      		movw r20,r24
+ 1063 0722 60E0      		ldi r22,lo8(0x3f800000)
+ 1064 0724 70E0      		ldi r23,hi8(0x3f800000)
+ 1065 0726 80E8      		ldi r24,hlo8(0x3f800000)
+ 1066 0728 9FE3      		ldi r25,hhi8(0x3f800000)
+ 1067 072a 0E94 0000 		call __subsf3
+ 1068 072e 2BE4      		ldi r18,lo8(0x37bd3a4b)
+ 1069 0730 3AE3      		ldi r19,hi8(0x37bd3a4b)
+ 1070 0732 4DEB      		ldi r20,hlo8(0x37bd3a4b)
+ 1071 0734 57E3      		ldi r21,hhi8(0x37bd3a4b)
+ 1072 0736 0E94 0000 		call __divsf3
+ 1073 073a 20E0      		ldi r18,lo8(0x0)
+ 1074 073c 30E0      		ldi r19,hi8(0x0)
+ 1075 073e 40E0      		ldi r20,hlo8(0x0)
+ 1076 0740 50E0      		ldi r21,hhi8(0x0)
+ 1077 0742 0E94 0000 		call __addsf3
+ 1078               	/* epilogue start */
+ 1079               	.LM91:
+ 1080 0746 0895      		ret
+ 1081               	.LFE17:
+ 1083               	.global	bmp085_getpressure
+ 1085               	bmp085_getpressure:
+ 1086               	.LFB16:
+ 1087               	.LM92:
+ 1088               	/* prologue: function */
+ 1089               	/* frame size = 0 */
+ 1090               	.LM93:
+ 1091 0748 0E94 0000 		call bmp085_getrawpressure
+ 1092 074c 6091 0000 		lds r22,bmp085_rawpressure
+ 1093 0750 7091 0000 		lds r23,bmp085_rawpressure+1
+ 1094               	.LM94:
+ 1095 0754 8091 0000 		lds r24,bmp085_rawpressure+2
+ 1096 0758 9091 0000 		lds r25,bmp085_rawpressure+3
+ 1097               	/* epilogue start */
+ 1098 075c 0895      		ret
+ 1099               	.LFE16:
+ 1101               		.lcomm k,84
+ 1102               		.comm bmp085_regac1,2,1
+ 1103               		.comm bmp085_regac2,2,1
+ 1104               		.comm bmp085_regac3,2,1
+ 1105               		.comm bmp085_regb1,2,1
+ 1106               		.comm bmp085_regb2,2,1
+ 1107               		.comm bmp085_regmb,2,1
+ 1108               		.comm bmp085_regmc,2,1
+ 1109               		.comm bmp085_regmd,2,1
+ 1110               		.comm bmp085_regac4,2,1
+ 1111               		.comm bmp085_regac5,2,1
+ 1112               		.comm bmp085_regac6,2,1
+ 1113               		.comm bmp085_rawtemperature,4,1
+ 1114               		.comm bmp085_rawpressure,4,1
+ 1211               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 bmp085.c
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:18     .text:00000000 bmp085_avaragefilter
+                             .bss:00000000 k
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:90     .text:0000006a bmp085_readmem
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:174    .text:000000d4 bmp085_getcalibration
+                            *COM*:00000002 bmp085_regac1
+                            *COM*:00000002 bmp085_regac2
+                            *COM*:00000002 bmp085_regac3
+                            *COM*:00000002 bmp085_regac4
+                            *COM*:00000002 bmp085_regac5
+                            *COM*:00000002 bmp085_regac6
+                            *COM*:00000002 bmp085_regb1
+                            *COM*:00000002 bmp085_regb2
+                            *COM*:00000002 bmp085_regmb
+                            *COM*:00000002 bmp085_regmc
+                            *COM*:00000002 bmp085_regmd
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:359    .text:00000244 bmp085_writemem
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:393    .text:00000268 bmp085_getrawtemperature
+                            *COM*:00000004 bmp085_rawtemperature
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:529    .text:00000356 bmp085_gettemperature
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:565    .text:00000392 bmp085_getrawpressure
+                            *COM*:00000004 bmp085_rawpressure
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:990    .text:000006ca bmp085_init
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:1038   .text:000006ee bmp085_getaltitude
+C:\Users\Rasika\AppData\Local\Temp/ccrZM40g.s:1085   .text:00000748 bmp085_getpressure
+
+UNDEFINED SYMBOLS
+__divmodsi4
+i2c_start_wait
+i2c_write
+i2c_rep_start
+i2c_readNak
+i2c_readAck
+i2c_stop
+__mulsi3
+__floatsisf
+__divsf3
+__udivmodsi4
+i2c_init
+pow
+__subsf3
+__addsf3
+__do_clear_bss

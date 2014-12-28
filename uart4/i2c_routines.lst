@@ -1,0 +1,408 @@
+   1               		.file	"i2c_routines.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	twi_init
+  12               	twi_init:
+  13               	.LFB0:
+  14               		.file 1 "i2c_routines.c"
+   1:i2c_routines.c **** //************************************************************
+   2:i2c_routines.c **** //    ******** FUNCTIONS FOR I2C COMMUNICATION  *******
+   3:i2c_routines.c **** //************************************************************
+   4:i2c_routines.c **** //Controller: ATmega32 (Clock: 8 Mhz-internal)
+   5:i2c_routines.c **** //Compiler	: AVR-GCC (winAVR with AVRStudio)
+   6:i2c_routines.c **** //Project V.: Version - 2.4.1
+   7:i2c_routines.c **** //Author	: CC Dharmani, Chennai (India)
+   8:i2c_routines.c **** //			  www.dharmanitech.com
+   9:i2c_routines.c **** //Date		: 24 Apr 2011
+  10:i2c_routines.c **** //************************************************************
+  11:i2c_routines.c **** 
+  12:i2c_routines.c **** #include <avr/io.h>
+  13:i2c_routines.c **** #include "i2c_routines.h"
+  14:i2c_routines.c **** #include "UART_routines.h"
+  15:i2c_routines.c **** 
+  16:i2c_routines.c **** //************************************************
+  17:i2c_routines.c **** //TWI initialize
+  18:i2c_routines.c **** // bit rate:18 (freq: 100Khz @16MHz)
+  19:i2c_routines.c **** //************************************************
+  20:i2c_routines.c **** void twi_init(void)
+  21:i2c_routines.c **** {
+  15               		.loc 1 21 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  22:i2c_routines.c ****  TWCR= 0x00; //disable twi
+  21               		.loc 1 22 0
+  22 0000 16BE      		out 0x36,__zero_reg__
+  23:i2c_routines.c ****  TWBR= 0x12; //set bit rate
+  23               		.loc 1 23 0
+  24 0002 82E1      		ldi r24,lo8(18)
+  25 0004 80B9      		out 0,r24
+  24:i2c_routines.c ****  TWSR= 0x00; //set prescale
+  26               		.loc 1 24 0
+  27 0006 11B8      		out 0x1,__zero_reg__
+  28 0008 0895      		ret
+  29               		.cfi_endproc
+  30               	.LFE0:
+  32               	.global	i2c_start
+  34               	i2c_start:
+  35               	.LFB1:
+  25:i2c_routines.c ****  //TWCR= 0x44; //enable twi
+  26:i2c_routines.c **** }
+  27:i2c_routines.c **** 
+  28:i2c_routines.c **** 
+  29:i2c_routines.c **** //*************************************************
+  30:i2c_routines.c **** //Function to start i2c communication
+  31:i2c_routines.c **** //*************************************************
+  32:i2c_routines.c **** unsigned char i2c_start(void)
+  33:i2c_routines.c **** {
+  36               		.loc 1 33 0
+  37               		.cfi_startproc
+  38               	/* prologue: function */
+  39               	/* frame size = 0 */
+  40               	/* stack size = 0 */
+  41               	.L__stack_usage = 0
+  34:i2c_routines.c ****  
+  35:i2c_routines.c **** 	TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN); 	//Send START condition
+  42               		.loc 1 35 0
+  43 000a 84EA      		ldi r24,lo8(-92)
+  44 000c 86BF      		out 0x36,r24
+  45               	.L4:
+  36:i2c_routines.c **** 	
+  37:i2c_routines.c ****     while (!(TWCR & (1<<TWINT)));   		//Wait for TWINT flag set. This indicates that the
+  46               		.loc 1 37 0 discriminator 1
+  47 000e 06B6      		in __tmp_reg__,0x36
+  48 0010 07FE      		sbrs __tmp_reg__,7
+  49 0012 00C0      		rjmp .L4
+  38:i2c_routines.c **** 		  								//START condition has been transmitted
+  39:i2c_routines.c ****     if ((TWSR & 0xF8) == START)			//Check value of TWI Status Register
+  50               		.loc 1 39 0
+  51 0014 91B1      		in r25,0x1
+  52 0016 987F      		andi r25,lo8(-8)
+  53 0018 81E0      		ldi r24,lo8(1)
+  54 001a 9830      		cpi r25,lo8(8)
+  55 001c 01F4      		brne .L5
+  56 001e 80E0      		ldi r24,0
+  57               	.L5:
+  40:i2c_routines.c ****  	   return(0);
+  41:i2c_routines.c **** 	else
+  42:i2c_routines.c **** 	   return(1);
+  43:i2c_routines.c **** }
+  58               		.loc 1 43 0
+  59 0020 0895      		ret
+  60               		.cfi_endproc
+  61               	.LFE1:
+  63               	.global	i2c_repeatStart
+  65               	i2c_repeatStart:
+  66               	.LFB2:
+  44:i2c_routines.c **** 
+  45:i2c_routines.c **** //*************************************************
+  46:i2c_routines.c **** //Function for repeat start condition
+  47:i2c_routines.c **** //*************************************************
+  48:i2c_routines.c **** unsigned char i2c_repeatStart(void)
+  49:i2c_routines.c **** {
+  67               		.loc 1 49 0
+  68               		.cfi_startproc
+  69               	/* prologue: function */
+  70               	/* frame size = 0 */
+  71               	/* stack size = 0 */
+  72               	.L__stack_usage = 0
+  50:i2c_routines.c ****  
+  51:i2c_routines.c ****     TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN); 		//Send START condition
+  73               		.loc 1 51 0
+  74 0022 84EA      		ldi r24,lo8(-92)
+  75 0024 86BF      		out 0x36,r24
+  76               	.L9:
+  52:i2c_routines.c ****     while (!(TWCR & (1<<TWINT)));   		//Wait for TWINT flag set. This indicates that the
+  77               		.loc 1 52 0 discriminator 1
+  78 0026 06B6      		in __tmp_reg__,0x36
+  79 0028 07FE      		sbrs __tmp_reg__,7
+  80 002a 00C0      		rjmp .L9
+  53:i2c_routines.c **** 		  								//START condition has been transmitted
+  54:i2c_routines.c ****     if ((TWSR & 0xF8) == REPEAT_START)			//Check value of TWI Status Register
+  81               		.loc 1 54 0
+  82 002c 91B1      		in r25,0x1
+  83 002e 987F      		andi r25,lo8(-8)
+  84 0030 81E0      		ldi r24,lo8(1)
+  85 0032 9031      		cpi r25,lo8(16)
+  86 0034 01F4      		brne .L10
+  87 0036 80E0      		ldi r24,0
+  88               	.L10:
+  55:i2c_routines.c ****  	   return(0);
+  56:i2c_routines.c **** 	else
+  57:i2c_routines.c **** 	   return(1);
+  58:i2c_routines.c **** }
+  89               		.loc 1 58 0
+  90 0038 0895      		ret
+  91               		.cfi_endproc
+  92               	.LFE2:
+  94               	.global	i2c_sendAddress
+  96               	i2c_sendAddress:
+  97               	.LFB3:
+  59:i2c_routines.c **** //**************************************************
+  60:i2c_routines.c **** //Function to transmit address of the slave
+  61:i2c_routines.c **** //*************************************************
+  62:i2c_routines.c **** unsigned char i2c_sendAddress(unsigned char address)
+  63:i2c_routines.c **** {
+  98               		.loc 1 63 0
+  99               		.cfi_startproc
+ 100               	.LVL0:
+ 101               	/* prologue: function */
+ 102               	/* frame size = 0 */
+ 103               	/* stack size = 0 */
+ 104               	.L__stack_usage = 0
+  64:i2c_routines.c ****    unsigned char STATUS;
+  65:i2c_routines.c ****    
+  66:i2c_routines.c ****    if((address & 0x01) == 0) 
+ 105               		.loc 1 66 0
+ 106 003a 80FD      		sbrc r24,0
+ 107 003c 00C0      		rjmp .L16
+  67:i2c_routines.c ****      STATUS = MT_SLA_ACK;
+ 108               		.loc 1 67 0
+ 109 003e 28E1      		ldi r18,lo8(24)
+ 110 0040 00C0      		rjmp .L12
+ 111               	.L16:
+  68:i2c_routines.c ****    else
+  69:i2c_routines.c ****      STATUS = MR_SLA_ACK; 
+ 112               		.loc 1 69 0
+ 113 0042 20E4      		ldi r18,lo8(64)
+ 114               	.L12:
+ 115               	.LVL1:
+  70:i2c_routines.c ****    
+  71:i2c_routines.c ****    TWDR = address; 
+ 116               		.loc 1 71 0
+ 117 0044 83B9      		out 0x3,r24
+  72:i2c_routines.c ****    TWCR = (1<<TWINT)|(1<<TWEN);	   //Load SLA_W into TWDR Register. Clear TWINT bit
+ 118               		.loc 1 72 0
+ 119 0046 84E8      		ldi r24,lo8(-124)
+ 120               	.LVL2:
+ 121 0048 86BF      		out 0x36,r24
+ 122               	.LVL3:
+ 123               	.L14:
+  73:i2c_routines.c ****    		  			 				   //in TWCR to start transmission of address
+  74:i2c_routines.c ****    while (!(TWCR & (1<<TWINT)));	   //Wait for TWINT flag set. This indicates that the
+ 124               		.loc 1 74 0 discriminator 1
+ 125 004a 06B6      		in __tmp_reg__,0x36
+ 126 004c 07FE      		sbrs __tmp_reg__,7
+ 127 004e 00C0      		rjmp .L14
+  75:i2c_routines.c ****    		 		   					   //SLA+W has been transmitted, and
+  76:i2c_routines.c **** 									   //ACK/NACK has been received.
+  77:i2c_routines.c ****    if ((TWSR & 0xF8) == STATUS)	   //Check value of TWI Status Register
+ 128               		.loc 1 77 0
+ 129 0050 91B1      		in r25,0x1
+ 130 0052 987F      		andi r25,lo8(-8)
+ 131 0054 81E0      		ldi r24,lo8(1)
+ 132 0056 9213      		cpse r25,r18
+ 133 0058 00C0      		rjmp .L15
+ 134 005a 80E0      		ldi r24,0
+ 135               	.L15:
+  78:i2c_routines.c ****    	  return(0);
+  79:i2c_routines.c ****    else 
+  80:i2c_routines.c ****       return(1);
+  81:i2c_routines.c **** }
+ 136               		.loc 1 81 0
+ 137 005c 0895      		ret
+ 138               		.cfi_endproc
+ 139               	.LFE3:
+ 141               	.global	i2c_sendData
+ 143               	i2c_sendData:
+ 144               	.LFB4:
+  82:i2c_routines.c **** 
+  83:i2c_routines.c **** //**************************************************
+  84:i2c_routines.c **** //Function to transmit a data byte
+  85:i2c_routines.c **** //*************************************************
+  86:i2c_routines.c **** unsigned char i2c_sendData(unsigned char data)
+  87:i2c_routines.c **** {
+ 145               		.loc 1 87 0
+ 146               		.cfi_startproc
+ 147               	.LVL4:
+ 148               	/* prologue: function */
+ 149               	/* frame size = 0 */
+ 150               	/* stack size = 0 */
+ 151               	.L__stack_usage = 0
+  88:i2c_routines.c ****    TWDR = data; 
+ 152               		.loc 1 88 0
+ 153 005e 83B9      		out 0x3,r24
+  89:i2c_routines.c ****    TWCR = (1<<TWINT) |(1<<TWEN);	   //Load SLA_W into TWDR Register. Clear TWINT bit
+ 154               		.loc 1 89 0
+ 155 0060 84E8      		ldi r24,lo8(-124)
+ 156               	.LVL5:
+ 157 0062 86BF      		out 0x36,r24
+ 158               	.LVL6:
+ 159               	.L19:
+  90:i2c_routines.c ****    		  			 				   //in TWCR to start transmission of data
+  91:i2c_routines.c ****    while (!(TWCR & (1<<TWINT)));	   //Wait for TWINT flag set. This indicates that the
+ 160               		.loc 1 91 0 discriminator 1
+ 161 0064 06B6      		in __tmp_reg__,0x36
+ 162 0066 07FE      		sbrs __tmp_reg__,7
+ 163 0068 00C0      		rjmp .L19
+  92:i2c_routines.c ****    		 		   					   //data has been transmitted, and
+  93:i2c_routines.c **** 									   //ACK/NACK has been received.
+  94:i2c_routines.c ****    if ((TWSR & 0xF8) != MT_DATA_ACK)   //Check value of TWI Status Register
+ 164               		.loc 1 94 0
+ 165 006a 91B1      		in r25,0x1
+ 166 006c 987F      		andi r25,lo8(-8)
+ 167 006e 81E0      		ldi r24,lo8(1)
+ 168 0070 9832      		cpi r25,lo8(40)
+ 169 0072 01F4      		brne .L20
+ 170 0074 80E0      		ldi r24,0
+ 171               	.L20:
+  95:i2c_routines.c ****    	  return(1);
+  96:i2c_routines.c ****    else
+  97:i2c_routines.c ****       return(0);
+  98:i2c_routines.c **** }
+ 172               		.loc 1 98 0
+ 173 0076 0895      		ret
+ 174               		.cfi_endproc
+ 175               	.LFE4:
+ 177               	.global	i2c_receiveData_ACK
+ 179               	i2c_receiveData_ACK:
+ 180               	.LFB5:
+  99:i2c_routines.c **** 
+ 100:i2c_routines.c **** //*****************************************************
+ 101:i2c_routines.c **** //Function to receive a data byte and send ACKnowledge
+ 102:i2c_routines.c **** //*****************************************************
+ 103:i2c_routines.c **** unsigned char i2c_receiveData_ACK(void)
+ 104:i2c_routines.c **** {
+ 181               		.loc 1 104 0
+ 182               		.cfi_startproc
+ 183               	/* prologue: function */
+ 184               	/* frame size = 0 */
+ 185               	/* stack size = 0 */
+ 186               	.L__stack_usage = 0
+ 105:i2c_routines.c ****   unsigned char data;
+ 106:i2c_routines.c ****   
+ 107:i2c_routines.c ****   TWCR = (1<<TWEA)|(1<<TWINT)|(1<<TWEN);
+ 187               		.loc 1 107 0
+ 188 0078 84EC      		ldi r24,lo8(-60)
+ 189 007a 86BF      		out 0x36,r24
+ 190               	.L23:
+ 108:i2c_routines.c ****   
+ 109:i2c_routines.c ****   while (!(TWCR & (1<<TWINT)));	   	   //Wait for TWINT flag set. This indicates that the
+ 191               		.loc 1 109 0 discriminator 1
+ 192 007c 06B6      		in __tmp_reg__,0x36
+ 193 007e 07FE      		sbrs __tmp_reg__,7
+ 194 0080 00C0      		rjmp .L23
+ 110:i2c_routines.c ****    		 		   					   //data has been received
+ 111:i2c_routines.c ****   if ((TWSR & 0xF8) != MR_DATA_ACK)    //Check value of TWI Status Register
+ 195               		.loc 1 111 0
+ 196 0082 81B1      		in r24,0x1
+ 197 0084 887F      		andi r24,lo8(-8)
+ 198 0086 8035      		cpi r24,lo8(80)
+ 199 0088 01F4      		brne .L25
+ 112:i2c_routines.c ****    	  return(ERROR_CODE);
+ 113:i2c_routines.c ****   
+ 114:i2c_routines.c ****   data = TWDR;
+ 200               		.loc 1 114 0
+ 201 008a 83B1      		in r24,0x3
+ 115:i2c_routines.c ****   return(data);
+ 202               		.loc 1 115 0
+ 203 008c 0895      		ret
+ 204               	.L25:
+ 112:i2c_routines.c ****    	  return(ERROR_CODE);
+ 205               		.loc 1 112 0
+ 206 008e 8EE7      		ldi r24,lo8(126)
+ 116:i2c_routines.c **** }
+ 207               		.loc 1 116 0
+ 208 0090 0895      		ret
+ 209               		.cfi_endproc
+ 210               	.LFE5:
+ 212               	.global	i2c_receiveData_NACK
+ 214               	i2c_receiveData_NACK:
+ 215               	.LFB6:
+ 117:i2c_routines.c **** 
+ 118:i2c_routines.c **** //******************************************************************
+ 119:i2c_routines.c **** //Function to receive the last data byte (no acknowledge from master
+ 120:i2c_routines.c **** //******************************************************************
+ 121:i2c_routines.c **** unsigned char i2c_receiveData_NACK(void)
+ 122:i2c_routines.c **** {
+ 216               		.loc 1 122 0
+ 217               		.cfi_startproc
+ 218               	/* prologue: function */
+ 219               	/* frame size = 0 */
+ 220               	/* stack size = 0 */
+ 221               	.L__stack_usage = 0
+ 123:i2c_routines.c ****   unsigned char data;
+ 124:i2c_routines.c ****   
+ 125:i2c_routines.c ****   TWCR = (1<<TWINT)|(1<<TWEN);
+ 222               		.loc 1 125 0
+ 223 0092 84E8      		ldi r24,lo8(-124)
+ 224 0094 86BF      		out 0x36,r24
+ 225               	.L28:
+ 126:i2c_routines.c ****   
+ 127:i2c_routines.c ****   while (!(TWCR & (1<<TWINT)));	   	   //Wait for TWINT flag set. This indicates that the
+ 226               		.loc 1 127 0 discriminator 1
+ 227 0096 06B6      		in __tmp_reg__,0x36
+ 228 0098 07FE      		sbrs __tmp_reg__,7
+ 229 009a 00C0      		rjmp .L28
+ 128:i2c_routines.c ****    		 		   					   //data has been received
+ 129:i2c_routines.c ****   if ((TWSR & 0xF8) != MR_DATA_NACK)    //Check value of TWI Status Register
+ 230               		.loc 1 129 0
+ 231 009c 81B1      		in r24,0x1
+ 232 009e 887F      		andi r24,lo8(-8)
+ 233 00a0 8835      		cpi r24,lo8(88)
+ 234 00a2 01F4      		brne .L30
+ 130:i2c_routines.c ****    	  return(ERROR_CODE);
+ 131:i2c_routines.c ****   
+ 132:i2c_routines.c ****   data = TWDR;
+ 235               		.loc 1 132 0
+ 236 00a4 83B1      		in r24,0x3
+ 133:i2c_routines.c ****   return(data);
+ 237               		.loc 1 133 0
+ 238 00a6 0895      		ret
+ 239               	.L30:
+ 130:i2c_routines.c ****    	  return(ERROR_CODE);
+ 240               		.loc 1 130 0
+ 241 00a8 8EE7      		ldi r24,lo8(126)
+ 134:i2c_routines.c **** }
+ 242               		.loc 1 134 0
+ 243 00aa 0895      		ret
+ 244               		.cfi_endproc
+ 245               	.LFE6:
+ 247               	.global	i2c_stop
+ 249               	i2c_stop:
+ 250               	.LFB7:
+ 135:i2c_routines.c **** //**************************************************
+ 136:i2c_routines.c **** //Function to end the i2c communication
+ 137:i2c_routines.c **** //*************************************************   	
+ 138:i2c_routines.c **** void i2c_stop(void)
+ 139:i2c_routines.c **** {
+ 251               		.loc 1 139 0
+ 252               		.cfi_startproc
+ 253               	/* prologue: function */
+ 254               	/* frame size = 0 */
+ 255               	/* stack size = 0 */
+ 256               	.L__stack_usage = 0
+ 140:i2c_routines.c ****   TWCR =  (1<<TWINT)|(1<<TWEN)|(1<<TWSTO);	  //Transmit STOP condition
+ 257               		.loc 1 140 0
+ 258 00ac 84E9      		ldi r24,lo8(-108)
+ 259 00ae 86BF      		out 0x36,r24
+ 260 00b0 0895      		ret
+ 261               		.cfi_endproc
+ 262               	.LFE7:
+ 264               	.Letext0:
+ 265               		.file 2 "/usr/lib/avr/include/stdint.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 i2c_routines.c
+     /tmp/ccYEKUyH.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccYEKUyH.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccYEKUyH.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccYEKUyH.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccYEKUyH.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccYEKUyH.s:12     .text:0000000000000000 twi_init
+     /tmp/ccYEKUyH.s:34     .text:000000000000000a i2c_start
+     /tmp/ccYEKUyH.s:65     .text:0000000000000022 i2c_repeatStart
+     /tmp/ccYEKUyH.s:96     .text:000000000000003a i2c_sendAddress
+     /tmp/ccYEKUyH.s:143    .text:000000000000005e i2c_sendData
+     /tmp/ccYEKUyH.s:179    .text:0000000000000078 i2c_receiveData_ACK
+     /tmp/ccYEKUyH.s:214    .text:0000000000000092 i2c_receiveData_NACK
+     /tmp/ccYEKUyH.s:249    .text:00000000000000ac i2c_stop
+
+NO UNDEFINED SYMBOLS

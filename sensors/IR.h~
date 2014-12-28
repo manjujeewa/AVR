@@ -1,0 +1,28 @@
+/*
+DHT11 Library
+Author:M.P Sameera Vitaj
+University of Colombo
+*/
+
+#include <stdio.h>
+#include <string.h>
+#include <avr/io.h>
+#include <util/delay.h>
+
+#ifndef _IR_H_
+#define _IR_H_
+
+void wait_until_key_pressed(void);
+void init(void);
+ISR(TIMER1_OVF_vect);
+ISR(TIMER1_COMPA_vect);
+void calculate(void);
+
+
+
+
+
+
+
+
+#endif // _IR_H_

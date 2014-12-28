@@ -1,0 +1,436 @@
+   1               		.file	"UART_routines.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	uart0_init
+  12               	uart0_init:
+  13               	.LFB1:
+  14               		.file 1 "UART_routines.c"
+   1:UART_routines.c **** //**************************************************************
+   2:UART_routines.c **** //******** FUNCTIONS FOR SERIAL COMMUNICATION USING UART *******
+   3:UART_routines.c **** //**************************************************************
+   4:UART_routines.c **** //Controller		: ATmega32 (Clock: 8 Mhz-internal)
+   5:UART_routines.c **** //Compiler			: AVR-GCC (winAVR with AVRStudio-4)
+   6:UART_routines.c **** //Project Version	: DL_1.0
+   7:UART_routines.c **** //Author			: CC Dharmani, Chennai (India)
+   8:UART_routines.c **** //			  		  www.dharmanitech.com
+   9:UART_routines.c **** //Date				: 10 May 2011
+  10:UART_routines.c **** //**************************************************************
+  11:UART_routines.c **** 
+  12:UART_routines.c **** #include "UART_routines.h"
+  13:UART_routines.c **** #include <avr/io.h>
+  14:UART_routines.c **** #include <avr/pgmspace.h>
+  15:UART_routines.c **** 
+  16:UART_routines.c **** //**************************************************
+  17:UART_routines.c **** //UART0 initialize
+  18:UART_routines.c **** //baud rate: 19200  (for controller clock = 8MHz)
+  19:UART_routines.c **** //char size: 8 bit
+  20:UART_routines.c **** //parity: Disabled
+  21:UART_routines.c **** //**************************************************
+  22:UART_routines.c **** void uart0_init(void)
+  23:UART_routines.c **** {
+  15               		.loc 1 23 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  24:UART_routines.c ****  UCSRB = 0x00; //disable while setting baud rate
+  21               		.loc 1 24 0
+  22 0000 1AB8      		out 0xa,__zero_reg__
+  25:UART_routines.c ****  UCSRA = 0x00;
+  23               		.loc 1 25 0
+  24 0002 1BB8      		out 0xb,__zero_reg__
+  26:UART_routines.c ****  UCSRC = (1 << URSEL) | 0x06;
+  25               		.loc 1 26 0
+  26 0004 86E8      		ldi r24,lo8(-122)
+  27 0006 80BD      		out 0x20,r24
+  27:UART_routines.c ****  UBRRL = 0x19; //set baud rate lo
+  28               		.loc 1 27 0
+  29 0008 89E1      		ldi r24,lo8(25)
+  30 000a 89B9      		out 0x9,r24
+  28:UART_routines.c ****  UBRRH = 0x00; //set baud rate hi
+  31               		.loc 1 28 0
+  32 000c 10BC      		out 0x20,__zero_reg__
+  29:UART_routines.c ****  UCSRB = 0x18;
+  33               		.loc 1 29 0
+  34 000e 88E1      		ldi r24,lo8(24)
+  35 0010 8AB9      		out 0xa,r24
+  36 0012 0895      		ret
+  37               		.cfi_endproc
+  38               	.LFE1:
+  40               	.global	receiveByte
+  42               	receiveByte:
+  43               	.LFB2:
+  30:UART_routines.c **** }
+  31:UART_routines.c **** 
+  32:UART_routines.c **** //**************************************************
+  33:UART_routines.c **** //Function to receive a single byte
+  34:UART_routines.c **** //*************************************************
+  35:UART_routines.c **** unsigned char receiveByte( void )
+  36:UART_routines.c **** {
+  44               		.loc 1 36 0
+  45               		.cfi_startproc
+  46               	/* prologue: function */
+  47               	/* frame size = 0 */
+  48               	/* stack size = 0 */
+  49               	.L__stack_usage = 0
+  50               	.L4:
+  37:UART_routines.c **** 	unsigned char data, status;
+  38:UART_routines.c **** 	
+  39:UART_routines.c **** 	while(!(UCSRA & (1<<RXC))); 	// Wait for incomming data
+  51               		.loc 1 39 0 discriminator 1
+  52 0014 5F9B      		sbis 0xb,7
+  53 0016 00C0      		rjmp .L4
+  40:UART_routines.c **** 	
+  41:UART_routines.c **** 	status = UCSRA;
+  54               		.loc 1 41 0
+  55 0018 8BB1      		in r24,0xb
+  42:UART_routines.c **** 	data = UDR;
+  56               		.loc 1 42 0
+  57 001a 8CB1      		in r24,0xc
+  58               	.LVL0:
+  43:UART_routines.c **** 	
+  44:UART_routines.c **** 	return(data);
+  45:UART_routines.c **** }
+  59               		.loc 1 45 0
+  60 001c 0895      		ret
+  61               		.cfi_endproc
+  62               	.LFE2:
+  64               	.global	transmitByte
+  66               	transmitByte:
+  67               	.LFB3:
+  46:UART_routines.c **** 
+  47:UART_routines.c **** //***************************************************
+  48:UART_routines.c **** //Function to transmit a single byte
+  49:UART_routines.c **** //***************************************************
+  50:UART_routines.c **** void transmitByte( unsigned char data )
+  51:UART_routines.c **** {
+  68               		.loc 1 51 0
+  69               		.cfi_startproc
+  70               	/* prologue: function */
+  71               	/* frame size = 0 */
+  72               	/* stack size = 0 */
+  73               	.L__stack_usage = 0
+  74               	.LVL1:
+  75               	.L8:
+  52:UART_routines.c **** 	while ( !(UCSRA & (1<<UDRE)) )
+  76               		.loc 1 52 0 discriminator 1
+  77 001e 5D9B      		sbis 0xb,5
+  78 0020 00C0      		rjmp .L8
+  53:UART_routines.c **** 		; 			                /* Wait for empty transmit buffer */
+  54:UART_routines.c **** 	UDR = data; 			        /* Start transmition */
+  79               		.loc 1 54 0
+  80 0022 8CB9      		out 0xc,r24
+  81 0024 0895      		ret
+  82               		.cfi_endproc
+  83               	.LFE3:
+  85               	.global	transmitString_F
+  87               	transmitString_F:
+  88               	.LFB5:
+  55:UART_routines.c **** }
+  56:UART_routines.c **** 
+  57:UART_routines.c **** 
+  58:UART_routines.c **** //***************************************************
+  59:UART_routines.c **** //Function to transmit hex format data
+  60:UART_routines.c **** //first argument indicates type: CHAR, INT or LONG
+  61:UART_routines.c **** //Second argument is the data to be displayed
+  62:UART_routines.c **** //***************************************************
+  63:UART_routines.c **** void transmitHex( unsigned char dataType, unsigned long data )
+  64:UART_routines.c **** {
+  65:UART_routines.c **** unsigned char count, i, temp;
+  66:UART_routines.c **** unsigned char dataString[] = "0x        ";
+  67:UART_routines.c **** 
+  68:UART_routines.c **** if (dataType == CHAR) count = 2;
+  69:UART_routines.c **** if (dataType == INT) count = 4;
+  70:UART_routines.c **** if (dataType == LONG) count = 8;
+  71:UART_routines.c **** 
+  72:UART_routines.c **** for(i=count; i>0; i--)
+  73:UART_routines.c **** {
+  74:UART_routines.c ****   temp = data % 16;
+  75:UART_routines.c ****   if((temp>=0) && (temp<10)) dataString [i+1] = temp + 0x30;
+  76:UART_routines.c ****   else dataString [i+1] = (temp - 10) + 0x41;
+  77:UART_routines.c **** 
+  78:UART_routines.c ****   data = data/16;
+  79:UART_routines.c **** }
+  80:UART_routines.c **** 
+  81:UART_routines.c **** transmitString (dataString);
+  82:UART_routines.c **** }
+  83:UART_routines.c **** 
+  84:UART_routines.c **** //***************************************************
+  85:UART_routines.c **** //Function to transmit a string in Flash
+  86:UART_routines.c **** //***************************************************
+  87:UART_routines.c **** void transmitString_F(char* string)
+  88:UART_routines.c **** {
+  89               		.loc 1 88 0
+  90               		.cfi_startproc
+  91               	.LVL2:
+  92 0026 CF93      		push r28
+  93               	.LCFI0:
+  94               		.cfi_def_cfa_offset 3
+  95               		.cfi_offset 28, -2
+  96 0028 DF93      		push r29
+  97               	.LCFI1:
+  98               		.cfi_def_cfa_offset 4
+  99               		.cfi_offset 29, -3
+ 100               	/* prologue: function */
+ 101               	/* frame size = 0 */
+ 102               	/* stack size = 2 */
+ 103               	.L__stack_usage = 2
+ 104 002a EC01      		movw r28,r24
+ 105               	.LVL3:
+ 106               	.L10:
+ 107               	.LBB2:
+  89:UART_routines.c ****   while (pgm_read_byte(&(*string)))
+ 108               		.loc 1 89 0 discriminator 1
+ 109 002c CE01      		movw r24,r28
+ 110               	.LVL4:
+ 111 002e FE01      		movw r30,r28
+ 112               	/* #APP */
+ 113               	 ;  89 "UART_routines.c" 1
+ 114 0030 2491      		lpm r18, Z
+ 115               		
+ 116               	 ;  0 "" 2
+ 117               	.LVL5:
+ 118               	/* #NOAPP */
+ 119               	.LBE2:
+ 120 0032 2223      		tst r18
+ 121 0034 01F0      		breq .L12
+ 122               	.LVL6:
+ 123               	.LBB3:
+  90:UART_routines.c ****    transmitByte(pgm_read_byte(&(*string++)));
+ 124               		.loc 1 90 0
+ 125 0036 2196      		adiw r28,1
+ 126               	.LVL7:
+ 127 0038 FC01      		movw r30,r24
+ 128               	/* #APP */
+ 129               	 ;  90 "UART_routines.c" 1
+ 130 003a 8491      		lpm r24, Z
+ 131               		
+ 132               	 ;  0 "" 2
+ 133               	.LVL8:
+ 134               	/* #NOAPP */
+ 135               	.LBE3:
+ 136 003c 0E94 0000 		call transmitByte
+ 137               	.LVL9:
+ 138 0040 00C0      		rjmp .L10
+ 139               	.LVL10:
+ 140               	.L12:
+ 141               	/* epilogue start */
+  91:UART_routines.c **** }
+ 142               		.loc 1 91 0
+ 143 0042 DF91      		pop r29
+ 144 0044 CF91      		pop r28
+ 145 0046 0895      		ret
+ 146               		.cfi_endproc
+ 147               	.LFE5:
+ 149               	.global	transmitString
+ 151               	transmitString:
+ 152               	.LFB6:
+  92:UART_routines.c **** 
+  93:UART_routines.c **** //***************************************************
+  94:UART_routines.c **** //Function to transmit a string in RAM
+  95:UART_routines.c **** //***************************************************
+  96:UART_routines.c **** void transmitString(unsigned char* string)
+  97:UART_routines.c **** {
+ 153               		.loc 1 97 0
+ 154               		.cfi_startproc
+ 155               	.LVL11:
+ 156 0048 CF93      		push r28
+ 157               	.LCFI2:
+ 158               		.cfi_def_cfa_offset 3
+ 159               		.cfi_offset 28, -2
+ 160 004a DF93      		push r29
+ 161               	.LCFI3:
+ 162               		.cfi_def_cfa_offset 4
+ 163               		.cfi_offset 29, -3
+ 164               	/* prologue: function */
+ 165               	/* frame size = 0 */
+ 166               	/* stack size = 2 */
+ 167               	.L__stack_usage = 2
+ 168 004c EC01      		movw r28,r24
+ 169               	.LVL12:
+ 170               	.L14:
+  98:UART_routines.c ****   while (*string)
+ 171               		.loc 1 98 0 discriminator 1
+ 172 004e 8991      		ld r24,Y+
+ 173               	.LVL13:
+ 174 0050 8823      		tst r24
+ 175 0052 01F0      		breq .L16
+ 176               	.LVL14:
+  99:UART_routines.c ****    transmitByte(*string++);
+ 177               		.loc 1 99 0
+ 178 0054 0E94 0000 		call transmitByte
+ 179               	.LVL15:
+ 180 0058 00C0      		rjmp .L14
+ 181               	.LVL16:
+ 182               	.L16:
+ 183               	/* epilogue start */
+ 100:UART_routines.c **** }
+ 184               		.loc 1 100 0
+ 185 005a DF91      		pop r29
+ 186 005c CF91      		pop r28
+ 187               	.LVL17:
+ 188 005e 0895      		ret
+ 189               		.cfi_endproc
+ 190               	.LFE6:
+ 192               		.section	.rodata.str1.1,"aMS",@progbits,1
+ 193               	.LC0:
+ 194 0000 3078 2020 		.string	"0x        "
+ 194      2020 2020 
+ 194      2020 00
+ 195               		.text
+ 196               	.global	transmitHex
+ 198               	transmitHex:
+ 199               	.LFB4:
+  64:UART_routines.c **** {
+ 200               		.loc 1 64 0
+ 201               		.cfi_startproc
+ 202               	.LVL18:
+ 203 0060 CF93      		push r28
+ 204               	.LCFI4:
+ 205               		.cfi_def_cfa_offset 3
+ 206               		.cfi_offset 28, -2
+ 207 0062 DF93      		push r29
+ 208               	.LCFI5:
+ 209               		.cfi_def_cfa_offset 4
+ 210               		.cfi_offset 29, -3
+ 211 0064 CDB7      		in r28,__SP_L__
+ 212 0066 DEB7      		in r29,__SP_H__
+ 213               	.LCFI6:
+ 214               		.cfi_def_cfa_register 28
+ 215 0068 2B97      		sbiw r28,11
+ 216               	.LCFI7:
+ 217               		.cfi_def_cfa_offset 15
+ 218 006a 0FB6      		in __tmp_reg__,__SREG__
+ 219 006c F894      		cli
+ 220 006e DEBF      		out __SP_H__,r29
+ 221 0070 0FBE      		out __SREG__,__tmp_reg__
+ 222 0072 CDBF      		out __SP_L__,r28
+ 223               	/* prologue: function */
+ 224               	/* frame size = 11 */
+ 225               	/* stack size = 13 */
+ 226               	.L__stack_usage = 13
+  66:UART_routines.c **** unsigned char dataString[] = "0x        ";
+ 227               		.loc 1 66 0
+ 228 0074 9BE0      		ldi r25,lo8(11)
+ 229 0076 E0E0      		ldi r30,lo8(.LC0)
+ 230 0078 F0E0      		ldi r31,hi8(.LC0)
+ 231 007a DE01      		movw r26,r28
+ 232 007c 1196      		adiw r26,1
+ 233               		0:
+ 234 007e 0190      		ld r0,Z+
+ 235 0080 0D92      		st X+,r0
+ 236 0082 9A95      		dec r25
+ 237 0084 01F4      		brne 0b
+ 238               	.LVL19:
+  69:UART_routines.c **** if (dataType == INT) count = 4;
+ 239               		.loc 1 69 0
+ 240 0086 8130      		cpi r24,lo8(1)
+ 241 0088 01F0      		breq .L23
+  70:UART_routines.c **** if (dataType == LONG) count = 8;
+ 242               		.loc 1 70 0
+ 243 008a 8230      		cpi r24,lo8(2)
+ 244 008c 01F0      		breq .L24
+ 245 008e 22E0      		ldi r18,lo8(2)
+ 246 0090 00C0      		rjmp .L22
+ 247               	.L23:
+  69:UART_routines.c **** if (dataType == INT) count = 4;
+ 248               		.loc 1 69 0
+ 249 0092 24E0      		ldi r18,lo8(4)
+ 250 0094 00C0      		rjmp .L22
+ 251               	.L24:
+  70:UART_routines.c **** if (dataType == LONG) count = 8;
+ 252               		.loc 1 70 0
+ 253 0096 28E0      		ldi r18,lo8(8)
+ 254               	.LVL20:
+ 255               	.L22:
+  74:UART_routines.c ****   temp = data % 16;
+ 256               		.loc 1 74 0
+ 257 0098 342F      		mov r19,r20
+ 258 009a 3F70      		andi r19,lo8(15)
+ 259               	.LVL21:
+ 260 009c 822F      		mov r24,r18
+ 261 009e 90E0      		ldi r25,0
+  75:UART_routines.c ****   if((temp>=0) && (temp<10)) dataString [i+1] = temp + 0x30;
+ 262               		.loc 1 75 0
+ 263 00a0 E2E0      		ldi r30,lo8(2)
+ 264 00a2 F0E0      		ldi r31,0
+ 265 00a4 EC0F      		add r30,r28
+ 266 00a6 FD1F      		adc r31,r29
+ 267 00a8 E80F      		add r30,r24
+ 268 00aa F91F      		adc r31,r25
+ 269 00ac 3A30      		cpi r19,lo8(10)
+ 270 00ae 00F4      		brsh .L19
+  75:UART_routines.c ****   if((temp>=0) && (temp<10)) dataString [i+1] = temp + 0x30;
+ 271               		.loc 1 75 0 is_stmt 0 discriminator 1
+ 272 00b0 305D      		subi r19,lo8(-(48))
+ 273               	.LVL22:
+ 274 00b2 00C0      		rjmp .L25
+ 275               	.LVL23:
+ 276               	.L19:
+  76:UART_routines.c ****   else dataString [i+1] = (temp - 10) + 0x41;
+ 277               		.loc 1 76 0 is_stmt 1
+ 278 00b4 395C      		subi r19,lo8(-(55))
+ 279               	.LVL24:
+ 280               	.L25:
+ 281 00b6 3083      		st Z,r19
+  78:UART_routines.c ****   data = data/16;
+ 282               		.loc 1 78 0
+ 283 00b8 84E0      		ldi r24,4
+ 284               		1:
+ 285 00ba 7695      		lsr r23
+ 286 00bc 6795      		ror r22
+ 287 00be 5795      		ror r21
+ 288 00c0 4795      		ror r20
+ 289 00c2 8A95      		dec r24
+ 290 00c4 01F4      		brne 1b
+ 291               	.LVL25:
+  72:UART_routines.c **** for(i=count; i>0; i--)
+ 292               		.loc 1 72 0
+ 293 00c6 2150      		subi r18,lo8(-(-1))
+ 294               	.LVL26:
+ 295 00c8 01F4      		brne .L22
+  81:UART_routines.c **** transmitString (dataString);
+ 296               		.loc 1 81 0
+ 297 00ca CE01      		movw r24,r28
+ 298 00cc 0196      		adiw r24,1
+ 299 00ce 0E94 0000 		call transmitString
+ 300               	.LVL27:
+ 301               	/* epilogue start */
+  82:UART_routines.c **** }
+ 302               		.loc 1 82 0
+ 303 00d2 2B96      		adiw r28,11
+ 304 00d4 0FB6      		in __tmp_reg__,__SREG__
+ 305 00d6 F894      		cli
+ 306 00d8 DEBF      		out __SP_H__,r29
+ 307 00da 0FBE      		out __SREG__,__tmp_reg__
+ 308 00dc CDBF      		out __SP_L__,r28
+ 309 00de DF91      		pop r29
+ 310 00e0 CF91      		pop r28
+ 311 00e2 0895      		ret
+ 312               		.cfi_endproc
+ 313               	.LFE4:
+ 315               	.Letext0:
+ 316               		.file 2 "/usr/lib/avr/include/stdint.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 UART_routines.c
+     /tmp/ccOOxKRB.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccOOxKRB.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccOOxKRB.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccOOxKRB.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccOOxKRB.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccOOxKRB.s:12     .text:0000000000000000 uart0_init
+     /tmp/ccOOxKRB.s:42     .text:0000000000000014 receiveByte
+     /tmp/ccOOxKRB.s:66     .text:000000000000001e transmitByte
+     /tmp/ccOOxKRB.s:87     .text:0000000000000026 transmitString_F
+     /tmp/ccOOxKRB.s:151    .text:0000000000000048 transmitString
+     /tmp/ccOOxKRB.s:198    .text:0000000000000060 transmitHex
+
+UNDEFINED SYMBOLS
+__do_copy_data

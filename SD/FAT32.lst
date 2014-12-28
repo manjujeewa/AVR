@@ -1,0 +1,4350 @@
+   1               		.file	"FAT32.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	getFirstSector
+  12               	getFirstSector:
+  13               	.LFB2:
+  14               		.file 1 "FAT32.c"
+   1:FAT32.c       **** //************************************************************
+   2:FAT32.c       **** // **** ROUTINES FOR FAT32 IMPLEMATATION OF SD CARD ****
+   3:FAT32.c       **** //************************************************************
+   4:FAT32.c       **** //Controller		: ATmega32 (Clock: 8 Mhz-internal)
+   5:FAT32.c       **** //Compiler			: AVR-GCC (winAVR with AVRStudio-4)
+   6:FAT32.c       **** //Project Version	: DL_1.0
+   7:FAT32.c       **** //Author			: CC Dharmani, Chennai (India)
+   8:FAT32.c       **** //			  		  www.dharmanitech.com
+   9:FAT32.c       **** //Date				: 10 May 2011
+  10:FAT32.c       **** //************************************************************
+  11:FAT32.c       **** 
+  12:FAT32.c       **** #include <avr/io.h>
+  13:FAT32.c       **** #include <avr/pgmspace.h>
+  14:FAT32.c       **** #include "FAT32.h"
+  15:FAT32.c       **** #include "UART_routines.h"
+  16:FAT32.c       **** #include "SD_routines.h"
+  17:FAT32.c       **** #include "RTC_routines.h"
+  18:FAT32.c       **** 
+  19:FAT32.c       **** //***************************************************************************
+  20:FAT32.c       **** //Function: to read data from boot sector of SD card, to determine important
+  21:FAT32.c       **** //parameters like bytesPerSector, sectorsPerCluster etc.
+  22:FAT32.c       **** //Arguments: none
+  23:FAT32.c       **** //return: none
+  24:FAT32.c       **** //***************************************************************************
+  25:FAT32.c       **** unsigned char getBootSectorData (void)
+  26:FAT32.c       **** {
+  27:FAT32.c       **** struct BS_Structure *bpb; //mapping the buffer onto the structure
+  28:FAT32.c       **** struct MBRinfo_Structure *mbr;
+  29:FAT32.c       **** struct partitionInfo_Structure *partition;
+  30:FAT32.c       **** unsigned long dataSectors;
+  31:FAT32.c       **** 
+  32:FAT32.c       **** unusedSectors = 0;
+  33:FAT32.c       **** 
+  34:FAT32.c       **** SD_readSingleBlock(0);
+  35:FAT32.c       **** bpb = (struct BS_Structure *)buffer;
+  36:FAT32.c       **** 
+  37:FAT32.c       **** if(bpb->jumpBoot[0]!=0xE9 && bpb->jumpBoot[0]!=0xEB)   //check if it is boot sector
+  38:FAT32.c       **** {
+  39:FAT32.c       ****   mbr = (struct MBRinfo_Structure *) buffer;       //if it is not boot sector, it must be MBR
+  40:FAT32.c       ****   
+  41:FAT32.c       ****   if(mbr->signature != 0xaa55) return 1;       //if it is not even MBR then it's not FAT32
+  42:FAT32.c       ****   	
+  43:FAT32.c       ****   partition = (struct partitionInfo_Structure *)(mbr->partitionData);//first partition
+  44:FAT32.c       ****   unusedSectors = partition->firstSector; //the unused sectors, hidden to the FAT
+  45:FAT32.c       ****   
+  46:FAT32.c       ****   SD_readSingleBlock(partition->firstSector);//read the bpb sector
+  47:FAT32.c       ****   bpb = (struct BS_Structure *)buffer;
+  48:FAT32.c       ****   if(bpb->jumpBoot[0]!=0xE9 && bpb->jumpBoot[0]!=0xEB) return 1; 
+  49:FAT32.c       **** }
+  50:FAT32.c       **** 
+  51:FAT32.c       **** bytesPerSector = bpb->bytesPerSector;
+  52:FAT32.c       **** //transmitHex(INT, bytesPerSector); transmitByte(' ');
+  53:FAT32.c       **** sectorPerCluster = bpb->sectorPerCluster;
+  54:FAT32.c       **** //transmitHex(INT, sectorPerCluster); transmitByte(' ');
+  55:FAT32.c       **** reservedSectorCount = bpb->reservedSectorCount;
+  56:FAT32.c       **** rootCluster = bpb->rootCluster;// + (sector / sectorPerCluster) +1;
+  57:FAT32.c       **** firstDataSector = bpb->hiddenSectors + reservedSectorCount + (bpb->numberofFATs * bpb->FATsize_F32)
+  58:FAT32.c       **** 
+  59:FAT32.c       **** dataSectors = bpb->totalSectors_F32
+  60:FAT32.c       ****               - bpb->reservedSectorCount
+  61:FAT32.c       ****               - ( bpb->numberofFATs * bpb->FATsize_F32);
+  62:FAT32.c       **** totalClusters = dataSectors / sectorPerCluster;
+  63:FAT32.c       **** //transmitHex(LONG, totalClusters); transmitByte(' ');
+  64:FAT32.c       **** 
+  65:FAT32.c       **** if((getSetFreeCluster (TOTAL_FREE, GET, 0)) > totalClusters)  //check if FSinfo free clusters count
+  66:FAT32.c       ****      freeClusterCountUpdated = 0;
+  67:FAT32.c       **** else
+  68:FAT32.c       **** 	 freeClusterCountUpdated = 1;
+  69:FAT32.c       **** return 0;
+  70:FAT32.c       **** }
+  71:FAT32.c       **** 
+  72:FAT32.c       **** //***************************************************************************
+  73:FAT32.c       **** //Function: to calculate first sector address of any given cluster
+  74:FAT32.c       **** //Arguments: cluster number for which first sector is to be found
+  75:FAT32.c       **** //return: first sector address
+  76:FAT32.c       **** //***************************************************************************
+  77:FAT32.c       **** unsigned long getFirstSector(unsigned long clusterNumber)
+  78:FAT32.c       **** {
+  15               		.loc 1 78 0
+  16               		.cfi_startproc
+  17               	.LVL0:
+  18 0000 CF92      		push r12
+  19               	.LCFI0:
+  20               		.cfi_def_cfa_offset 3
+  21               		.cfi_offset 12, -2
+  22 0002 DF92      		push r13
+  23               	.LCFI1:
+  24               		.cfi_def_cfa_offset 4
+  25               		.cfi_offset 13, -3
+  26 0004 EF92      		push r14
+  27               	.LCFI2:
+  28               		.cfi_def_cfa_offset 5
+  29               		.cfi_offset 14, -4
+  30 0006 FF92      		push r15
+  31               	.LCFI3:
+  32               		.cfi_def_cfa_offset 6
+  33               		.cfi_offset 15, -5
+  34               	/* prologue: function */
+  35               	/* frame size = 0 */
+  36               	/* stack size = 4 */
+  37               	.L__stack_usage = 4
+  38 0008 9B01      		movw r18,r22
+  39 000a AC01      		movw r20,r24
+  79:FAT32.c       ****   return (((clusterNumber - 2) * sectorPerCluster) + firstDataSector);
+  40               		.loc 1 79 0
+  41 000c A091 0000 		lds r26,sectorPerCluster
+  42 0010 B091 0000 		lds r27,sectorPerCluster+1
+  43 0014 C090 0000 		lds r12,firstDataSector
+  44 0018 D090 0000 		lds r13,firstDataSector+1
+  45 001c E090 0000 		lds r14,firstDataSector+2
+  46 0020 F090 0000 		lds r15,firstDataSector+3
+  47 0024 2250      		subi r18,2
+  48 0026 3109      		sbc r19,__zero_reg__
+  49 0028 4109      		sbc r20,__zero_reg__
+  50 002a 5109      		sbc r21,__zero_reg__
+  51 002c 0E94 0000 		call __muluhisi3
+  52               	.LVL1:
+  53 0030 6C0D      		add r22,r12
+  54 0032 7D1D      		adc r23,r13
+  55 0034 8E1D      		adc r24,r14
+  56 0036 9F1D      		adc r25,r15
+  57               	/* epilogue start */
+  80:FAT32.c       **** }
+  58               		.loc 1 80 0
+  59 0038 FF90      		pop r15
+  60 003a EF90      		pop r14
+  61 003c DF90      		pop r13
+  62 003e CF90      		pop r12
+  63 0040 0895      		ret
+  64               		.cfi_endproc
+  65               	.LFE2:
+  67               	.global	getSetNextCluster
+  69               	getSetNextCluster:
+  70               	.LFB3:
+  81:FAT32.c       **** 
+  82:FAT32.c       **** //***************************************************************************
+  83:FAT32.c       **** //Function: get cluster entry value from FAT to find out the next cluster in the chain
+  84:FAT32.c       **** //or set new cluster entry in FAT
+  85:FAT32.c       **** //Arguments: 1. current cluster number, 2. get_set (=GET, if next cluster is to be found or = SET,
+  86:FAT32.c       **** //if next cluster is to be set 3. next cluster number, if argument#2 = SET, else 0
+  87:FAT32.c       **** //return: next cluster number, if if argument#2 = GET, else 0
+  88:FAT32.c       **** //****************************************************************************
+  89:FAT32.c       **** unsigned long getSetNextCluster (unsigned long clusterNumber,
+  90:FAT32.c       ****                                  unsigned char get_set,
+  91:FAT32.c       ****                                  unsigned long clusterEntry)
+  92:FAT32.c       **** {
+  71               		.loc 1 92 0
+  72               		.cfi_startproc
+  73               	.LVL2:
+  74 0042 4F92      		push r4
+  75               	.LCFI4:
+  76               		.cfi_def_cfa_offset 3
+  77               		.cfi_offset 4, -2
+  78 0044 5F92      		push r5
+  79               	.LCFI5:
+  80               		.cfi_def_cfa_offset 4
+  81               		.cfi_offset 5, -3
+  82 0046 6F92      		push r6
+  83               	.LCFI6:
+  84               		.cfi_def_cfa_offset 5
+  85               		.cfi_offset 6, -4
+  86 0048 7F92      		push r7
+  87               	.LCFI7:
+  88               		.cfi_def_cfa_offset 6
+  89               		.cfi_offset 7, -5
+  90 004a 8F92      		push r8
+  91               	.LCFI8:
+  92               		.cfi_def_cfa_offset 7
+  93               		.cfi_offset 8, -6
+  94 004c 9F92      		push r9
+  95               	.LCFI9:
+  96               		.cfi_def_cfa_offset 8
+  97               		.cfi_offset 9, -7
+  98 004e AF92      		push r10
+  99               	.LCFI10:
+ 100               		.cfi_def_cfa_offset 9
+ 101               		.cfi_offset 10, -8
+ 102 0050 BF92      		push r11
+ 103               	.LCFI11:
+ 104               		.cfi_def_cfa_offset 10
+ 105               		.cfi_offset 11, -9
+ 106 0052 CF92      		push r12
+ 107               	.LCFI12:
+ 108               		.cfi_def_cfa_offset 11
+ 109               		.cfi_offset 12, -10
+ 110 0054 DF92      		push r13
+ 111               	.LCFI13:
+ 112               		.cfi_def_cfa_offset 12
+ 113               		.cfi_offset 13, -11
+ 114 0056 EF92      		push r14
+ 115               	.LCFI14:
+ 116               		.cfi_def_cfa_offset 13
+ 117               		.cfi_offset 14, -12
+ 118 0058 FF92      		push r15
+ 119               	.LCFI15:
+ 120               		.cfi_def_cfa_offset 14
+ 121               		.cfi_offset 15, -13
+ 122 005a 0F93      		push r16
+ 123               	.LCFI16:
+ 124               		.cfi_def_cfa_offset 15
+ 125               		.cfi_offset 16, -14
+ 126 005c 1F93      		push r17
+ 127               	.LCFI17:
+ 128               		.cfi_def_cfa_offset 16
+ 129               		.cfi_offset 17, -15
+ 130 005e CF93      		push r28
+ 131               	.LCFI18:
+ 132               		.cfi_def_cfa_offset 17
+ 133               		.cfi_offset 28, -16
+ 134 0060 DF93      		push r29
+ 135               	.LCFI19:
+ 136               		.cfi_def_cfa_offset 18
+ 137               		.cfi_offset 29, -17
+ 138               	/* prologue: function */
+ 139               	/* frame size = 0 */
+ 140               	/* stack size = 16 */
+ 141               	.L__stack_usage = 16
+ 142 0062 4B01      		movw r8,r22
+ 143 0064 5C01      		movw r10,r24
+ 144 0066 C42F      		mov r28,r20
+ 145 0068 2801      		movw r4,r16
+ 146 006a 3901      		movw r6,r18
+ 147               	.LVL3:
+  93:FAT32.c       **** unsigned int FATEntryOffset;
+  94:FAT32.c       **** unsigned long *FATEntryValue;
+  95:FAT32.c       **** unsigned long FATEntrySector;
+  96:FAT32.c       **** unsigned char retry = 0;
+  97:FAT32.c       **** 
+  98:FAT32.c       **** //get sector number of the cluster entry in the FAT
+  99:FAT32.c       **** FATEntrySector = unusedSectors + reservedSectorCount + ((clusterNumber * 4) / bytesPerSector) ;
+ 148               		.loc 1 99 0
+ 149 006c 8091 0000 		lds r24,reservedSectorCount
+ 150 0070 9091 0000 		lds r25,reservedSectorCount+1
+ 151 0074 22E0      		ldi r18,2
+ 152               		1:
+ 153 0076 880C      		lsl r8
+ 154 0078 991C      		rol r9
+ 155 007a AA1C      		rol r10
+ 156 007c BB1C      		rol r11
+ 157 007e 2A95      		dec r18
+ 158 0080 01F4      		brne 1b
+ 159 0082 2091 0000 		lds r18,bytesPerSector
+ 160 0086 3091 0000 		lds r19,bytesPerSector+1
+ 161 008a C090 0000 		lds r12,unusedSectors
+ 162 008e D090 0000 		lds r13,unusedSectors+1
+ 163 0092 E090 0000 		lds r14,unusedSectors+2
+ 164 0096 F090 0000 		lds r15,unusedSectors+3
+ 165 009a C80E      		add r12,r24
+ 166 009c D91E      		adc r13,r25
+ 167 009e E11C      		adc r14,__zero_reg__
+ 168 00a0 F11C      		adc r15,__zero_reg__
+ 169 00a2 40E0      		ldi r20,0
+ 170 00a4 50E0      		ldi r21,0
+ 171               	.LVL4:
+ 172 00a6 C501      		movw r24,r10
+ 173 00a8 B401      		movw r22,r8
+ 174               	.LVL5:
+ 175 00aa 0E94 0000 		call __udivmodsi4
+ 176 00ae C20E      		add r12,r18
+ 177 00b0 D31E      		adc r13,r19
+ 178 00b2 E41E      		adc r14,r20
+ 179 00b4 F51E      		adc r15,r21
+ 180               	.LVL6:
+ 100:FAT32.c       **** 
+ 101:FAT32.c       **** //get the offset address in that sector number
+ 102:FAT32.c       **** FATEntryOffset = (unsigned int) ((clusterNumber * 4) % bytesPerSector);
+ 181               		.loc 1 102 0
+ 182 00b6 2091 0000 		lds r18,bytesPerSector
+ 183 00ba 3091 0000 		lds r19,bytesPerSector+1
+ 184 00be 40E0      		ldi r20,0
+ 185 00c0 50E0      		ldi r21,0
+ 186 00c2 C501      		movw r24,r10
+ 187 00c4 B401      		movw r22,r8
+ 188 00c6 0E94 0000 		call __udivmodsi4
+ 189 00ca 4B01      		movw r8,r22
+ 190 00cc 5C01      		movw r10,r24
+ 191               	.LVL7:
+ 192 00ce DAE0      		ldi r29,lo8(10)
+ 193               	.LVL8:
+ 194               	.L4:
+ 103:FAT32.c       **** 
+ 104:FAT32.c       **** //read the sector into a buffer
+ 105:FAT32.c       **** while(retry <10)
+ 106:FAT32.c       **** { if(!SD_readSingleBlock(FATEntrySector)) break; retry++;}
+ 195               		.loc 1 106 0
+ 196 00d0 C701      		movw r24,r14
+ 197 00d2 B601      		movw r22,r12
+ 198 00d4 0E94 0000 		call SD_readSingleBlock
+ 199               	.LVL9:
+ 200 00d8 8823      		tst r24
+ 201 00da 01F0      		breq .L3
+ 202               	.LVL10:
+ 203 00dc D150      		subi r29,lo8(-(-1))
+ 204               	.LVL11:
+ 105:FAT32.c       **** while(retry <10)
+ 205               		.loc 1 105 0 discriminator 1
+ 206 00de 01F4      		brne .L4
+ 207               	.LVL12:
+ 208               	.L3:
+ 107:FAT32.c       **** 
+ 108:FAT32.c       **** //get the cluster address from the buffer
+ 109:FAT32.c       **** FATEntryValue = (unsigned long *) &buffer[FATEntryOffset];
+ 209               		.loc 1 109 0
+ 210 00e0 F401      		movw r30,r8
+ 211 00e2 E050      		subi r30,lo8(-(buffer))
+ 212 00e4 F040      		sbci r31,hi8(-(buffer))
+ 213               	.LVL13:
+ 110:FAT32.c       **** 
+ 111:FAT32.c       **** if(get_set == GET)
+ 214               		.loc 1 111 0
+ 215 00e6 C111      		cpse r28,__zero_reg__
+ 216 00e8 00C0      		rjmp .L5
+ 112:FAT32.c       ****   return ((*FATEntryValue) & 0x0fffffff);
+ 217               		.loc 1 112 0
+ 218 00ea 6081      		ld r22,Z
+ 219 00ec 7181      		ldd r23,Z+1
+ 220 00ee 8281      		ldd r24,Z+2
+ 221 00f0 9381      		ldd r25,Z+3
+ 222 00f2 9F70      		andi r25,15
+ 223 00f4 00C0      		rjmp .L6
+ 224               	.L5:
+ 113:FAT32.c       **** 
+ 114:FAT32.c       **** 
+ 115:FAT32.c       **** *FATEntryValue = clusterEntry;   //for setting new value in cluster entry in FAT
+ 225               		.loc 1 115 0
+ 226 00f6 4082      		st Z,r4
+ 227 00f8 5182      		std Z+1,r5
+ 228 00fa 6282      		std Z+2,r6
+ 229 00fc 7382      		std Z+3,r7
+ 116:FAT32.c       **** 
+ 117:FAT32.c       **** SD_writeSingleBlock(FATEntrySector);
+ 230               		.loc 1 117 0
+ 231 00fe C701      		movw r24,r14
+ 232 0100 B601      		movw r22,r12
+ 233 0102 0E94 0000 		call SD_writeSingleBlock
+ 234               	.LVL14:
+ 118:FAT32.c       **** 
+ 119:FAT32.c       **** return (0);
+ 235               		.loc 1 119 0
+ 236 0106 60E0      		ldi r22,0
+ 237 0108 70E0      		ldi r23,0
+ 238 010a CB01      		movw r24,r22
+ 239               	.LVL15:
+ 240               	.L6:
+ 241               	/* epilogue start */
+ 120:FAT32.c       **** }
+ 242               		.loc 1 120 0
+ 243 010c DF91      		pop r29
+ 244 010e CF91      		pop r28
+ 245               	.LVL16:
+ 246 0110 1F91      		pop r17
+ 247 0112 0F91      		pop r16
+ 248 0114 FF90      		pop r15
+ 249 0116 EF90      		pop r14
+ 250 0118 DF90      		pop r13
+ 251 011a CF90      		pop r12
+ 252               	.LVL17:
+ 253 011c BF90      		pop r11
+ 254 011e AF90      		pop r10
+ 255 0120 9F90      		pop r9
+ 256 0122 8F90      		pop r8
+ 257               	.LVL18:
+ 258 0124 7F90      		pop r7
+ 259 0126 6F90      		pop r6
+ 260 0128 5F90      		pop r5
+ 261 012a 4F90      		pop r4
+ 262               	.LVL19:
+ 263 012c 0895      		ret
+ 264               		.cfi_endproc
+ 265               	.LFE3:
+ 267               	.global	getSetFreeCluster
+ 269               	getSetFreeCluster:
+ 270               	.LFB4:
+ 121:FAT32.c       **** 
+ 122:FAT32.c       **** //********************************************************************************************
+ 123:FAT32.c       **** //Function: to get or set next free cluster or total free clusters in FSinfo sector of SD card
+ 124:FAT32.c       **** //Arguments: 1.flag:TOTAL_FREE or NEXT_FREE, 
+ 125:FAT32.c       **** //			 2.flag: GET or SET 
+ 126:FAT32.c       **** //			 3.new FS entry, when argument2 is SET; or 0, when argument2 is GET
+ 127:FAT32.c       **** //return: next free cluster, if arg1 is NEXT_FREE & arg2 is GET
+ 128:FAT32.c       **** //        total number of free clusters, if arg1 is TOTAL_FREE & arg2 is GET
+ 129:FAT32.c       **** //		  0xffffffff, if any error or if arg2 is SET
+ 130:FAT32.c       **** //********************************************************************************************
+ 131:FAT32.c       **** unsigned long getSetFreeCluster(unsigned char totOrNext, unsigned char get_set, unsigned long FSEnt
+ 132:FAT32.c       **** {
+ 271               		.loc 1 132 0
+ 272               		.cfi_startproc
+ 273               	.LVL20:
+ 274 012e CF92      		push r12
+ 275               	.LCFI20:
+ 276               		.cfi_def_cfa_offset 3
+ 277               		.cfi_offset 12, -2
+ 278 0130 DF92      		push r13
+ 279               	.LCFI21:
+ 280               		.cfi_def_cfa_offset 4
+ 281               		.cfi_offset 13, -3
+ 282 0132 EF92      		push r14
+ 283               	.LCFI22:
+ 284               		.cfi_def_cfa_offset 5
+ 285               		.cfi_offset 14, -4
+ 286 0134 FF92      		push r15
+ 287               	.LCFI23:
+ 288               		.cfi_def_cfa_offset 6
+ 289               		.cfi_offset 15, -5
+ 290 0136 0F93      		push r16
+ 291               	.LCFI24:
+ 292               		.cfi_def_cfa_offset 7
+ 293               		.cfi_offset 16, -6
+ 294 0138 1F93      		push r17
+ 295               	.LCFI25:
+ 296               		.cfi_def_cfa_offset 8
+ 297               		.cfi_offset 17, -7
+ 298 013a CF93      		push r28
+ 299               	.LCFI26:
+ 300               		.cfi_def_cfa_offset 9
+ 301               		.cfi_offset 28, -8
+ 302 013c DF93      		push r29
+ 303               	.LCFI27:
+ 304               		.cfi_def_cfa_offset 10
+ 305               		.cfi_offset 29, -9
+ 306 013e 00D0      		rcall .
+ 307 0140 00D0      		rcall .
+ 308               	.LCFI28:
+ 309               		.cfi_def_cfa_offset 14
+ 310 0142 CDB7      		in r28,__SP_L__
+ 311 0144 DEB7      		in r29,__SP_H__
+ 312               	.LCFI29:
+ 313               		.cfi_def_cfa_register 28
+ 314               	/* prologue: function */
+ 315               	/* frame size = 4 */
+ 316               	/* stack size = 12 */
+ 317               	.L__stack_usage = 12
+ 318 0146 182F      		mov r17,r24
+ 319 0148 062F      		mov r16,r22
+ 320               	.LVL21:
+ 133:FAT32.c       **** struct FSInfo_Structure *FS = (struct FSInfo_Structure *) &buffer;
+ 134:FAT32.c       **** unsigned char error;
+ 135:FAT32.c       **** 
+ 136:FAT32.c       **** SD_readSingleBlock(unusedSectors + 1);
+ 321               		.loc 1 136 0
+ 322 014a 6091 0000 		lds r22,unusedSectors
+ 323 014e 7091 0000 		lds r23,unusedSectors+1
+ 324 0152 8091 0000 		lds r24,unusedSectors+2
+ 325 0156 9091 0000 		lds r25,unusedSectors+3
+ 326               	.LVL22:
+ 327 015a 6F5F      		subi r22,-1
+ 328 015c 7F4F      		sbci r23,-1
+ 329 015e 8F4F      		sbci r24,-1
+ 330 0160 9F4F      		sbci r25,-1
+ 331 0162 2983      		std Y+1,r18
+ 332 0164 3A83      		std Y+2,r19
+ 333 0166 4B83      		std Y+3,r20
+ 334 0168 5C83      		std Y+4,r21
+ 335 016a 0E94 0000 		call SD_readSingleBlock
+ 336               	.LVL23:
+ 137:FAT32.c       **** 
+ 138:FAT32.c       **** if((FS->leadSignature != 0x41615252) || (FS->structureSignature != 0x61417272) || (FS->trailSignatu
+ 337               		.loc 1 138 0
+ 338 016e C090 0000 		lds r12,buffer
+ 339 0172 D090 0000 		lds r13,buffer+1
+ 340 0176 E090 0000 		lds r14,buffer+2
+ 341 017a F090 0000 		lds r15,buffer+3
+ 342 017e 2981      		ldd r18,Y+1
+ 343 0180 3A81      		ldd r19,Y+2
+ 344 0182 4B81      		ldd r20,Y+3
+ 345 0184 5C81      		ldd r21,Y+4
+ 346 0186 82E5      		ldi r24,82
+ 347 0188 C816      		cp r12,r24
+ 348 018a D806      		cpc r13,r24
+ 349 018c 81E6      		ldi r24,97
+ 350 018e E806      		cpc r14,r24
+ 351 0190 81E4      		ldi r24,65
+ 352 0192 F806      		cpc r15,r24
+ 353 0194 01F0      		breq .+2
+ 354 0196 00C0      		rjmp .L23
+ 355               		.loc 1 138 0 is_stmt 0 discriminator 1
+ 356 0198 C090 0000 		lds r12,buffer+484
+ 357 019c D090 0000 		lds r13,buffer+484+1
+ 358 01a0 E090 0000 		lds r14,buffer+484+2
+ 359 01a4 F090 0000 		lds r15,buffer+484+3
+ 360 01a8 E2E7      		ldi r30,114
+ 361 01aa CE16      		cp r12,r30
+ 362 01ac DE06      		cpc r13,r30
+ 363 01ae E1E4      		ldi r30,65
+ 364 01b0 EE06      		cpc r14,r30
+ 365 01b2 E1E6      		ldi r30,97
+ 366 01b4 FE06      		cpc r15,r30
+ 367 01b6 01F0      		breq .+2
+ 368 01b8 00C0      		rjmp .L23
+ 369 01ba C090 0000 		lds r12,buffer+508
+ 370 01be D090 0000 		lds r13,buffer+508+1
+ 371 01c2 E090 0000 		lds r14,buffer+508+2
+ 372 01c6 F090 0000 		lds r15,buffer+508+3
+ 373 01ca C114      		cp r12,__zero_reg__
+ 374 01cc D104      		cpc r13,__zero_reg__
+ 375 01ce F5E5      		ldi r31,85
+ 376 01d0 EF06      		cpc r14,r31
+ 377 01d2 FAEA      		ldi r31,-86
+ 378 01d4 FF06      		cpc r15,r31
+ 379 01d6 01F4      		brne .L23
+ 139:FAT32.c       ****   return 0xffffffff;
+ 140:FAT32.c       **** 
+ 141:FAT32.c       ****  if(get_set == GET)
+ 380               		.loc 1 141 0 is_stmt 1
+ 381 01d8 0111      		cpse r16,__zero_reg__
+ 382 01da 00C0      		rjmp .L16
+ 383               	.LVL24:
+ 384               	.LBB4:
+ 385               	.LBB5:
+ 142:FAT32.c       ****  {
+ 143:FAT32.c       ****    if(totOrNext == TOTAL_FREE)
+ 386               		.loc 1 143 0
+ 387 01dc 1130      		cpi r17,lo8(1)
+ 388 01de 01F4      		brne .L17
+ 144:FAT32.c       ****       return(FS->freeClusterCount);
+ 389               		.loc 1 144 0
+ 390 01e0 6091 0000 		lds r22,buffer+488
+ 391 01e4 7091 0000 		lds r23,buffer+488+1
+ 392 01e8 8091 0000 		lds r24,buffer+488+2
+ 393 01ec 9091 0000 		lds r25,buffer+488+3
+ 394 01f0 00C0      		rjmp .L15
+ 395               	.L17:
+ 145:FAT32.c       ****    else // when totOrNext = NEXT_FREE
+ 146:FAT32.c       ****       return(FS->nextFreeCluster);
+ 396               		.loc 1 146 0
+ 397 01f2 6091 0000 		lds r22,buffer+492
+ 398 01f6 7091 0000 		lds r23,buffer+492+1
+ 399 01fa 8091 0000 		lds r24,buffer+492+2
+ 400 01fe 9091 0000 		lds r25,buffer+492+3
+ 401 0202 00C0      		rjmp .L15
+ 402               	.LVL25:
+ 403               	.L16:
+ 404               	.LBE5:
+ 405               	.LBE4:
+ 147:FAT32.c       ****  }
+ 148:FAT32.c       ****  else
+ 149:FAT32.c       ****  {
+ 150:FAT32.c       ****    if(totOrNext == TOTAL_FREE)
+ 406               		.loc 1 150 0
+ 407 0204 1130      		cpi r17,lo8(1)
+ 408 0206 01F4      		brne .L19
+ 151:FAT32.c       ****       FS->freeClusterCount = FSEntry;
+ 409               		.loc 1 151 0
+ 410 0208 2093 0000 		sts buffer+488,r18
+ 411 020c 3093 0000 		sts buffer+488+1,r19
+ 412 0210 4093 0000 		sts buffer+488+2,r20
+ 413 0214 5093 0000 		sts buffer+488+3,r21
+ 414 0218 00C0      		rjmp .L20
+ 415               	.L19:
+ 152:FAT32.c       ****    else // when totOrNext = NEXT_FREE
+ 153:FAT32.c       **** 	  FS->nextFreeCluster = FSEntry;
+ 416               		.loc 1 153 0
+ 417 021a 2093 0000 		sts buffer+492,r18
+ 418 021e 3093 0000 		sts buffer+492+1,r19
+ 419 0222 4093 0000 		sts buffer+492+2,r20
+ 420 0226 5093 0000 		sts buffer+492+3,r21
+ 421               	.L20:
+ 154:FAT32.c       ****  
+ 155:FAT32.c       ****    error = SD_writeSingleBlock(unusedSectors + 1);	//update FSinfo
+ 422               		.loc 1 155 0
+ 423 022a 6091 0000 		lds r22,unusedSectors
+ 424 022e 7091 0000 		lds r23,unusedSectors+1
+ 425 0232 8091 0000 		lds r24,unusedSectors+2
+ 426 0236 9091 0000 		lds r25,unusedSectors+3
+ 427 023a 6F5F      		subi r22,-1
+ 428 023c 7F4F      		sbci r23,-1
+ 429 023e 8F4F      		sbci r24,-1
+ 430 0240 9F4F      		sbci r25,-1
+ 431 0242 0E94 0000 		call SD_writeSingleBlock
+ 432               	.LVL26:
+ 433               	.L23:
+ 139:FAT32.c       ****   return 0xffffffff;
+ 434               		.loc 1 139 0
+ 435 0246 6FEF      		ldi r22,lo8(-1)
+ 436 0248 7FEF      		ldi r23,lo8(-1)
+ 437 024a CB01      		movw r24,r22
+ 438               	.L15:
+ 439               	/* epilogue start */
+ 156:FAT32.c       ****  }
+ 157:FAT32.c       ****  return 0xffffffff;
+ 158:FAT32.c       **** }
+ 440               		.loc 1 158 0
+ 441 024c 0F90      		pop __tmp_reg__
+ 442 024e 0F90      		pop __tmp_reg__
+ 443 0250 0F90      		pop __tmp_reg__
+ 444 0252 0F90      		pop __tmp_reg__
+ 445 0254 DF91      		pop r29
+ 446 0256 CF91      		pop r28
+ 447 0258 1F91      		pop r17
+ 448               	.LVL27:
+ 449 025a 0F91      		pop r16
+ 450               	.LVL28:
+ 451 025c FF90      		pop r15
+ 452 025e EF90      		pop r14
+ 453 0260 DF90      		pop r13
+ 454 0262 CF90      		pop r12
+ 455 0264 0895      		ret
+ 456               		.cfi_endproc
+ 457               	.LFE4:
+ 459               	.global	getBootSectorData
+ 461               	getBootSectorData:
+ 462               	.LFB1:
+  26:FAT32.c       **** {
+ 463               		.loc 1 26 0
+ 464               		.cfi_startproc
+ 465 0266 0F93      		push r16
+ 466               	.LCFI30:
+ 467               		.cfi_def_cfa_offset 3
+ 468               		.cfi_offset 16, -2
+ 469 0268 1F93      		push r17
+ 470               	.LCFI31:
+ 471               		.cfi_def_cfa_offset 4
+ 472               		.cfi_offset 17, -3
+ 473 026a CF93      		push r28
+ 474               	.LCFI32:
+ 475               		.cfi_def_cfa_offset 5
+ 476               		.cfi_offset 28, -4
+ 477 026c DF93      		push r29
+ 478               	.LCFI33:
+ 479               		.cfi_def_cfa_offset 6
+ 480               		.cfi_offset 29, -5
+ 481               	/* prologue: function */
+ 482               	/* frame size = 0 */
+ 483               	/* stack size = 4 */
+ 484               	.L__stack_usage = 4
+  32:FAT32.c       **** unusedSectors = 0;
+ 485               		.loc 1 32 0
+ 486 026e 1092 0000 		sts unusedSectors,__zero_reg__
+ 487 0272 1092 0000 		sts unusedSectors+1,__zero_reg__
+ 488 0276 1092 0000 		sts unusedSectors+2,__zero_reg__
+ 489 027a 1092 0000 		sts unusedSectors+3,__zero_reg__
+  34:FAT32.c       **** SD_readSingleBlock(0);
+ 490               		.loc 1 34 0
+ 491 027e 60E0      		ldi r22,0
+ 492 0280 70E0      		ldi r23,0
+ 493 0282 CB01      		movw r24,r22
+ 494 0284 0E94 0000 		call SD_readSingleBlock
+ 495               	.LVL29:
+  37:FAT32.c       **** if(bpb->jumpBoot[0]!=0xE9 && bpb->jumpBoot[0]!=0xEB)   //check if it is boot sector
+ 496               		.loc 1 37 0
+ 497 0288 8091 0000 		lds r24,buffer
+ 498 028c 8D7F      		andi r24,lo8(-3)
+ 499 028e 893E      		cpi r24,lo8(-23)
+ 500 0290 01F0      		breq .+2
+ 501 0292 00C0      		rjmp .L25
+ 502               	.L31:
+  51:FAT32.c       **** bytesPerSector = bpb->bytesPerSector;
+ 503               		.loc 1 51 0
+ 504 0294 8091 0000 		lds r24,buffer+11
+ 505 0298 9091 0000 		lds r25,buffer+11+1
+ 506 029c 9093 0000 		sts bytesPerSector+1,r25
+ 507 02a0 8093 0000 		sts bytesPerSector,r24
+  53:FAT32.c       **** sectorPerCluster = bpb->sectorPerCluster;
+ 508               		.loc 1 53 0
+ 509 02a4 8091 0000 		lds r24,buffer+13
+ 510 02a8 90E0      		ldi r25,0
+ 511 02aa 9093 0000 		sts sectorPerCluster+1,r25
+ 512 02ae 8093 0000 		sts sectorPerCluster,r24
+  55:FAT32.c       **** reservedSectorCount = bpb->reservedSectorCount;
+ 513               		.loc 1 55 0
+ 514 02b2 E091 0000 		lds r30,buffer+14
+ 515 02b6 F091 0000 		lds r31,buffer+14+1
+ 516 02ba F093 0000 		sts reservedSectorCount+1,r31
+ 517 02be E093 0000 		sts reservedSectorCount,r30
+  56:FAT32.c       **** rootCluster = bpb->rootCluster;// + (sector / sectorPerCluster) +1;
+ 518               		.loc 1 56 0
+ 519 02c2 8091 0000 		lds r24,buffer+44
+ 520 02c6 9091 0000 		lds r25,buffer+44+1
+ 521 02ca A091 0000 		lds r26,buffer+44+2
+ 522 02ce B091 0000 		lds r27,buffer+44+3
+ 523 02d2 8093 0000 		sts rootCluster,r24
+ 524 02d6 9093 0000 		sts rootCluster+1,r25
+ 525 02da A093 0000 		sts rootCluster+2,r26
+ 526 02de B093 0000 		sts rootCluster+3,r27
+  57:FAT32.c       **** firstDataSector = bpb->hiddenSectors + reservedSectorCount + (bpb->numberofFATs * bpb->FATsize_F32)
+ 527               		.loc 1 57 0
+ 528 02e2 C091 0000 		lds r28,reservedSectorCount
+ 529 02e6 D091 0000 		lds r29,reservedSectorCount+1
+ 530 02ea A091 0000 		lds r26,buffer+16
+ 531 02ee 2091 0000 		lds r18,buffer+36
+ 532 02f2 3091 0000 		lds r19,buffer+36+1
+ 533 02f6 4091 0000 		lds r20,buffer+36+2
+ 534 02fa 5091 0000 		lds r21,buffer+36+3
+ 535 02fe B0E0      		ldi r27,0
+ 536 0300 0E94 0000 		call __muluhisi3
+ 537 0304 8B01      		movw r16,r22
+ 538 0306 9C01      		movw r18,r24
+ 539 0308 8091 0000 		lds r24,buffer+28
+ 540 030c 9091 0000 		lds r25,buffer+28+1
+ 541 0310 A091 0000 		lds r26,buffer+28+2
+ 542 0314 B091 0000 		lds r27,buffer+28+3
+ 543 0318 8C0F      		add r24,r28
+ 544 031a 9D1F      		adc r25,r29
+ 545 031c A11D      		adc r26,__zero_reg__
+ 546 031e B11D      		adc r27,__zero_reg__
+ 547 0320 800F      		add r24,r16
+ 548 0322 911F      		adc r25,r17
+ 549 0324 A21F      		adc r26,r18
+ 550 0326 B31F      		adc r27,r19
+ 551 0328 8093 0000 		sts firstDataSector,r24
+ 552 032c 9093 0000 		sts firstDataSector+1,r25
+ 553 0330 A093 0000 		sts firstDataSector+2,r26
+ 554 0334 B093 0000 		sts firstDataSector+3,r27
+  62:FAT32.c       **** totalClusters = dataSectors / sectorPerCluster;
+ 555               		.loc 1 62 0
+ 556 0338 4091 0000 		lds r20,sectorPerCluster
+ 557 033c 5091 0000 		lds r21,sectorPerCluster+1
+  60:FAT32.c       ****               - bpb->reservedSectorCount
+ 558               		.loc 1 60 0
+ 559 0340 6091 0000 		lds r22,buffer+32
+ 560 0344 7091 0000 		lds r23,buffer+32+1
+ 561 0348 8091 0000 		lds r24,buffer+32+2
+ 562 034c 9091 0000 		lds r25,buffer+32+3
+ 563 0350 6E1B      		sub r22,r30
+ 564 0352 7F0B      		sbc r23,r31
+ 565 0354 8109      		sbc r24,__zero_reg__
+ 566 0356 9109      		sbc r25,__zero_reg__
+  59:FAT32.c       **** dataSectors = bpb->totalSectors_F32
+ 567               		.loc 1 59 0
+ 568 0358 601B      		sub r22,r16
+ 569 035a 710B      		sbc r23,r17
+ 570 035c 820B      		sbc r24,r18
+ 571 035e 930B      		sbc r25,r19
+  62:FAT32.c       **** totalClusters = dataSectors / sectorPerCluster;
+ 572               		.loc 1 62 0
+ 573 0360 9A01      		movw r18,r20
+ 574 0362 40E0      		ldi r20,0
+ 575 0364 50E0      		ldi r21,0
+ 576 0366 0E94 0000 		call __udivmodsi4
+ 577 036a 2093 0000 		sts totalClusters,r18
+ 578 036e 3093 0000 		sts totalClusters+1,r19
+ 579 0372 4093 0000 		sts totalClusters+2,r20
+ 580 0376 5093 0000 		sts totalClusters+3,r21
+  65:FAT32.c       **** if((getSetFreeCluster (TOTAL_FREE, GET, 0)) > totalClusters)  //check if FSinfo free clusters count
+ 581               		.loc 1 65 0
+ 582 037a 20E0      		ldi r18,0
+ 583 037c 30E0      		ldi r19,0
+ 584 037e A901      		movw r20,r18
+ 585 0380 60E0      		ldi r22,0
+ 586 0382 81E0      		ldi r24,lo8(1)
+ 587 0384 0E94 0000 		call getSetFreeCluster
+ 588               	.LVL30:
+ 589 0388 0091 0000 		lds r16,totalClusters
+ 590 038c 1091 0000 		lds r17,totalClusters+1
+ 591 0390 2091 0000 		lds r18,totalClusters+2
+ 592 0394 3091 0000 		lds r19,totalClusters+3
+ 593 0398 0617      		cp r16,r22
+ 594 039a 1707      		cpc r17,r23
+ 595 039c 2807      		cpc r18,r24
+ 596 039e 3907      		cpc r19,r25
+ 597 03a0 00F4      		brsh .L32
+  66:FAT32.c       ****      freeClusterCountUpdated = 0;
+ 598               		.loc 1 66 0
+ 599 03a2 1092 0000 		sts freeClusterCountUpdated,__zero_reg__
+ 600 03a6 00C0      		rjmp .L33
+ 601               	.L25:
+ 602               	.LVL31:
+  41:FAT32.c       ****   if(mbr->signature != 0xaa55) return 1;       //if it is not even MBR then it's not FAT32
+ 603               		.loc 1 41 0
+ 604 03a8 8091 0000 		lds r24,buffer+510
+ 605 03ac 9091 0000 		lds r25,buffer+510+1
+ 606 03b0 8535      		cpi r24,85
+ 607 03b2 9A4A      		sbci r25,-86
+ 608 03b4 01F0      		breq .L28
+ 609               	.L30:
+ 610 03b6 81E0      		ldi r24,lo8(1)
+ 611 03b8 00C0      		rjmp .L29
+ 612               	.L28:
+ 613               	.LVL32:
+  44:FAT32.c       ****   unusedSectors = partition->firstSector; //the unused sectors, hidden to the FAT
+ 614               		.loc 1 44 0
+ 615 03ba 6091 0000 		lds r22,buffer+454
+ 616 03be 7091 0000 		lds r23,buffer+454+1
+ 617 03c2 8091 0000 		lds r24,buffer+454+2
+ 618 03c6 9091 0000 		lds r25,buffer+454+3
+ 619 03ca 6093 0000 		sts unusedSectors,r22
+ 620 03ce 7093 0000 		sts unusedSectors+1,r23
+ 621 03d2 8093 0000 		sts unusedSectors+2,r24
+ 622 03d6 9093 0000 		sts unusedSectors+3,r25
+  46:FAT32.c       ****   SD_readSingleBlock(partition->firstSector);//read the bpb sector
+ 623               		.loc 1 46 0
+ 624 03da 0E94 0000 		call SD_readSingleBlock
+ 625               	.LVL33:
+  48:FAT32.c       ****   if(bpb->jumpBoot[0]!=0xE9 && bpb->jumpBoot[0]!=0xEB) return 1; 
+ 626               		.loc 1 48 0
+ 627 03de 8091 0000 		lds r24,buffer
+ 628 03e2 8D7F      		andi r24,lo8(-3)
+ 629 03e4 893E      		cpi r24,lo8(-23)
+ 630 03e6 01F4      		brne .L30
+ 631 03e8 00C0      		rjmp .L31
+ 632               	.LVL34:
+ 633               	.L32:
+  68:FAT32.c       **** 	 freeClusterCountUpdated = 1;
+ 634               		.loc 1 68 0
+ 635 03ea 81E0      		ldi r24,lo8(1)
+ 636 03ec 8093 0000 		sts freeClusterCountUpdated,r24
+ 637               	.L33:
+  69:FAT32.c       **** return 0;
+ 638               		.loc 1 69 0
+ 639 03f0 80E0      		ldi r24,0
+ 640               	.L29:
+ 641               	/* epilogue start */
+  70:FAT32.c       **** }
+ 642               		.loc 1 70 0
+ 643 03f2 DF91      		pop r29
+ 644 03f4 CF91      		pop r28
+ 645 03f6 1F91      		pop r17
+ 646 03f8 0F91      		pop r16
+ 647 03fa 0895      		ret
+ 648               		.cfi_endproc
+ 649               	.LFE1:
+ 651               	.global	convertFileName
+ 653               	convertFileName:
+ 654               	.LFB7:
+ 159:FAT32.c       **** 
+ 160:FAT32.c       **** //***************************************************************************
+ 161:FAT32.c       **** //Function: to get DIR/FILE list or a single file address (cluster number) or to delete a specified
+ 162:FAT32.c       **** //Arguments: #1 - flag: GET_LIST, GET_FILE or DELETE #2 - pointer to file name (0 if arg#1 is GET_L
+ 163:FAT32.c       **** //return: first cluster of the file, if flag = GET_FILE
+ 164:FAT32.c       **** //        print file/dir list of the root directory, if flag = GET_LIST
+ 165:FAT32.c       **** //		  Delete the file mentioned in arg#2, if flag = DELETE
+ 166:FAT32.c       **** //****************************************************************************
+ 167:FAT32.c       **** struct dir_Structure* findFiles (unsigned char flag, unsigned char *fileName)
+ 168:FAT32.c       **** {
+ 169:FAT32.c       **** unsigned long cluster, sector, firstSector, firstCluster, nextCluster;
+ 170:FAT32.c       **** struct dir_Structure *dir;
+ 171:FAT32.c       **** unsigned int i;
+ 172:FAT32.c       **** unsigned char j;
+ 173:FAT32.c       **** 
+ 174:FAT32.c       **** cluster = rootCluster; //root cluster
+ 175:FAT32.c       **** 
+ 176:FAT32.c       **** while(1)
+ 177:FAT32.c       **** {
+ 178:FAT32.c       ****    firstSector = getFirstSector (cluster);
+ 179:FAT32.c       **** 
+ 180:FAT32.c       ****    for(sector = 0; sector < sectorPerCluster; sector++)
+ 181:FAT32.c       ****    {
+ 182:FAT32.c       ****      SD_readSingleBlock (firstSector + sector);
+ 183:FAT32.c       **** 	
+ 184:FAT32.c       **** 
+ 185:FAT32.c       ****      for(i=0; i<bytesPerSector; i+=32)
+ 186:FAT32.c       ****      {
+ 187:FAT32.c       **** 	    dir = (struct dir_Structure *) &buffer[i];
+ 188:FAT32.c       **** 
+ 189:FAT32.c       ****         if(dir->name[0] == EMPTY) //indicates end of the file list of the directory
+ 190:FAT32.c       **** 		{
+ 191:FAT32.c       **** 		  if(flag == DELETE)
+ 192:FAT32.c       **** 		      transmitString_F(PSTR("File does not exist!"));
+ 193:FAT32.c       **** 		  return 0;   
+ 194:FAT32.c       **** 		}
+ 195:FAT32.c       **** 		if((dir->name[0] != DELETED) && (dir->attrib != ATTR_LONG_NAME))
+ 196:FAT32.c       ****         {
+ 197:FAT32.c       ****           if((flag == GET_FILE) || (flag == DELETE))
+ 198:FAT32.c       ****           {
+ 199:FAT32.c       ****             for(j=0; j<11; j++)
+ 200:FAT32.c       ****             if(dir->name[j] != fileName[j]) break;
+ 201:FAT32.c       ****             if(j == 11)
+ 202:FAT32.c       **** 			{
+ 203:FAT32.c       **** 			  if(flag == GET_FILE)
+ 204:FAT32.c       ****               {
+ 205:FAT32.c       **** 			    appendFileSector = firstSector + sector;
+ 206:FAT32.c       **** 				appendFileLocation = i;
+ 207:FAT32.c       **** 				appendStartCluster = (((unsigned long) dir->firstClusterHI) << 16) | dir->firstClusterLO;
+ 208:FAT32.c       **** 				fileSize = dir->fileSize;
+ 209:FAT32.c       **** 			    return (dir);
+ 210:FAT32.c       **** 			  }	
+ 211:FAT32.c       **** 			  else    //when flag = DELETE
+ 212:FAT32.c       **** 			  {
+ 213:FAT32.c       **** 			     TX_NEWLINE;
+ 214:FAT32.c       **** 				 transmitString_F(PSTR("Deleting.."));
+ 215:FAT32.c       **** 				 TX_NEWLINE;
+ 216:FAT32.c       **** 				 TX_NEWLINE;
+ 217:FAT32.c       **** 				 firstCluster = (((unsigned long) dir->firstClusterHI) << 16) | dir->firstClusterLO;
+ 218:FAT32.c       ****                 
+ 219:FAT32.c       **** 				 //mark file as 'deleted' in FAT table
+ 220:FAT32.c       **** 				 dir->name[0] = DELETED;    
+ 221:FAT32.c       **** 				 SD_writeSingleBlock (firstSector+sector);
+ 222:FAT32.c       **** 				 			 
+ 223:FAT32.c       **** 				 freeMemoryUpdate (ADD, dir->fileSize);
+ 224:FAT32.c       **** 
+ 225:FAT32.c       **** 				 //update next free cluster entry in FSinfo sector
+ 226:FAT32.c       **** 				 cluster = getSetFreeCluster (NEXT_FREE, GET, 0); 
+ 227:FAT32.c       **** 				 if(firstCluster < cluster)
+ 228:FAT32.c       **** 				     getSetFreeCluster (NEXT_FREE, SET, firstCluster);
+ 229:FAT32.c       **** 
+ 230:FAT32.c       **** 				 //mark all the clusters allocated to the file as 'free'
+ 231:FAT32.c       **** 			     while(1)  
+ 232:FAT32.c       **** 			     {
+ 233:FAT32.c       **** 			        nextCluster = getSetNextCluster (firstCluster, GET, 0);
+ 234:FAT32.c       **** 					getSetNextCluster (firstCluster, SET, 0);
+ 235:FAT32.c       **** 					if(nextCluster > 0x0ffffff6) 
+ 236:FAT32.c       **** 					   {transmitString_F(PSTR("File deleted!"));return 0;}
+ 237:FAT32.c       **** 					firstCluster = nextCluster;
+ 238:FAT32.c       **** 			  	 } 
+ 239:FAT32.c       **** 			  }
+ 240:FAT32.c       ****             }
+ 241:FAT32.c       ****           }
+ 242:FAT32.c       ****           else  //when flag = GET_LIST
+ 243:FAT32.c       **** 		  {
+ 244:FAT32.c       **** 		     TX_NEWLINE;
+ 245:FAT32.c       **** 			 for(j=0; j<11; j++)
+ 246:FAT32.c       **** 		     {
+ 247:FAT32.c       **** 			   if(j == 8) transmitByte(' ');
+ 248:FAT32.c       **** 			   transmitByte (dir->name[j]);
+ 249:FAT32.c       **** 			 }
+ 250:FAT32.c       **** 		     transmitString_F (PSTR("   "));
+ 251:FAT32.c       **** 		     if((dir->attrib != 0x10) && (dir->attrib != 0x08))
+ 252:FAT32.c       **** 			 {
+ 253:FAT32.c       **** 			     transmitString_F (PSTR("FILE" ));
+ 254:FAT32.c       **** 		         transmitString_F (PSTR("   "));
+ 255:FAT32.c       **** 			     displayMemory (LOW, dir->fileSize);
+ 256:FAT32.c       **** 			 }
+ 257:FAT32.c       **** 			 else
+ 258:FAT32.c       **** 			   transmitString_F ((dir->attrib == 0x10)? PSTR("DIR") : PSTR("ROOT"));
+ 259:FAT32.c       **** 		  }
+ 260:FAT32.c       ****        }
+ 261:FAT32.c       ****      }
+ 262:FAT32.c       ****    }
+ 263:FAT32.c       **** 
+ 264:FAT32.c       ****    cluster = (getSetNextCluster (cluster, GET, 0));
+ 265:FAT32.c       **** 
+ 266:FAT32.c       ****    if(cluster > 0x0ffffff6)
+ 267:FAT32.c       ****    	 return 0;
+ 268:FAT32.c       ****    if(cluster == 0) 
+ 269:FAT32.c       ****    {transmitString_F(PSTR("Error in getting cluster"));  return 0;}
+ 270:FAT32.c       ****  }
+ 271:FAT32.c       **** return 0;
+ 272:FAT32.c       **** }
+ 273:FAT32.c       **** 
+ 274:FAT32.c       **** //***************************************************************************
+ 275:FAT32.c       **** //Function: if flag=READ then to read file from SD card and send contents to UART 
+ 276:FAT32.c       **** //if flag=VERIFY then functions will verify whether a specified file is already existing
+ 277:FAT32.c       **** //Arguments: flag (READ or VERIFY) and pointer to the file name
+ 278:FAT32.c       **** //return: 0, if normal operation or flag is READ
+ 279:FAT32.c       **** //	      1, if file is already existing and flag = VERIFY; or if flag=READ and file does not exist
+ 280:FAT32.c       **** //		  2, if file name is incompatible
+ 281:FAT32.c       **** //***************************************************************************
+ 282:FAT32.c       **** unsigned char readFile (unsigned char flag, unsigned char *fileName)
+ 283:FAT32.c       **** {
+ 284:FAT32.c       **** struct dir_Structure *dir;
+ 285:FAT32.c       **** unsigned long cluster, byteCounter = 0, fileSize, firstSector;
+ 286:FAT32.c       **** unsigned int k;
+ 287:FAT32.c       **** unsigned char j, error;
+ 288:FAT32.c       **** 
+ 289:FAT32.c       **** error = convertFileName (fileName); //convert fileName into FAT format
+ 290:FAT32.c       **** if(error) return 2;
+ 291:FAT32.c       **** 
+ 292:FAT32.c       **** dir = findFiles (GET_FILE, fileName); //get the file location
+ 293:FAT32.c       **** if(dir == 0) 
+ 294:FAT32.c       **** {
+ 295:FAT32.c       ****   if(flag == READ) return (1);
+ 296:FAT32.c       ****   else return (0);
+ 297:FAT32.c       **** }
+ 298:FAT32.c       **** 
+ 299:FAT32.c       **** if(flag == VERIFY) return (1);	//specified file name is already existing
+ 300:FAT32.c       **** 
+ 301:FAT32.c       **** cluster = (((unsigned long) dir->firstClusterHI) << 16) | dir->firstClusterLO;
+ 302:FAT32.c       **** 
+ 303:FAT32.c       **** fileSize = dir->fileSize;
+ 304:FAT32.c       **** 
+ 305:FAT32.c       **** TX_NEWLINE;
+ 306:FAT32.c       **** TX_NEWLINE;
+ 307:FAT32.c       **** 
+ 308:FAT32.c       **** while(1)
+ 309:FAT32.c       **** {
+ 310:FAT32.c       ****   firstSector = getFirstSector (cluster);
+ 311:FAT32.c       **** 
+ 312:FAT32.c       ****   for(j=0; j<sectorPerCluster; j++)
+ 313:FAT32.c       ****   {
+ 314:FAT32.c       ****     SD_readSingleBlock(firstSector + j);
+ 315:FAT32.c       ****     
+ 316:FAT32.c       **** 	for(k=0; k<512; k++)
+ 317:FAT32.c       ****     {
+ 318:FAT32.c       ****       transmitByte(buffer[k]);
+ 319:FAT32.c       ****       if ((byteCounter++) >= fileSize ) return 0;
+ 320:FAT32.c       ****     }
+ 321:FAT32.c       ****   }
+ 322:FAT32.c       ****   cluster = getSetNextCluster (cluster, GET, 0);
+ 323:FAT32.c       ****   if(cluster == 0) {transmitString_F(PSTR("Error in getting cluster")); return 0;}
+ 324:FAT32.c       **** }
+ 325:FAT32.c       **** return 0;
+ 326:FAT32.c       **** }
+ 327:FAT32.c       **** 
+ 328:FAT32.c       **** //***************************************************************************
+ 329:FAT32.c       **** //Function: to convert normal short file name into FAT format
+ 330:FAT32.c       **** //Arguments: pointer to the file name
+ 331:FAT32.c       **** //return: 0, if successful else 1.
+ 332:FAT32.c       **** //***************************************************************************
+ 333:FAT32.c       **** unsigned char convertFileName (unsigned char *fileName)
+ 334:FAT32.c       **** {
+ 655               		.loc 1 334 0
+ 656               		.cfi_startproc
+ 657               	.LVL35:
+ 658 03fc CF93      		push r28
+ 659               	.LCFI34:
+ 660               		.cfi_def_cfa_offset 3
+ 661               		.cfi_offset 28, -2
+ 662 03fe DF93      		push r29
+ 663               	.LCFI35:
+ 664               		.cfi_def_cfa_offset 4
+ 665               		.cfi_offset 29, -3
+ 666 0400 CDB7      		in r28,__SP_L__
+ 667 0402 DEB7      		in r29,__SP_H__
+ 668               	.LCFI36:
+ 669               		.cfi_def_cfa_register 28
+ 670 0404 2B97      		sbiw r28,11
+ 671               	.LCFI37:
+ 672               		.cfi_def_cfa_offset 15
+ 673 0406 0FB6      		in __tmp_reg__,__SREG__
+ 674 0408 F894      		cli
+ 675 040a DEBF      		out __SP_H__,r29
+ 676 040c 0FBE      		out __SREG__,__tmp_reg__
+ 677 040e CDBF      		out __SP_L__,r28
+ 678               	/* prologue: function */
+ 679               	/* frame size = 11 */
+ 680               	/* stack size = 13 */
+ 681               	.L__stack_usage = 13
+ 682               	.LVL36:
+ 683               		.loc 1 334 0
+ 684 0410 FC01      		movw r30,r24
+ 335:FAT32.c       **** unsigned char fileNameFAT[11];
+ 336:FAT32.c       **** unsigned char j, k;
+ 337:FAT32.c       **** 
+ 338:FAT32.c       **** for(j=0; j<12; j++)
+ 685               		.loc 1 338 0
+ 686 0412 40E0      		ldi r20,0
+ 687               	.LVL37:
+ 688               	.L37:
+ 339:FAT32.c       **** if(fileName[j] == '.') break;
+ 689               		.loc 1 339 0
+ 690 0414 2191      		ld r18,Z+
+ 691 0416 2E32      		cpi r18,lo8(46)
+ 692 0418 01F0      		breq .L35
+ 338:FAT32.c       **** for(j=0; j<12; j++)
+ 693               		.loc 1 338 0
+ 694 041a 4F5F      		subi r20,lo8(-(1))
+ 695               	.LVL38:
+ 696 041c 4C30      		cpi r20,lo8(12)
+ 697 041e 01F4      		brne .L37
+ 698 0420 00C0      		rjmp .L36
+ 699               	.L35:
+ 700 0422 542F      		mov r21,r20
+ 340:FAT32.c       **** 
+ 341:FAT32.c       **** if(j>8) {transmitString_F(PSTR("Invalid fileName..")); return 1;}
+ 701               		.loc 1 341 0
+ 702 0424 4930      		cpi r20,lo8(9)
+ 703 0426 00F4      		brsh .L36
+ 704 0428 9E01      		movw r18,r28
+ 705 042a 2F5F      		subi r18,-1
+ 706 042c 3F4F      		sbci r19,-1
+ 707 042e F901      		movw r30,r18
+ 708 0430 DC01      		movw r26,r24
+ 709 0432 00C0      		rjmp .L38
+ 710               	.L36:
+ 711               		.loc 1 341 0 is_stmt 0 discriminator 1
+ 712 0434 80E0      		ldi r24,lo8(__c.1937)
+ 713 0436 90E0      		ldi r25,hi8(__c.1937)
+ 714               	.LVL39:
+ 715 0438 0E94 0000 		call transmitString_F
+ 716               	.LVL40:
+ 717 043c 81E0      		ldi r24,lo8(1)
+ 718 043e 00C0      		rjmp .L39
+ 719               	.LVL41:
+ 720               	.L38:
+ 721 0440 6E2F      		mov r22,r30
+ 722 0442 621B      		sub r22,r18
+ 342:FAT32.c       **** 
+ 343:FAT32.c       **** for(k=0; k<j; k++) //setting file name
+ 723               		.loc 1 343 0 is_stmt 1 discriminator 1
+ 724 0444 6417      		cp r22,r20
+ 725 0446 00F4      		brsh .L56
+ 344:FAT32.c       ****   fileNameFAT[k] = fileName[k];
+ 726               		.loc 1 344 0 discriminator 2
+ 727 0448 6D91      		ld r22,X+
+ 728 044a 6193      		st Z+,r22
+ 729 044c 00C0      		rjmp .L38
+ 730               	.L56:
+ 345:FAT32.c       **** 
+ 346:FAT32.c       **** for(k=j; k<=7; k++) //filling file name trail with blanks
+ 347:FAT32.c       ****   fileNameFAT[k] = ' ';
+ 731               		.loc 1 347 0
+ 732 044e 60E2      		ldi r22,lo8(32)
+ 733               	.LVL42:
+ 734               	.L41:
+ 346:FAT32.c       **** for(k=j; k<=7; k++) //filling file name trail with blanks
+ 735               		.loc 1 346 0 discriminator 1
+ 736 0450 4830      		cpi r20,lo8(8)
+ 737 0452 01F0      		breq .L57
+ 738               		.loc 1 347 0 discriminator 2
+ 739 0454 F901      		movw r30,r18
+ 740 0456 E40F      		add r30,r20
+ 741 0458 F11D      		adc r31,__zero_reg__
+ 742 045a 6083      		st Z,r22
+ 346:FAT32.c       **** for(k=j; k<=7; k++) //filling file name trail with blanks
+ 743               		.loc 1 346 0 discriminator 2
+ 744 045c 4F5F      		subi r20,lo8(-(1))
+ 745               	.LVL43:
+ 746 045e 00C0      		rjmp .L41
+ 747               	.L57:
+ 348:FAT32.c       **** 
+ 349:FAT32.c       **** j++;
+ 748               		.loc 1 349 0
+ 749 0460 5F5F      		subi r21,lo8(-(1))
+ 750               	.LVL44:
+ 350:FAT32.c       **** for(k=8; k<11; k++) //setting file extention
+ 351:FAT32.c       **** {
+ 352:FAT32.c       ****   if(fileName[j] != 0)
+ 353:FAT32.c       ****     fileNameFAT[k] = fileName[j++];
+ 354:FAT32.c       ****   else //filling extension trail with blanks
+ 355:FAT32.c       ****     while(k<11)
+ 356:FAT32.c       ****       fileNameFAT[k++] = ' ';
+ 751               		.loc 1 356 0
+ 752 0462 70E2      		ldi r23,lo8(32)
+ 753               	.LVL45:
+ 754               	.L47:
+ 352:FAT32.c       ****   if(fileName[j] != 0)
+ 755               		.loc 1 352 0
+ 756 0464 FC01      		movw r30,r24
+ 757 0466 E50F      		add r30,r21
+ 758 0468 F11D      		adc r31,__zero_reg__
+ 759 046a 6081      		ld r22,Z
+ 760 046c 6623      		tst r22
+ 761 046e 01F0      		breq .L43
+ 353:FAT32.c       ****     fileNameFAT[k] = fileName[j++];
+ 762               		.loc 1 353 0
+ 763 0470 5F5F      		subi r21,lo8(-(1))
+ 764               	.LVL46:
+ 765 0472 F901      		movw r30,r18
+ 766 0474 E40F      		add r30,r20
+ 767 0476 F11D      		adc r31,__zero_reg__
+ 768 0478 6083      		st Z,r22
+ 769 047a 00C0      		rjmp .L44
+ 770               	.L43:
+ 352:FAT32.c       ****   if(fileName[j] != 0)
+ 771               		.loc 1 352 0
+ 772 047c 642F      		mov r22,r20
+ 773               	.LVL47:
+ 774               		.loc 1 356 0
+ 775 047e 4F5F      		subi r20,lo8(-(1))
+ 776               	.LVL48:
+ 777 0480 F901      		movw r30,r18
+ 778 0482 E60F      		add r30,r22
+ 779 0484 F11D      		adc r31,__zero_reg__
+ 780 0486 7083      		st Z,r23
+ 355:FAT32.c       ****     while(k<11)
+ 781               		.loc 1 355 0
+ 782 0488 4B30      		cpi r20,lo8(11)
+ 783 048a 00F0      		brlo .L43
+ 784               	.L44:
+ 350:FAT32.c       **** for(k=8; k<11; k++) //setting file extention
+ 785               		.loc 1 350 0
+ 786 048c 4F5F      		subi r20,lo8(-(1))
+ 787               	.LVL49:
+ 788 048e 4B30      		cpi r20,lo8(11)
+ 789 0490 00F0      		brlo .L47
+ 790 0492 AE01      		movw r20,r28
+ 791               	.LVL50:
+ 792 0494 445F      		subi r20,-12
+ 793 0496 5F4F      		sbci r21,-1
+ 794 0498 F901      		movw r30,r18
+ 795               	.LVL51:
+ 796               	.L50:
+ 357:FAT32.c       **** }
+ 358:FAT32.c       **** 
+ 359:FAT32.c       **** for(j=0; j<11; j++) //converting small letters to caps
+ 360:FAT32.c       ****   if((fileNameFAT[j] >= 0x61) && (fileNameFAT[j] <= 0x7a))
+ 797               		.loc 1 360 0
+ 798 049a 6081      		ld r22,Z
+ 799 049c 7FE9      		ldi r23,lo8(-97)
+ 800 049e 760F      		add r23,r22
+ 801 04a0 7A31      		cpi r23,lo8(26)
+ 802 04a2 00F4      		brsh .L48
+ 361:FAT32.c       ****     fileNameFAT[j] -= 0x20;
+ 803               		.loc 1 361 0
+ 804 04a4 6052      		subi r22,lo8(-(-32))
+ 805 04a6 6083      		st Z,r22
+ 806               	.L48:
+ 807 04a8 3196      		adiw r30,1
+ 359:FAT32.c       **** for(j=0; j<11; j++) //converting small letters to caps
+ 808               		.loc 1 359 0
+ 809 04aa E417      		cp r30,r20
+ 810 04ac F507      		cpc r31,r21
+ 811 04ae 01F4      		brne .L50
+ 812 04b0 DC01      		movw r26,r24
+ 813 04b2 F901      		movw r30,r18
+ 814               	.LVL52:
+ 815               	.L51:
+ 362:FAT32.c       **** 
+ 363:FAT32.c       **** for(j=0; j<11; j++)
+ 364:FAT32.c       ****   fileName[j] = fileNameFAT[j];
+ 816               		.loc 1 364 0 discriminator 2
+ 817 04b4 8191      		ld r24,Z+
+ 818 04b6 8D93      		st X+,r24
+ 363:FAT32.c       **** for(j=0; j<11; j++)
+ 819               		.loc 1 363 0 discriminator 2
+ 820 04b8 E417      		cp r30,r20
+ 821 04ba F507      		cpc r31,r21
+ 822 04bc 01F4      		brne .L51
+ 365:FAT32.c       **** 
+ 366:FAT32.c       **** return 0;
+ 823               		.loc 1 366 0
+ 824 04be 80E0      		ldi r24,0
+ 825               	.L39:
+ 826               	/* epilogue start */
+ 367:FAT32.c       **** }
+ 827               		.loc 1 367 0
+ 828 04c0 2B96      		adiw r28,11
+ 829 04c2 0FB6      		in __tmp_reg__,__SREG__
+ 830 04c4 F894      		cli
+ 831 04c6 DEBF      		out __SP_H__,r29
+ 832 04c8 0FBE      		out __SREG__,__tmp_reg__
+ 833 04ca CDBF      		out __SP_L__,r28
+ 834 04cc DF91      		pop r29
+ 835 04ce CF91      		pop r28
+ 836 04d0 0895      		ret
+ 837               		.cfi_endproc
+ 838               	.LFE7:
+ 840               	.global	searchNextFreeCluster
+ 842               	searchNextFreeCluster:
+ 843               	.LFB9:
+ 368:FAT32.c       **** 
+ 369:FAT32.c       **** //************************************************************************************
+ 370:FAT32.c       **** //Function: to create a file in FAT32 format in the root directory if given 
+ 371:FAT32.c       **** //			file name does not exist; if the file already exists then append the data
+ 372:FAT32.c       **** //Arguments: pointer to the file name
+ 373:FAT32.c       **** //return: none
+ 374:FAT32.c       **** //************************************************************************************
+ 375:FAT32.c       **** unsigned char writeFile (unsigned char *fileName)
+ 376:FAT32.c       **** {
+ 377:FAT32.c       **** unsigned char j,k, data, error, fileCreatedFlag = 0, start = 0, appendFile = 0, sector=0;
+ 378:FAT32.c       **** unsigned int i, firstClusterHigh=0, firstClusterLow=0;  //value 0 is assigned just to avoid warning
+ 379:FAT32.c       **** struct dir_Structure *dir;
+ 380:FAT32.c       **** unsigned long cluster, nextCluster, prevCluster, firstSector, clusterCount, extraMemory;
+ 381:FAT32.c       **** 
+ 382:FAT32.c       **** j = readFile (VERIFY, fileName);
+ 383:FAT32.c       **** 
+ 384:FAT32.c       **** if(j == 1) 
+ 385:FAT32.c       **** {
+ 386:FAT32.c       ****   //transmitString_F(PSTR(" File already exists, appending data..")); 
+ 387:FAT32.c       ****   appendFile = 1;
+ 388:FAT32.c       ****   cluster = appendStartCluster;
+ 389:FAT32.c       ****   clusterCount=0;
+ 390:FAT32.c       ****   while(1)
+ 391:FAT32.c       ****   {
+ 392:FAT32.c       ****     nextCluster = getSetNextCluster (cluster, GET, 0);
+ 393:FAT32.c       ****     if(nextCluster == EOF) break;
+ 394:FAT32.c       **** 	cluster = nextCluster;
+ 395:FAT32.c       **** 	clusterCount++;
+ 396:FAT32.c       ****   }
+ 397:FAT32.c       **** 
+ 398:FAT32.c       ****   sector = (fileSize - (clusterCount * sectorPerCluster * bytesPerSector)) / bytesPerSector; //last
+ 399:FAT32.c       ****   start = 1;
+ 400:FAT32.c       **** }
+ 401:FAT32.c       **** else if(j == 2) 
+ 402:FAT32.c       ****    return 1; //invalid file name
+ 403:FAT32.c       **** 
+ 404:FAT32.c       **** else
+ 405:FAT32.c       **** {
+ 406:FAT32.c       ****  // TX_NEWLINE;
+ 407:FAT32.c       ****  // transmitString_F(PSTR(" Creating File.."));
+ 408:FAT32.c       **** 
+ 409:FAT32.c       ****   cluster = getSetFreeCluster (NEXT_FREE, GET, 0);
+ 410:FAT32.c       ****   if(cluster > totalClusters)
+ 411:FAT32.c       ****      cluster = rootCluster;
+ 412:FAT32.c       **** 
+ 413:FAT32.c       ****   cluster = searchNextFreeCluster(cluster);
+ 414:FAT32.c       ****    if(cluster == 0)
+ 415:FAT32.c       ****    {
+ 416:FAT32.c       ****       TX_NEWLINE;
+ 417:FAT32.c       ****       transmitString_F(PSTR(" No free cluster!"));
+ 418:FAT32.c       **** 	  return 1;
+ 419:FAT32.c       ****    }
+ 420:FAT32.c       ****   getSetNextCluster(cluster, SET, EOF);   //last cluster of the file, marked EOF
+ 421:FAT32.c       ****    
+ 422:FAT32.c       ****   firstClusterHigh = (unsigned int) ((cluster & 0xffff0000) >> 16 );
+ 423:FAT32.c       ****   firstClusterLow = (unsigned int) ( cluster & 0x0000ffff);
+ 424:FAT32.c       ****   fileSize = 0;
+ 425:FAT32.c       **** }
+ 426:FAT32.c       **** 
+ 427:FAT32.c       **** k=0;
+ 428:FAT32.c       **** 
+ 429:FAT32.c       **** while(1)
+ 430:FAT32.c       **** {
+ 431:FAT32.c       ****    if(start)
+ 432:FAT32.c       ****    {
+ 433:FAT32.c       ****       start = 0;
+ 434:FAT32.c       **** 	  startBlock = getFirstSector (cluster) + sector;
+ 435:FAT32.c       **** 	  SD_readSingleBlock (startBlock);
+ 436:FAT32.c       **** 	  i = fileSize % bytesPerSector;
+ 437:FAT32.c       **** 	  j = sector;
+ 438:FAT32.c       ****    }
+ 439:FAT32.c       ****    else
+ 440:FAT32.c       ****    {
+ 441:FAT32.c       ****       startBlock = getFirstSector (cluster);
+ 442:FAT32.c       **** 	  i=0;
+ 443:FAT32.c       **** 	  j=0;
+ 444:FAT32.c       ****    }
+ 445:FAT32.c       ****    
+ 446:FAT32.c       ****    
+ 447:FAT32.c       ****    do
+ 448:FAT32.c       ****    {
+ 449:FAT32.c       **** 
+ 450:FAT32.c       **** 	 data = dataString[k++];
+ 451:FAT32.c       **** 	 //transmitByte(data);
+ 452:FAT32.c       ****      buffer[i++] = data;
+ 453:FAT32.c       **** 	 fileSize++;
+ 454:FAT32.c       ****      
+ 455:FAT32.c       ****      if(i >= 512)   //though 'i' will never become greater than 512, it's kept here to avoid 
+ 456:FAT32.c       **** 	 {				//infinite loop in case it happens to be greater than 512 due to some data corruption
+ 457:FAT32.c       **** 	   i=0;
+ 458:FAT32.c       **** 	   error = SD_writeSingleBlock (startBlock);
+ 459:FAT32.c       ****        j++;
+ 460:FAT32.c       **** 	   if(j == sectorPerCluster) {j = 0; break;}
+ 461:FAT32.c       **** 	   startBlock++; 
+ 462:FAT32.c       ****      }
+ 463:FAT32.c       ****    } while((data != '\n') && (k < MAX_STRING_SIZE)); //stop when newline character is found
+ 464:FAT32.c       ****    													 //or when string size limit reached
+ 465:FAT32.c       **** 
+ 466:FAT32.c       ****    if((data == '\n') || (k >= MAX_STRING_SIZE))
+ 467:FAT32.c       ****    {
+ 468:FAT32.c       ****       for(;i<512;i++)  //fill the rest of the buffer with 0x00
+ 469:FAT32.c       ****         buffer[i]= 0x00;
+ 470:FAT32.c       ****    	  error = SD_writeSingleBlock (startBlock);
+ 471:FAT32.c       **** 
+ 472:FAT32.c       ****       break;
+ 473:FAT32.c       ****    } 
+ 474:FAT32.c       ****  
+ 475:FAT32.c       ****    prevCluster = cluster;
+ 476:FAT32.c       **** 
+ 477:FAT32.c       ****    cluster = searchNextFreeCluster(prevCluster); //look for a free cluster starting from the curren
+ 478:FAT32.c       **** 
+ 479:FAT32.c       ****    if(cluster == 0)
+ 480:FAT32.c       ****    {
+ 481:FAT32.c       ****       TX_NEWLINE;
+ 482:FAT32.c       ****       transmitString_F(PSTR(" No free cluster!"));
+ 483:FAT32.c       **** 	  return 1;
+ 484:FAT32.c       ****    }
+ 485:FAT32.c       **** 
+ 486:FAT32.c       ****    getSetNextCluster(prevCluster, SET, cluster);
+ 487:FAT32.c       ****    getSetNextCluster(cluster, SET, EOF);   //last cluster of the file, marked EOF
+ 488:FAT32.c       **** }        
+ 489:FAT32.c       **** 
+ 490:FAT32.c       **** getSetFreeCluster (NEXT_FREE, SET, cluster); //update FSinfo next free cluster entry
+ 491:FAT32.c       **** 
+ 492:FAT32.c       **** error = getDateTime_FAT();    //get current date & time from the RTC
+ 493:FAT32.c       **** if(error) { dateFAT = 0; timeFAT = 0;}
+ 494:FAT32.c       **** 
+ 495:FAT32.c       **** if(appendFile)  //executes this loop if file is to be appended
+ 496:FAT32.c       **** {
+ 497:FAT32.c       ****   SD_readSingleBlock (appendFileSector);    
+ 498:FAT32.c       ****   dir = (struct dir_Structure *) &buffer[appendFileLocation]; 
+ 499:FAT32.c       **** 
+ 500:FAT32.c       ****   dir->lastAccessDate = 0;   //date of last access ignored
+ 501:FAT32.c       ****   dir->writeTime = timeFAT;  //setting new time of last write, obtained from RTC
+ 502:FAT32.c       ****   dir->writeDate = dateFAT;  //setting new date of last write, obtained from RTC
+ 503:FAT32.c       ****   extraMemory = fileSize - dir->fileSize;
+ 504:FAT32.c       ****   dir->fileSize = fileSize;
+ 505:FAT32.c       ****   SD_writeSingleBlock (appendFileSector);
+ 506:FAT32.c       ****   freeMemoryUpdate (REMOVE, extraMemory); //updating free memory count in FSinfo sector;
+ 507:FAT32.c       **** 
+ 508:FAT32.c       ****   
+ 509:FAT32.c       ****  // TX_NEWLINE;
+ 510:FAT32.c       ****  // transmitString_F(PSTR(" File appended!"));
+ 511:FAT32.c       **** 
+ 512:FAT32.c       ****   return 0;
+ 513:FAT32.c       **** }
+ 514:FAT32.c       **** 
+ 515:FAT32.c       **** //executes following portion when new file is created
+ 516:FAT32.c       **** 
+ 517:FAT32.c       **** prevCluster = rootCluster; //root cluster
+ 518:FAT32.c       **** 
+ 519:FAT32.c       **** while(1)
+ 520:FAT32.c       **** {
+ 521:FAT32.c       ****    firstSector = getFirstSector (prevCluster);
+ 522:FAT32.c       **** 
+ 523:FAT32.c       ****    for(sector = 0; sector < sectorPerCluster; sector++)
+ 524:FAT32.c       ****    {
+ 525:FAT32.c       ****      SD_readSingleBlock (firstSector + sector);
+ 526:FAT32.c       **** 	
+ 527:FAT32.c       **** 
+ 528:FAT32.c       ****      for(i=0; i<bytesPerSector; i+=32)
+ 529:FAT32.c       ****      {
+ 530:FAT32.c       **** 	    dir = (struct dir_Structure *) &buffer[i];
+ 531:FAT32.c       **** 
+ 532:FAT32.c       **** 		if(fileCreatedFlag)   //to mark last directory entry with 0x00 (empty) mark
+ 533:FAT32.c       **** 		 { 					  //indicating end of the directory file list
+ 534:FAT32.c       **** 		   //dir->name[0] = EMPTY;
+ 535:FAT32.c       **** 		   //SD_writeSingleBlock (firstSector + sector);
+ 536:FAT32.c       ****            return 0;
+ 537:FAT32.c       ****          }
+ 538:FAT32.c       **** 
+ 539:FAT32.c       ****         if((dir->name[0] == EMPTY) || (dir->name[0] == DELETED))  //looking for an empty slot to en
+ 540:FAT32.c       **** 		{
+ 541:FAT32.c       **** 		  for(j=0; j<11; j++)
+ 542:FAT32.c       ****   			dir->name[j] = fileName[j];
+ 543:FAT32.c       **** 		  dir->attrib = ATTR_ARCHIVE;	//settting file attribute as 'archive'
+ 544:FAT32.c       **** 		  dir->NTreserved = 0;			//always set to 0
+ 545:FAT32.c       **** 		  dir->timeTenth = 0;			//always set to 0
+ 546:FAT32.c       **** 		  dir->createTime = timeFAT; 	//setting time of file creation, obtained from RTC
+ 547:FAT32.c       **** 		  dir->createDate = dateFAT; 	//setting date of file creation, obtained from RTC
+ 548:FAT32.c       **** 		  dir->lastAccessDate = 0;   	//date of last access ignored
+ 549:FAT32.c       **** 		  dir->writeTime = timeFAT;  	//setting new time of last write, obtained from RTC
+ 550:FAT32.c       **** 		  dir->writeDate = dateFAT;  	//setting new date of last write, obtained from RTC
+ 551:FAT32.c       **** 		  dir->firstClusterHI = firstClusterHigh;
+ 552:FAT32.c       **** 		  dir->firstClusterLO = firstClusterLow;
+ 553:FAT32.c       **** 		  dir->fileSize = fileSize;
+ 554:FAT32.c       **** 
+ 555:FAT32.c       **** 		  SD_writeSingleBlock (firstSector + sector);
+ 556:FAT32.c       **** 		  fileCreatedFlag = 1;
+ 557:FAT32.c       **** 
+ 558:FAT32.c       **** 		  //TX_NEWLINE;
+ 559:FAT32.c       **** 		  //TX_NEWLINE;
+ 560:FAT32.c       **** 		  //transmitString_F(PSTR(" File Created! "));
+ 561:FAT32.c       **** 
+ 562:FAT32.c       **** 		  freeMemoryUpdate (REMOVE, fileSize); //updating free memory count in FSinfo sector
+ 563:FAT32.c       **** 	     
+ 564:FAT32.c       ****         }
+ 565:FAT32.c       ****      }
+ 566:FAT32.c       ****    }
+ 567:FAT32.c       **** 
+ 568:FAT32.c       ****    cluster = getSetNextCluster (prevCluster, GET, 0);
+ 569:FAT32.c       **** 
+ 570:FAT32.c       ****    if(cluster > 0x0ffffff6)
+ 571:FAT32.c       ****    {
+ 572:FAT32.c       ****       if(cluster == EOF)   //this situation will come when total files in root is multiple of (32*s
+ 573:FAT32.c       **** 	  {  
+ 574:FAT32.c       **** 		cluster = searchNextFreeCluster(prevCluster); //find next cluster for root directory entries
+ 575:FAT32.c       **** 		getSetNextCluster(prevCluster, SET, cluster); //link the new cluster of root to the previous clus
+ 576:FAT32.c       **** 		getSetNextCluster(cluster, SET, EOF);  //set the new cluster as end of the root directory
+ 577:FAT32.c       ****       } 
+ 578:FAT32.c       **** 
+ 579:FAT32.c       ****       else
+ 580:FAT32.c       ****       {	
+ 581:FAT32.c       **** 	    transmitString_F(PSTR("End of Cluster Chain")); 
+ 582:FAT32.c       **** 	    return 1;
+ 583:FAT32.c       ****       }
+ 584:FAT32.c       ****    }
+ 585:FAT32.c       ****    if(cluster == 0) {transmitString_F(PSTR("Error in getting cluster")); return 1;}
+ 586:FAT32.c       ****    
+ 587:FAT32.c       ****    prevCluster = cluster;
+ 588:FAT32.c       ****  }
+ 589:FAT32.c       ****  
+ 590:FAT32.c       ****  return 0;
+ 591:FAT32.c       **** }
+ 592:FAT32.c       **** 
+ 593:FAT32.c       **** 
+ 594:FAT32.c       **** //***************************************************************************
+ 595:FAT32.c       **** //Function: to search for the next free cluster in the root directory
+ 596:FAT32.c       **** //          starting from a specified cluster
+ 597:FAT32.c       **** //Arguments: Starting cluster
+ 598:FAT32.c       **** //return: the next free cluster
+ 599:FAT32.c       **** //****************************************************************
+ 600:FAT32.c       **** unsigned long searchNextFreeCluster (unsigned long startCluster)
+ 601:FAT32.c       **** {
+ 844               		.loc 1 601 0
+ 845               		.cfi_startproc
+ 846               	.LVL53:
+ 847 04d2 4F92      		push r4
+ 848               	.LCFI38:
+ 849               		.cfi_def_cfa_offset 3
+ 850               		.cfi_offset 4, -2
+ 851 04d4 5F92      		push r5
+ 852               	.LCFI39:
+ 853               		.cfi_def_cfa_offset 4
+ 854               		.cfi_offset 5, -3
+ 855 04d6 6F92      		push r6
+ 856               	.LCFI40:
+ 857               		.cfi_def_cfa_offset 5
+ 858               		.cfi_offset 6, -4
+ 859 04d8 7F92      		push r7
+ 860               	.LCFI41:
+ 861               		.cfi_def_cfa_offset 6
+ 862               		.cfi_offset 7, -5
+ 863 04da 8F92      		push r8
+ 864               	.LCFI42:
+ 865               		.cfi_def_cfa_offset 7
+ 866               		.cfi_offset 8, -6
+ 867 04dc 9F92      		push r9
+ 868               	.LCFI43:
+ 869               		.cfi_def_cfa_offset 8
+ 870               		.cfi_offset 9, -7
+ 871 04de AF92      		push r10
+ 872               	.LCFI44:
+ 873               		.cfi_def_cfa_offset 9
+ 874               		.cfi_offset 10, -8
+ 875 04e0 BF92      		push r11
+ 876               	.LCFI45:
+ 877               		.cfi_def_cfa_offset 10
+ 878               		.cfi_offset 11, -9
+ 879 04e2 CF92      		push r12
+ 880               	.LCFI46:
+ 881               		.cfi_def_cfa_offset 11
+ 882               		.cfi_offset 12, -10
+ 883 04e4 DF92      		push r13
+ 884               	.LCFI47:
+ 885               		.cfi_def_cfa_offset 12
+ 886               		.cfi_offset 13, -11
+ 887 04e6 EF92      		push r14
+ 888               	.LCFI48:
+ 889               		.cfi_def_cfa_offset 13
+ 890               		.cfi_offset 14, -12
+ 891 04e8 FF92      		push r15
+ 892               	.LCFI49:
+ 893               		.cfi_def_cfa_offset 14
+ 894               		.cfi_offset 15, -13
+ 895               	/* prologue: function */
+ 896               	/* frame size = 0 */
+ 897               	/* stack size = 12 */
+ 898               	.L__stack_usage = 12
+ 899 04ea 6B01      		movw r12,r22
+ 900 04ec 7C01      		movw r14,r24
+ 602:FAT32.c       ****   unsigned long cluster, *value, sector;
+ 603:FAT32.c       ****   unsigned char i;
+ 604:FAT32.c       ****     
+ 605:FAT32.c       **** 	startCluster -=  (startCluster % 128);   //to start with the first file in a FAT sector
+ 901               		.loc 1 605 0
+ 902 04ee 80E8      		ldi r24,128
+ 903 04f0 C822      		and r12,r24
+ 904               	.LVL54:
+ 905 04f2 2601      		movw r4,r12
+ 906 04f4 3701      		movw r6,r14
+ 907 04f6 32E0      		ldi r19,2
+ 908               		1:
+ 909 04f8 440C      		lsl r4
+ 910 04fa 551C      		rol r5
+ 911 04fc 661C      		rol r6
+ 912 04fe 771C      		rol r7
+ 913 0500 3A95      		dec r19
+ 914 0502 01F4      		brne 1b
+ 915               	.LVL55:
+ 916               	.L59:
+ 606:FAT32.c       ****     for(cluster =startCluster; cluster <totalClusters; cluster+=128) 
+ 917               		.loc 1 606 0 discriminator 1
+ 918 0504 8091 0000 		lds r24,totalClusters
+ 919 0508 9091 0000 		lds r25,totalClusters+1
+ 920 050c A091 0000 		lds r26,totalClusters+2
+ 921 0510 B091 0000 		lds r27,totalClusters+3
+ 922 0514 C816      		cp r12,r24
+ 923 0516 D906      		cpc r13,r25
+ 924 0518 EA06      		cpc r14,r26
+ 925 051a FB06      		cpc r15,r27
+ 926 051c 00F0      		brlo .+2
+ 927 051e 00C0      		rjmp .L65
+ 607:FAT32.c       ****     {
+ 608:FAT32.c       ****       sector = unusedSectors + reservedSectorCount + ((cluster * 4) / bytesPerSector);
+ 928               		.loc 1 608 0
+ 929 0520 8091 0000 		lds r24,reservedSectorCount
+ 930 0524 9091 0000 		lds r25,reservedSectorCount+1
+ 931 0528 2091 0000 		lds r18,bytesPerSector
+ 932 052c 3091 0000 		lds r19,bytesPerSector+1
+ 933               	.LVL56:
+ 934 0530 8090 0000 		lds r8,unusedSectors
+ 935 0534 9090 0000 		lds r9,unusedSectors+1
+ 936 0538 A090 0000 		lds r10,unusedSectors+2
+ 937 053c B090 0000 		lds r11,unusedSectors+3
+ 938 0540 880E      		add r8,r24
+ 939 0542 991E      		adc r9,r25
+ 940 0544 A11C      		adc r10,__zero_reg__
+ 941 0546 B11C      		adc r11,__zero_reg__
+ 942 0548 40E0      		ldi r20,0
+ 943 054a 50E0      		ldi r21,0
+ 944 054c C301      		movw r24,r6
+ 945 054e B201      		movw r22,r4
+ 946 0550 0E94 0000 		call __udivmodsi4
+ 947               	.LVL57:
+ 948 0554 820E      		add r8,r18
+ 949 0556 931E      		adc r9,r19
+ 950 0558 A41E      		adc r10,r20
+ 951 055a B51E      		adc r11,r21
+ 609:FAT32.c       ****       SD_readSingleBlock(sector);
+ 952               		.loc 1 609 0
+ 953 055c C501      		movw r24,r10
+ 954 055e B401      		movw r22,r8
+ 955 0560 0E94 0000 		call SD_readSingleBlock
+ 956               	.LVL58:
+ 957 0564 E0E0      		ldi r30,lo8(buffer)
+ 958 0566 F0E0      		ldi r31,hi8(buffer)
+ 610:FAT32.c       ****       for(i=0; i<128; i++)
+ 959               		.loc 1 610 0
+ 960 0568 20E0      		ldi r18,0
+ 961               	.LVL59:
+ 962               	.L60:
+ 611:FAT32.c       ****       {
+ 612:FAT32.c       ****        	 value = (unsigned long *) &buffer[i*4];
+ 613:FAT32.c       ****          if(((*value) & 0x0fffffff) == 0)
+ 963               		.loc 1 613 0
+ 964 056a 8191      		ld r24,Z+
+ 965 056c 9191      		ld r25,Z+
+ 966 056e A191      		ld r26,Z+
+ 967 0570 B191      		ld r27,Z+
+ 968               	.LVL60:
+ 969 0572 BF70      		andi r27,15
+ 970 0574 892B      		or r24,r25
+ 971 0576 8A2B      		or r24,r26
+ 972 0578 8B2B      		or r24,r27
+ 973 057a 01F4      		brne .L61
+ 614:FAT32.c       ****             return(cluster+i);
+ 974               		.loc 1 614 0
+ 975 057c C701      		movw r24,r14
+ 976 057e B601      		movw r22,r12
+ 977 0580 620F      		add r22,r18
+ 978 0582 711D      		adc r23,__zero_reg__
+ 979 0584 811D      		adc r24,__zero_reg__
+ 980 0586 911D      		adc r25,__zero_reg__
+ 981 0588 00C0      		rjmp .L62
+ 982               	.L61:
+ 610:FAT32.c       ****       for(i=0; i<128; i++)
+ 983               		.loc 1 610 0
+ 984 058a 2F5F      		subi r18,lo8(-(1))
+ 985               	.LVL61:
+ 986 058c 2038      		cpi r18,lo8(-128)
+ 987 058e 01F4      		brne .L60
+ 606:FAT32.c       ****     for(cluster =startCluster; cluster <totalClusters; cluster+=128) 
+ 988               		.loc 1 606 0
+ 989 0590 80E8      		ldi r24,-128
+ 990 0592 C80E      		add r12,r24
+ 991 0594 D11C      		adc r13,__zero_reg__
+ 992 0596 E11C      		adc r14,__zero_reg__
+ 993 0598 F11C      		adc r15,__zero_reg__
+ 994               	.LVL62:
+ 995 059a 82E0      		ldi r24,2
+ 996 059c 580E      		add r5,r24
+ 997 059e 611C      		adc r6,__zero_reg__
+ 998 05a0 711C      		adc r7,__zero_reg__
+ 999 05a2 00C0      		rjmp .L59
+ 1000               	.LVL63:
+ 1001               	.L65:
+ 615:FAT32.c       ****       }  
+ 616:FAT32.c       ****     } 
+ 617:FAT32.c       **** 
+ 618:FAT32.c       ****  return 0;
+ 1002               		.loc 1 618 0
+ 1003 05a4 60E0      		ldi r22,0
+ 1004 05a6 70E0      		ldi r23,0
+ 1005 05a8 CB01      		movw r24,r22
+ 1006               	.L62:
+ 1007               	/* epilogue start */
+ 619:FAT32.c       **** }
+ 1008               		.loc 1 619 0
+ 1009 05aa FF90      		pop r15
+ 1010 05ac EF90      		pop r14
+ 1011 05ae DF90      		pop r13
+ 1012 05b0 CF90      		pop r12
+ 1013               	.LVL64:
+ 1014 05b2 BF90      		pop r11
+ 1015 05b4 AF90      		pop r10
+ 1016 05b6 9F90      		pop r9
+ 1017 05b8 8F90      		pop r8
+ 1018 05ba 7F90      		pop r7
+ 1019 05bc 6F90      		pop r6
+ 1020 05be 5F90      		pop r5
+ 1021 05c0 4F90      		pop r4
+ 1022 05c2 0895      		ret
+ 1023               		.cfi_endproc
+ 1024               	.LFE9:
+ 1026               		.section	.rodata.str1.1,"aMS",@progbits,1
+ 1027               	.LC0:
+ 1028 0000 2020 2020 		.string	"              Bytes"
+ 1028      2020 2020 
+ 1028      2020 2020 
+ 1028      2020 4279 
+ 1028      7465 7300 
+ 1029               		.text
+ 1030               	.global	displayMemory
+ 1032               	displayMemory:
+ 1033               	.LFB10:
+ 620:FAT32.c       **** 
+ 621:FAT32.c       **** //************************************************************
+ 622:FAT32.c       **** //Function: To convert the unsigned long value of memory into 
+ 623:FAT32.c       **** //          text string and send to UART
+ 624:FAT32.c       **** //Arguments: 1. unsigned char flag. If flag is HIGH, memory will be displayed in KBytes, else in By
+ 625:FAT32.c       **** //			 2. unsigned long memory value
+ 626:FAT32.c       **** //return: none
+ 627:FAT32.c       **** //************************************************************
+ 628:FAT32.c       **** void displayMemory (unsigned char flag, unsigned long memory)
+ 629:FAT32.c       **** {
+ 1034               		.loc 1 629 0
+ 1035               		.cfi_startproc
+ 1036               	.LVL65:
+ 1037 05c4 9F92      		push r9
+ 1038               	.LCFI50:
+ 1039               		.cfi_def_cfa_offset 3
+ 1040               		.cfi_offset 9, -2
+ 1041 05c6 AF92      		push r10
+ 1042               	.LCFI51:
+ 1043               		.cfi_def_cfa_offset 4
+ 1044               		.cfi_offset 10, -3
+ 1045 05c8 BF92      		push r11
+ 1046               	.LCFI52:
+ 1047               		.cfi_def_cfa_offset 5
+ 1048               		.cfi_offset 11, -4
+ 1049 05ca CF92      		push r12
+ 1050               	.LCFI53:
+ 1051               		.cfi_def_cfa_offset 6
+ 1052               		.cfi_offset 12, -5
+ 1053 05cc DF92      		push r13
+ 1054               	.LCFI54:
+ 1055               		.cfi_def_cfa_offset 7
+ 1056               		.cfi_offset 13, -6
+ 1057 05ce EF92      		push r14
+ 1058               	.LCFI55:
+ 1059               		.cfi_def_cfa_offset 8
+ 1060               		.cfi_offset 14, -7
+ 1061 05d0 FF92      		push r15
+ 1062               	.LCFI56:
+ 1063               		.cfi_def_cfa_offset 9
+ 1064               		.cfi_offset 15, -8
+ 1065 05d2 0F93      		push r16
+ 1066               	.LCFI57:
+ 1067               		.cfi_def_cfa_offset 10
+ 1068               		.cfi_offset 16, -9
+ 1069 05d4 1F93      		push r17
+ 1070               	.LCFI58:
+ 1071               		.cfi_def_cfa_offset 11
+ 1072               		.cfi_offset 17, -10
+ 1073 05d6 CF93      		push r28
+ 1074               	.LCFI59:
+ 1075               		.cfi_def_cfa_offset 12
+ 1076               		.cfi_offset 28, -11
+ 1077 05d8 DF93      		push r29
+ 1078               	.LCFI60:
+ 1079               		.cfi_def_cfa_offset 13
+ 1080               		.cfi_offset 29, -12
+ 1081 05da CDB7      		in r28,__SP_L__
+ 1082 05dc DEB7      		in r29,__SP_H__
+ 1083               	.LCFI61:
+ 1084               		.cfi_def_cfa_register 28
+ 1085 05de 6497      		sbiw r28,20
+ 1086               	.LCFI62:
+ 1087               		.cfi_def_cfa_offset 33
+ 1088 05e0 0FB6      		in __tmp_reg__,__SREG__
+ 1089 05e2 F894      		cli
+ 1090 05e4 DEBF      		out __SP_H__,r29
+ 1091 05e6 0FBE      		out __SREG__,__tmp_reg__
+ 1092 05e8 CDBF      		out __SP_L__,r28
+ 1093               	/* prologue: function */
+ 1094               	/* frame size = 20 */
+ 1095               	/* stack size = 31 */
+ 1096               	.L__stack_usage = 31
+ 1097 05ea A82E      		mov r10,r24
+ 630:FAT32.c       ****   unsigned char memoryString[] = "              Bytes"; //19 character long string for memory displ
+ 1098               		.loc 1 630 0
+ 1099 05ec 94E1      		ldi r25,lo8(20)
+ 1100 05ee E0E0      		ldi r30,lo8(.LC0)
+ 1101 05f0 F0E0      		ldi r31,hi8(.LC0)
+ 1102 05f2 DE01      		movw r26,r28
+ 1103 05f4 1196      		adiw r26,1
+ 1104               		0:
+ 1105 05f6 0190      		ld r0,Z+
+ 1106 05f8 0D92      		st X+,r0
+ 1107 05fa 9A95      		dec r25
+ 1108 05fc 01F4      		brne 0b
+ 1109               	.LVL66:
+ 631:FAT32.c       ****   unsigned char i;
+ 632:FAT32.c       ****   for(i=12; i>0; i--) //converting freeMemory into ASCII string
+ 1110               		.loc 1 632 0
+ 1111 05fe ECE0      		ldi r30,lo8(12)
+ 1112 0600 BE2E      		mov r11,r30
+ 633:FAT32.c       ****   {
+ 634:FAT32.c       ****     if(i==5 || i==9) 
+ 635:FAT32.c       **** 	{
+ 636:FAT32.c       **** 	   memoryString[i-1] = ',';  
+ 1113               		.loc 1 636 0
+ 1114 0602 FCE2      		ldi r31,lo8(44)
+ 1115 0604 9F2E      		mov r9,r31
+ 637:FAT32.c       **** 	   i--;
+ 638:FAT32.c       **** 	}
+ 639:FAT32.c       ****     memoryString[i-1] = (memory % 10) | 0x30;
+ 1116               		.loc 1 639 0
+ 1117 0606 AAE0      		ldi r26,lo8(10)
+ 1118 0608 CA2E      		mov r12,r26
+ 1119 060a D12C      		mov r13,__zero_reg__
+ 1120 060c E12C      		mov r14,__zero_reg__
+ 1121 060e F12C      		mov r15,__zero_reg__
+ 1122               	.LVL67:
+ 1123               	.L70:
+ 634:FAT32.c       ****     if(i==5 || i==9) 
+ 1124               		.loc 1 634 0
+ 1125 0610 85E0      		ldi r24,lo8(5)
+ 1126 0612 B816      		cp r11,r24
+ 1127 0614 01F0      		breq .L67
+ 634:FAT32.c       ****     if(i==5 || i==9) 
+ 1128               		.loc 1 634 0 is_stmt 0 discriminator 1
+ 1129 0616 E9E0      		ldi r30,lo8(9)
+ 1130 0618 BE12      		cpse r11,r30
+ 1131 061a 00C0      		rjmp .L68
+ 1132               	.L67:
+ 636:FAT32.c       **** 	   memoryString[i-1] = ',';  
+ 1133               		.loc 1 636 0 is_stmt 1
+ 1134 061c FE01      		movw r30,r28
+ 1135 061e EB0D      		add r30,r11
+ 1136 0620 F11D      		adc r31,__zero_reg__
+ 1137 0622 9082      		st Z,r9
+ 637:FAT32.c       **** 	   i--;
+ 1138               		.loc 1 637 0
+ 1139 0624 BA94      		dec r11
+ 1140               	.LVL68:
+ 1141               	.L68:
+ 1142               		.loc 1 639 0
+ 1143 0626 8E01      		movw r16,r28
+ 1144 0628 0B0D      		add r16,r11
+ 1145 062a 111D      		adc r17,__zero_reg__
+ 1146 062c CB01      		movw r24,r22
+ 1147 062e BA01      		movw r22,r20
+ 1148 0630 A701      		movw r20,r14
+ 1149 0632 9601      		movw r18,r12
+ 1150 0634 0E94 0000 		call __udivmodsi4
+ 1151 0638 CA01      		movw r24,r20
+ 1152 063a 6063      		ori r22,lo8(48)
+ 1153 063c F801      		movw r30,r16
+ 1154 063e 6083      		st Z,r22
+ 640:FAT32.c       ****     memory /= 10;
+ 1155               		.loc 1 640 0
+ 1156 0640 A901      		movw r20,r18
+ 1157               	.LVL69:
+ 1158 0642 BC01      		movw r22,r24
+ 641:FAT32.c       **** 	if(memory == 0) break;
+ 1159               		.loc 1 641 0
+ 1160 0644 4115      		cp r20,__zero_reg__
+ 1161 0646 5105      		cpc r21,__zero_reg__
+ 1162 0648 6105      		cpc r22,__zero_reg__
+ 1163 064a 7105      		cpc r23,__zero_reg__
+ 1164 064c 01F0      		breq .L69
+ 632:FAT32.c       ****   for(i=12; i>0; i--) //converting freeMemory into ASCII string
+ 1165               		.loc 1 632 0
+ 1166 064e BA94      		dec r11
+ 1167               	.LVL70:
+ 1168 0650 01F4      		brne .L70
+ 1169               	.L69:
+ 642:FAT32.c       ****   }
+ 643:FAT32.c       ****   if(flag == HIGH)  memoryString[13] = 'K';
+ 1170               		.loc 1 643 0
+ 1171 0652 F1E0      		ldi r31,lo8(1)
+ 1172 0654 AF12      		cpse r10,r31
+ 1173 0656 00C0      		rjmp .L71
+ 1174               		.loc 1 643 0 is_stmt 0 discriminator 1
+ 1175 0658 8BE4      		ldi r24,lo8(75)
+ 1176 065a 8E87      		std Y+14,r24
+ 1177               	.L71:
+ 644:FAT32.c       ****   transmitString(memoryString);
+ 1178               		.loc 1 644 0 is_stmt 1
+ 1179 065c CE01      		movw r24,r28
+ 1180 065e 0196      		adiw r24,1
+ 1181 0660 0E94 0000 		call transmitString
+ 1182               	.LVL71:
+ 1183               	/* epilogue start */
+ 645:FAT32.c       **** }
+ 1184               		.loc 1 645 0
+ 1185 0664 6496      		adiw r28,20
+ 1186 0666 0FB6      		in __tmp_reg__,__SREG__
+ 1187 0668 F894      		cli
+ 1188 066a DEBF      		out __SP_H__,r29
+ 1189 066c 0FBE      		out __SREG__,__tmp_reg__
+ 1190 066e CDBF      		out __SP_L__,r28
+ 1191 0670 DF91      		pop r29
+ 1192 0672 CF91      		pop r28
+ 1193 0674 1F91      		pop r17
+ 1194 0676 0F91      		pop r16
+ 1195 0678 FF90      		pop r15
+ 1196 067a EF90      		pop r14
+ 1197 067c DF90      		pop r13
+ 1198 067e CF90      		pop r12
+ 1199 0680 BF90      		pop r11
+ 1200               	.LVL72:
+ 1201 0682 AF90      		pop r10
+ 1202               	.LVL73:
+ 1203 0684 9F90      		pop r9
+ 1204 0686 0895      		ret
+ 1205               		.cfi_endproc
+ 1206               	.LFE10:
+ 1208               	.global	freeMemoryUpdate
+ 1210               	freeMemoryUpdate:
+ 1211               	.LFB12:
+ 646:FAT32.c       **** 
+ 647:FAT32.c       **** //********************************************************************
+ 648:FAT32.c       **** //Function: to delete a specified file from the root directory
+ 649:FAT32.c       **** //Arguments: pointer to the file name
+ 650:FAT32.c       **** //return: none
+ 651:FAT32.c       **** //********************************************************************
+ 652:FAT32.c       **** void deleteFile (unsigned char *fileName)
+ 653:FAT32.c       **** {
+ 654:FAT32.c       ****   unsigned char error;
+ 655:FAT32.c       **** 
+ 656:FAT32.c       ****   error = convertFileName (fileName);
+ 657:FAT32.c       ****   if(error) return;
+ 658:FAT32.c       **** 
+ 659:FAT32.c       ****   findFiles (DELETE, fileName);
+ 660:FAT32.c       **** }
+ 661:FAT32.c       **** 
+ 662:FAT32.c       **** //********************************************************************
+ 663:FAT32.c       **** //Function: update the free memory count in the FSinfo sector. 
+ 664:FAT32.c       **** //			Whenever a file is deleted or created, this function will be called
+ 665:FAT32.c       **** //			to ADD or REMOVE clusters occupied by the file
+ 666:FAT32.c       **** //Arguments: #1.flag ADD or REMOVE #2.file size in Bytes
+ 667:FAT32.c       **** //return: none
+ 668:FAT32.c       **** //********************************************************************
+ 669:FAT32.c       **** void freeMemoryUpdate (unsigned char flag, unsigned long size)
+ 670:FAT32.c       **** {
+ 1212               		.loc 1 670 0
+ 1213               		.cfi_startproc
+ 1214               	.LVL74:
+ 1215 0688 CF92      		push r12
+ 1216               	.LCFI63:
+ 1217               		.cfi_def_cfa_offset 3
+ 1218               		.cfi_offset 12, -2
+ 1219 068a DF92      		push r13
+ 1220               	.LCFI64:
+ 1221               		.cfi_def_cfa_offset 4
+ 1222               		.cfi_offset 13, -3
+ 1223 068c EF92      		push r14
+ 1224               	.LCFI65:
+ 1225               		.cfi_def_cfa_offset 5
+ 1226               		.cfi_offset 14, -4
+ 1227 068e FF92      		push r15
+ 1228               	.LCFI66:
+ 1229               		.cfi_def_cfa_offset 6
+ 1230               		.cfi_offset 15, -5
+ 1231 0690 0F93      		push r16
+ 1232               	.LCFI67:
+ 1233               		.cfi_def_cfa_offset 7
+ 1234               		.cfi_offset 16, -6
+ 1235 0692 1F93      		push r17
+ 1236               	.LCFI68:
+ 1237               		.cfi_def_cfa_offset 8
+ 1238               		.cfi_offset 17, -7
+ 1239 0694 CF93      		push r28
+ 1240               	.LCFI69:
+ 1241               		.cfi_def_cfa_offset 9
+ 1242               		.cfi_offset 28, -8
+ 1243               	/* prologue: function */
+ 1244               	/* frame size = 0 */
+ 1245               	/* stack size = 7 */
+ 1246               	.L__stack_usage = 7
+ 1247 0696 C82F      		mov r28,r24
+ 671:FAT32.c       ****   unsigned long freeClusters;
+ 672:FAT32.c       ****   //convert file size into number of clusters occupied
+ 673:FAT32.c       ****   if((size % 512) == 0) size = size / 512;
+ 1248               		.loc 1 673 0
+ 1249 0698 8A01      		movw r16,r20
+ 1250 069a 9B01      		movw r18,r22
+ 1251 069c 1170      		andi r17,1
+ 1252 069e 2227      		clr r18
+ 1253 06a0 3327      		clr r19
+ 1254 06a2 6A01      		movw r12,r20
+ 1255 06a4 7B01      		movw r14,r22
+ 1256 06a6 89E0      		ldi r24,9
+ 1257               		1:
+ 1258 06a8 F694      		lsr r15
+ 1259 06aa E794      		ror r14
+ 1260 06ac D794      		ror r13
+ 1261 06ae C794      		ror r12
+ 1262 06b0 8A95      		dec r24
+ 1263 06b2 01F4      		brne 1b
+ 1264               	.LVL75:
+ 1265 06b4 012B      		or r16,r17
+ 1266 06b6 022B      		or r16,r18
+ 1267 06b8 032B      		or r16,r19
+ 1268 06ba 01F0      		breq .L83
+ 674:FAT32.c       ****   else size = (size / 512) +1;
+ 1269               		.loc 1 674 0
+ 1270 06bc 8FEF      		ldi r24,-1
+ 1271 06be C81A      		sub r12,r24
+ 1272 06c0 D80A      		sbc r13,r24
+ 1273 06c2 E80A      		sbc r14,r24
+ 1274 06c4 F80A      		sbc r15,r24
+ 1275               	.LVL76:
+ 1276               	.L83:
+ 675:FAT32.c       ****   if((size % 8) == 0) size = size / 8;
+ 1277               		.loc 1 675 0
+ 1278 06c6 B701      		movw r22,r14
+ 1279 06c8 A601      		movw r20,r12
+ 1280 06ca 4770      		andi r20,7
+ 1281 06cc 5527      		clr r21
+ 1282 06ce 6627      		clr r22
+ 1283 06d0 7727      		clr r23
+ 1284 06d2 B3E0      		ldi r27,3
+ 1285               		1:
+ 1286 06d4 F694      		lsr r15
+ 1287 06d6 E794      		ror r14
+ 1288 06d8 D794      		ror r13
+ 1289 06da C794      		ror r12
+ 1290 06dc BA95      		dec r27
+ 1291 06de 01F4      		brne 1b
+ 1292               	.LVL77:
+ 1293 06e0 452B      		or r20,r21
+ 1294 06e2 462B      		or r20,r22
+ 1295 06e4 472B      		or r20,r23
+ 1296 06e6 01F0      		breq .L85
+ 676:FAT32.c       ****   else size = (size / 8) +1;
+ 1297               		.loc 1 676 0
+ 1298 06e8 8FEF      		ldi r24,-1
+ 1299 06ea C81A      		sub r12,r24
+ 1300 06ec D80A      		sbc r13,r24
+ 1301 06ee E80A      		sbc r14,r24
+ 1302 06f0 F80A      		sbc r15,r24
+ 1303               	.LVL78:
+ 1304               	.L85:
+ 677:FAT32.c       **** 
+ 678:FAT32.c       ****   if(freeClusterCountUpdated)
+ 1305               		.loc 1 678 0
+ 1306 06f2 8091 0000 		lds r24,freeClusterCountUpdated
+ 1307 06f6 8823      		tst r24
+ 1308 06f8 01F0      		breq .L81
+ 679:FAT32.c       ****   {
+ 680:FAT32.c       **** 	freeClusters = getSetFreeCluster (TOTAL_FREE, GET, 0);
+ 1309               		.loc 1 680 0
+ 1310 06fa 20E0      		ldi r18,0
+ 1311 06fc 30E0      		ldi r19,0
+ 1312 06fe A901      		movw r20,r18
+ 1313 0700 60E0      		ldi r22,0
+ 1314 0702 81E0      		ldi r24,lo8(1)
+ 1315 0704 0E94 0000 		call getSetFreeCluster
+ 1316               	.LVL79:
+ 681:FAT32.c       **** 	if(flag == ADD)
+ 682:FAT32.c       ****   	   freeClusters = freeClusters + size;
+ 1317               		.loc 1 682 0
+ 1318 0708 9B01      		movw r18,r22
+ 1319 070a AC01      		movw r20,r24
+ 681:FAT32.c       **** 	if(flag == ADD)
+ 1320               		.loc 1 681 0
+ 1321 070c C111      		cpse r28,__zero_reg__
+ 1322 070e 00C0      		rjmp .L87
+ 1323               		.loc 1 682 0
+ 1324 0710 2C0D      		add r18,r12
+ 1325 0712 3D1D      		adc r19,r13
+ 1326 0714 4E1D      		adc r20,r14
+ 1327 0716 5F1D      		adc r21,r15
+ 1328               	.LVL80:
+ 1329 0718 00C0      		rjmp .L88
+ 1330               	.L87:
+ 683:FAT32.c       **** 	else  //when flag = REMOVE
+ 684:FAT32.c       **** 	   freeClusters = freeClusters - size;
+ 1331               		.loc 1 684 0
+ 1332 071a 2C19      		sub r18,r12
+ 1333 071c 3D09      		sbc r19,r13
+ 1334 071e 4E09      		sbc r20,r14
+ 1335 0720 5F09      		sbc r21,r15
+ 1336               	.LVL81:
+ 1337               	.L88:
+ 685:FAT32.c       **** 	getSetFreeCluster (TOTAL_FREE, SET, freeClusters);
+ 1338               		.loc 1 685 0
+ 1339 0722 61E0      		ldi r22,lo8(1)
+ 1340 0724 81E0      		ldi r24,lo8(1)
+ 1341               	/* epilogue start */
+ 686:FAT32.c       ****   }
+ 687:FAT32.c       **** }
+ 1342               		.loc 1 687 0
+ 1343 0726 CF91      		pop r28
+ 1344               	.LVL82:
+ 1345 0728 1F91      		pop r17
+ 1346 072a 0F91      		pop r16
+ 1347 072c FF90      		pop r15
+ 1348 072e EF90      		pop r14
+ 1349 0730 DF90      		pop r13
+ 1350 0732 CF90      		pop r12
+ 1351               	.LVL83:
+ 685:FAT32.c       **** 	getSetFreeCluster (TOTAL_FREE, SET, freeClusters);
+ 1352               		.loc 1 685 0
+ 1353 0734 0C94 0000 		jmp getSetFreeCluster
+ 1354               	.LVL84:
+ 1355               	.L81:
+ 1356               	/* epilogue start */
+ 1357               		.loc 1 687 0
+ 1358 0738 CF91      		pop r28
+ 1359               	.LVL85:
+ 1360 073a 1F91      		pop r17
+ 1361 073c 0F91      		pop r16
+ 1362 073e FF90      		pop r15
+ 1363 0740 EF90      		pop r14
+ 1364 0742 DF90      		pop r13
+ 1365 0744 CF90      		pop r12
+ 1366               	.LVL86:
+ 1367 0746 0895      		ret
+ 1368               		.cfi_endproc
+ 1369               	.LFE12:
+ 1371               	.global	findFiles
+ 1373               	findFiles:
+ 1374               	.LFB5:
+ 168:FAT32.c       **** {
+ 1375               		.loc 1 168 0
+ 1376               		.cfi_startproc
+ 1377               	.LVL87:
+ 1378 0748 2F92      		push r2
+ 1379               	.LCFI70:
+ 1380               		.cfi_def_cfa_offset 3
+ 1381               		.cfi_offset 2, -2
+ 1382 074a 3F92      		push r3
+ 1383               	.LCFI71:
+ 1384               		.cfi_def_cfa_offset 4
+ 1385               		.cfi_offset 3, -3
+ 1386 074c 4F92      		push r4
+ 1387               	.LCFI72:
+ 1388               		.cfi_def_cfa_offset 5
+ 1389               		.cfi_offset 4, -4
+ 1390 074e 5F92      		push r5
+ 1391               	.LCFI73:
+ 1392               		.cfi_def_cfa_offset 6
+ 1393               		.cfi_offset 5, -5
+ 1394 0750 6F92      		push r6
+ 1395               	.LCFI74:
+ 1396               		.cfi_def_cfa_offset 7
+ 1397               		.cfi_offset 6, -6
+ 1398 0752 7F92      		push r7
+ 1399               	.LCFI75:
+ 1400               		.cfi_def_cfa_offset 8
+ 1401               		.cfi_offset 7, -7
+ 1402 0754 8F92      		push r8
+ 1403               	.LCFI76:
+ 1404               		.cfi_def_cfa_offset 9
+ 1405               		.cfi_offset 8, -8
+ 1406 0756 9F92      		push r9
+ 1407               	.LCFI77:
+ 1408               		.cfi_def_cfa_offset 10
+ 1409               		.cfi_offset 9, -9
+ 1410 0758 AF92      		push r10
+ 1411               	.LCFI78:
+ 1412               		.cfi_def_cfa_offset 11
+ 1413               		.cfi_offset 10, -10
+ 1414 075a BF92      		push r11
+ 1415               	.LCFI79:
+ 1416               		.cfi_def_cfa_offset 12
+ 1417               		.cfi_offset 11, -11
+ 1418 075c CF92      		push r12
+ 1419               	.LCFI80:
+ 1420               		.cfi_def_cfa_offset 13
+ 1421               		.cfi_offset 12, -12
+ 1422 075e DF92      		push r13
+ 1423               	.LCFI81:
+ 1424               		.cfi_def_cfa_offset 14
+ 1425               		.cfi_offset 13, -13
+ 1426 0760 EF92      		push r14
+ 1427               	.LCFI82:
+ 1428               		.cfi_def_cfa_offset 15
+ 1429               		.cfi_offset 14, -14
+ 1430 0762 FF92      		push r15
+ 1431               	.LCFI83:
+ 1432               		.cfi_def_cfa_offset 16
+ 1433               		.cfi_offset 15, -15
+ 1434 0764 0F93      		push r16
+ 1435               	.LCFI84:
+ 1436               		.cfi_def_cfa_offset 17
+ 1437               		.cfi_offset 16, -16
+ 1438 0766 1F93      		push r17
+ 1439               	.LCFI85:
+ 1440               		.cfi_def_cfa_offset 18
+ 1441               		.cfi_offset 17, -17
+ 1442 0768 CF93      		push r28
+ 1443               	.LCFI86:
+ 1444               		.cfi_def_cfa_offset 19
+ 1445               		.cfi_offset 28, -18
+ 1446 076a DF93      		push r29
+ 1447               	.LCFI87:
+ 1448               		.cfi_def_cfa_offset 20
+ 1449               		.cfi_offset 29, -19
+ 1450 076c CDB7      		in r28,__SP_L__
+ 1451 076e DEB7      		in r29,__SP_H__
+ 1452               	.LCFI88:
+ 1453               		.cfi_def_cfa_register 28
+ 1454 0770 2B97      		sbiw r28,11
+ 1455               	.LCFI89:
+ 1456               		.cfi_def_cfa_offset 31
+ 1457 0772 0FB6      		in __tmp_reg__,__SREG__
+ 1458 0774 F894      		cli
+ 1459 0776 DEBF      		out __SP_H__,r29
+ 1460 0778 0FBE      		out __SREG__,__tmp_reg__
+ 1461 077a CDBF      		out __SP_L__,r28
+ 1462               	/* prologue: function */
+ 1463               	/* frame size = 11 */
+ 1464               	/* stack size = 29 */
+ 1465               	.L__stack_usage = 29
+ 1466 077c 382E      		mov r3,r24
+ 1467 077e 6887      		std Y+8,r22
+ 1468 0780 272E      		mov r2,r23
+ 174:FAT32.c       **** cluster = rootCluster; //root cluster
+ 1469               		.loc 1 174 0
+ 1470 0782 C090 0000 		lds r12,rootCluster
+ 1471 0786 D090 0000 		lds r13,rootCluster+1
+ 1472 078a E090 0000 		lds r14,rootCluster+2
+ 1473 078e F090 0000 		lds r15,rootCluster+3
+ 1474               	.LVL88:
+ 197:FAT32.c       ****           if((flag == GET_FILE) || (flag == DELETE))
+ 1475               		.loc 1 197 0
+ 1476 0792 8FEF      		ldi r24,lo8(-1)
+ 1477               	.LVL89:
+ 1478 0794 830D      		add r24,r3
+ 1479 0796 8F83      		std Y+7,r24
+ 1480               	.LVL90:
+ 1481               	.L110:
+ 178:FAT32.c       ****    firstSector = getFirstSector (cluster);
+ 1482               		.loc 1 178 0
+ 1483 0798 C701      		movw r24,r14
+ 1484 079a B601      		movw r22,r12
+ 1485 079c 0E94 0000 		call getFirstSector
+ 1486               	.LVL91:
+ 1487 07a0 6B83      		std Y+3,r22
+ 1488 07a2 7C83      		std Y+4,r23
+ 1489 07a4 8D83      		std Y+5,r24
+ 1490 07a6 9E83      		std Y+6,r25
+ 1491               	.LVL92:
+ 180:FAT32.c       ****    for(sector = 0; sector < sectorPerCluster; sector++)
+ 1492               		.loc 1 180 0
+ 1493 07a8 412C      		mov r4,__zero_reg__
+ 1494 07aa 512C      		mov r5,__zero_reg__
+ 1495 07ac 3201      		movw r6,r4
+ 1496               	.LVL93:
+ 1497               	.L90:
+ 180:FAT32.c       ****    for(sector = 0; sector < sectorPerCluster; sector++)
+ 1498               		.loc 1 180 0 is_stmt 0 discriminator 1
+ 1499 07ae 8091 0000 		lds r24,sectorPerCluster
+ 1500 07b2 9091 0000 		lds r25,sectorPerCluster+1
+ 1501 07b6 A0E0      		ldi r26,0
+ 1502 07b8 B0E0      		ldi r27,0
+ 1503 07ba 4816      		cp r4,r24
+ 1504 07bc 5906      		cpc r5,r25
+ 1505 07be 6A06      		cpc r6,r26
+ 1506 07c0 7B06      		cpc r7,r27
+ 1507 07c2 00F0      		brlo .+2
+ 1508 07c4 00C0      		rjmp .L125
+ 182:FAT32.c       ****      SD_readSingleBlock (firstSector + sector);
+ 1509               		.loc 1 182 0 is_stmt 1
+ 1510 07c6 8B80      		ldd r8,Y+3
+ 1511 07c8 9C80      		ldd r9,Y+4
+ 1512 07ca AD80      		ldd r10,Y+5
+ 1513 07cc BE80      		ldd r11,Y+6
+ 1514 07ce 840C      		add r8,r4
+ 1515 07d0 951C      		adc r9,r5
+ 1516 07d2 A61C      		adc r10,r6
+ 1517 07d4 B71C      		adc r11,r7
+ 1518 07d6 C501      		movw r24,r10
+ 1519 07d8 B401      		movw r22,r8
+ 1520 07da 0E94 0000 		call SD_readSingleBlock
+ 1521               	.LVL94:
+ 1522 07de 00E0      		ldi r16,lo8(buffer+11)
+ 1523 07e0 10E0      		ldi r17,hi8(buffer+11)
+ 185:FAT32.c       ****      for(i=0; i<bytesPerSector; i+=32)
+ 1524               		.loc 1 185 0
+ 1525 07e2 A0E0      		ldi r26,lo8(buffer)
+ 1526 07e4 B0E0      		ldi r27,hi8(buffer)
+ 1527 07e6 BB87      		std Y+11,r27
+ 1528 07e8 AA87      		std Y+10,r26
+ 1529               	.LVL95:
+ 1530               	.L91:
+ 1531 07ea 2A85      		ldd r18,Y+10
+ 1532 07ec 3B85      		ldd r19,Y+11
+ 1533 07ee 2050      		subi r18,lo8(buffer)
+ 1534 07f0 3040      		sbci r19,hi8(buffer)
+ 1535               	.LVL96:
+ 185:FAT32.c       ****      for(i=0; i<bytesPerSector; i+=32)
+ 1536               		.loc 1 185 0 is_stmt 0 discriminator 1
+ 1537 07f2 8091 0000 		lds r24,bytesPerSector
+ 1538 07f6 9091 0000 		lds r25,bytesPerSector+1
+ 1539 07fa 2817      		cp r18,r24
+ 1540 07fc 3907      		cpc r19,r25
+ 1541 07fe 00F0      		brlo .+2
+ 1542 0800 00C0      		rjmp .L126
+ 1543               	.LVL97:
+ 189:FAT32.c       ****         if(dir->name[0] == EMPTY) //indicates end of the file list of the directory
+ 1544               		.loc 1 189 0 is_stmt 1
+ 1545 0802 EA85      		ldd r30,Y+10
+ 1546 0804 FB85      		ldd r31,Y+11
+ 1547 0806 8081      		ld r24,Z
+ 1548 0808 8111      		cpse r24,__zero_reg__
+ 1549 080a 00C0      		rjmp .L92
+ 191:FAT32.c       **** 		  if(flag == DELETE)
+ 1550               		.loc 1 191 0
+ 1551 080c F2E0      		ldi r31,lo8(2)
+ 1552 080e 3F12      		cpse r3,r31
+ 1553 0810 00C0      		rjmp .L124
+ 192:FAT32.c       **** 		      transmitString_F(PSTR("File does not exist!"));
+ 1554               		.loc 1 192 0
+ 1555 0812 80E0      		ldi r24,lo8(__c.1875)
+ 1556 0814 90E0      		ldi r25,hi8(__c.1875)
+ 1557 0816 00C0      		rjmp .L123
+ 1558               	.L92:
+ 195:FAT32.c       **** 		if((dir->name[0] != DELETED) && (dir->attrib != ATTR_LONG_NAME))
+ 1559               		.loc 1 195 0
+ 1560 0818 853E      		cpi r24,lo8(-27)
+ 1561 081a 01F4      		brne .+2
+ 1562 081c 00C0      		rjmp .L95
+ 195:FAT32.c       **** 		if((dir->name[0] != DELETED) && (dir->attrib != ATTR_LONG_NAME))
+ 1563               		.loc 1 195 0 is_stmt 0 discriminator 1
+ 1564 081e D801      		movw r26,r16
+ 1565 0820 8C91      		ld r24,X
+ 1566 0822 8F30      		cpi r24,lo8(15)
+ 1567 0824 01F4      		brne .+2
+ 1568 0826 00C0      		rjmp .L95
+ 197:FAT32.c       ****           if((flag == GET_FILE) || (flag == DELETE))
+ 1569               		.loc 1 197 0 is_stmt 1
+ 1570 0828 BF81      		ldd r27,Y+7
+ 1571 082a B230      		cpi r27,lo8(2)
+ 1572 082c 00F4      		brsh .L96
+ 1573 082e E885      		ldd r30,Y+8
+ 1574 0830 F22D      		mov r31,r2
+ 1575 0832 AA85      		ldd r26,Y+10
+ 1576 0834 BB85      		ldd r27,Y+11
+ 1577               	.L98:
+ 1578               	.LVL98:
+ 200:FAT32.c       ****             if(dir->name[j] != fileName[j]) break;
+ 1579               		.loc 1 200 0
+ 1580 0836 9D91      		ld r25,X+
+ 1581               	.LVL99:
+ 1582 0838 8191      		ld r24,Z+
+ 1583 083a 9813      		cpse r25,r24
+ 1584 083c 00C0      		rjmp .L95
+ 1585               	.LVL100:
+ 199:FAT32.c       ****             for(j=0; j<11; j++)
+ 1586               		.loc 1 199 0
+ 1587 083e A017      		cp r26,r16
+ 1588 0840 B107      		cpc r27,r17
+ 1589 0842 01F4      		brne .L98
+ 1590 0844 00C0      		rjmp .L127
+ 1591               	.LVL101:
+ 1592               	.L96:
+ 244:FAT32.c       **** 		     TX_NEWLINE;
+ 1593               		.loc 1 244 0
+ 1594 0846 8DE0      		ldi r24,lo8(13)
+ 1595 0848 0E94 0000 		call transmitByte
+ 1596               	.LVL102:
+ 1597 084c 8AE0      		ldi r24,lo8(10)
+ 1598 084e 0E94 0000 		call transmitByte
+ 1599               	.LVL103:
+ 1600 0852 EA85      		ldd r30,Y+10
+ 1601 0854 FB85      		ldd r31,Y+11
+ 1602 0856 FA83      		std Y+2,r31
+ 1603 0858 E983      		std Y+1,r30
+ 245:FAT32.c       **** 			 for(j=0; j<11; j++)
+ 1604               		.loc 1 245 0
+ 1605 085a 90E0      		ldi r25,0
+ 1606               	.LVL104:
+ 1607               	.L102:
+ 248:FAT32.c       **** 			   transmitByte (dir->name[j]);
+ 1608               		.loc 1 248 0
+ 1609 085c A981      		ldd r26,Y+1
+ 1610 085e BA81      		ldd r27,Y+2
+ 1611 0860 8D91      		ld r24,X+
+ 1612 0862 BA83      		std Y+2,r27
+ 1613 0864 A983      		std Y+1,r26
+ 1614 0866 9987      		std Y+9,r25
+ 1615 0868 0E94 0000 		call transmitByte
+ 1616               	.LVL105:
+ 245:FAT32.c       **** 			 for(j=0; j<11; j++)
+ 1617               		.loc 1 245 0
+ 1618 086c 9985      		ldd r25,Y+9
+ 1619 086e 9F5F      		subi r25,lo8(-(1))
+ 1620               	.LVL106:
+ 1621 0870 9B30      		cpi r25,lo8(11)
+ 1622 0872 01F0      		breq .L128
+ 247:FAT32.c       **** 			   if(j == 8) transmitByte(' ');
+ 1623               		.loc 1 247 0
+ 1624 0874 9830      		cpi r25,lo8(8)
+ 1625 0876 01F4      		brne .L102
+ 247:FAT32.c       **** 			   if(j == 8) transmitByte(' ');
+ 1626               		.loc 1 247 0 is_stmt 0 discriminator 1
+ 1627 0878 80E2      		ldi r24,lo8(32)
+ 1628 087a 9987      		std Y+9,r25
+ 1629 087c 0E94 0000 		call transmitByte
+ 1630               	.LVL107:
+ 1631 0880 9985      		ldd r25,Y+9
+ 1632 0882 00C0      		rjmp .L102
+ 1633               	.LVL108:
+ 1634               	.L128:
+ 250:FAT32.c       **** 		     transmitString_F (PSTR("   "));
+ 1635               		.loc 1 250 0 is_stmt 1
+ 1636 0884 80E0      		ldi r24,lo8(__c.1888)
+ 1637 0886 90E0      		ldi r25,hi8(__c.1888)
+ 1638 0888 0E94 0000 		call transmitString_F
+ 1639               	.LVL109:
+ 251:FAT32.c       **** 		     if((dir->attrib != 0x10) && (dir->attrib != 0x08))
+ 1640               		.loc 1 251 0
+ 1641 088c F801      		movw r30,r16
+ 1642 088e 8081      		ld r24,Z
+ 1643 0890 8031      		cpi r24,lo8(16)
+ 1644 0892 01F0      		breq .L113
+ 251:FAT32.c       **** 		     if((dir->attrib != 0x10) && (dir->attrib != 0x08))
+ 1645               		.loc 1 251 0 is_stmt 0 discriminator 1
+ 1646 0894 8830      		cpi r24,lo8(8)
+ 1647 0896 01F0      		breq .L114
+ 253:FAT32.c       **** 			     transmitString_F (PSTR("FILE" ));
+ 1648               		.loc 1 253 0 is_stmt 1
+ 1649 0898 80E0      		ldi r24,lo8(__c.1890)
+ 1650 089a 90E0      		ldi r25,hi8(__c.1890)
+ 1651 089c 0E94 0000 		call transmitString_F
+ 1652               	.LVL110:
+ 254:FAT32.c       **** 		         transmitString_F (PSTR("   "));
+ 1653               		.loc 1 254 0
+ 1654 08a0 80E0      		ldi r24,lo8(__c.1892)
+ 1655 08a2 90E0      		ldi r25,hi8(__c.1892)
+ 1656 08a4 0E94 0000 		call transmitString_F
+ 1657               	.LVL111:
+ 255:FAT32.c       **** 			     displayMemory (LOW, dir->fileSize);
+ 1658               		.loc 1 255 0
+ 1659 08a8 AA85      		ldd r26,Y+10
+ 1660 08aa BB85      		ldd r27,Y+11
+ 1661 08ac 5C96      		adiw r26,28
+ 1662 08ae 4D91      		ld r20,X+
+ 1663 08b0 5D91      		ld r21,X+
+ 1664 08b2 6D91      		ld r22,X+
+ 1665 08b4 7C91      		ld r23,X
+ 1666 08b6 5F97      		sbiw r26,28+3
+ 1667 08b8 80E0      		ldi r24,0
+ 1668 08ba 0E94 0000 		call displayMemory
+ 1669               	.LVL112:
+ 1670 08be 00C0      		rjmp .L95
+ 1671               	.L113:
+ 258:FAT32.c       **** 			   transmitString_F ((dir->attrib == 0x10)? PSTR("DIR") : PSTR("ROOT"));
+ 1672               		.loc 1 258 0
+ 1673 08c0 80E0      		ldi r24,lo8(__c.1894)
+ 1674 08c2 90E0      		ldi r25,hi8(__c.1894)
+ 1675 08c4 00C0      		rjmp .L105
+ 1676               	.L114:
+ 1677 08c6 80E0      		ldi r24,lo8(__c.1896)
+ 1678 08c8 90E0      		ldi r25,hi8(__c.1896)
+ 1679               	.L105:
+ 258:FAT32.c       **** 			   transmitString_F ((dir->attrib == 0x10)? PSTR("DIR") : PSTR("ROOT"));
+ 1680               		.loc 1 258 0 is_stmt 0 discriminator 3
+ 1681 08ca 0E94 0000 		call transmitString_F
+ 1682               	.LVL113:
+ 1683               	.L95:
+ 1684 08ce EA85      		ldd r30,Y+10
+ 1685 08d0 FB85      		ldd r31,Y+11
+ 1686 08d2 B096      		adiw r30,32
+ 1687 08d4 FB87      		std Y+11,r31
+ 1688 08d6 EA87      		std Y+10,r30
+ 1689               	.LVL114:
+ 1690 08d8 005E      		subi r16,-32
+ 1691 08da 1F4F      		sbci r17,-1
+ 1692 08dc 00C0      		rjmp .L91
+ 1693               	.LVL115:
+ 1694               	.L126:
+ 180:FAT32.c       ****    for(sector = 0; sector < sectorPerCluster; sector++)
+ 1695               		.loc 1 180 0 is_stmt 1
+ 1696 08de FFEF      		ldi r31,-1
+ 1697 08e0 4F1A      		sub r4,r31
+ 1698 08e2 5F0A      		sbc r5,r31
+ 1699 08e4 6F0A      		sbc r6,r31
+ 1700 08e6 7F0A      		sbc r7,r31
+ 1701               	.LVL116:
+ 1702 08e8 00C0      		rjmp .L90
+ 1703               	.LVL117:
+ 1704               	.L125:
+ 264:FAT32.c       ****    cluster = (getSetNextCluster (cluster, GET, 0));
+ 1705               		.loc 1 264 0
+ 1706 08ea 00E0      		ldi r16,0
+ 1707 08ec 10E0      		ldi r17,0
+ 1708 08ee 9801      		movw r18,r16
+ 1709 08f0 40E0      		ldi r20,0
+ 1710 08f2 C701      		movw r24,r14
+ 1711 08f4 B601      		movw r22,r12
+ 1712 08f6 0E94 0000 		call getSetNextCluster
+ 1713               	.LVL118:
+ 1714 08fa 6B01      		movw r12,r22
+ 1715 08fc 7C01      		movw r14,r24
+ 1716               	.LVL119:
+ 266:FAT32.c       ****    if(cluster > 0x0ffffff6)
+ 1717               		.loc 1 266 0
+ 1718 08fe 87EF      		ldi r24,-9
+ 1719 0900 C816      		cp r12,r24
+ 1720 0902 8FEF      		ldi r24,-1
+ 1721 0904 D806      		cpc r13,r24
+ 1722 0906 E806      		cpc r14,r24
+ 1723 0908 8FE0      		ldi r24,15
+ 1724 090a F806      		cpc r15,r24
+ 1725 090c 00F4      		brsh .L124
+ 268:FAT32.c       ****    if(cluster == 0) 
+ 1726               		.loc 1 268 0
+ 1727 090e C114      		cp r12,__zero_reg__
+ 1728 0910 D104      		cpc r13,__zero_reg__
+ 1729 0912 E104      		cpc r14,__zero_reg__
+ 1730 0914 F104      		cpc r15,__zero_reg__
+ 1731 0916 01F0      		breq .+2
+ 1732 0918 00C0      		rjmp .L110
+ 269:FAT32.c       ****    {transmitString_F(PSTR("Error in getting cluster"));  return 0;}
+ 1733               		.loc 1 269 0
+ 1734 091a 80E0      		ldi r24,lo8(__c.1904)
+ 1735 091c 90E0      		ldi r25,hi8(__c.1904)
+ 1736               	.LVL120:
+ 1737               	.L123:
+ 1738 091e 0E94 0000 		call transmitString_F
+ 1739               	.LVL121:
+ 1740               	.L124:
+ 1741 0922 80E0      		ldi r24,0
+ 1742 0924 90E0      		ldi r25,0
+ 1743 0926 00C0      		rjmp .L121
+ 1744               	.LVL122:
+ 1745               	.L127:
+ 203:FAT32.c       **** 			  if(flag == GET_FILE)
+ 1746               		.loc 1 203 0
+ 1747 0928 91E0      		ldi r25,lo8(1)
+ 1748 092a 3912      		cpse r3,r25
+ 1749 092c 00C0      		rjmp .L129
+ 205:FAT32.c       **** 			    appendFileSector = firstSector + sector;
+ 1750               		.loc 1 205 0
+ 1751 092e 8092 0000 		sts appendFileSector,r8
+ 1752 0932 9092 0000 		sts appendFileSector+1,r9
+ 1753 0936 A092 0000 		sts appendFileSector+2,r10
+ 1754 093a B092 0000 		sts appendFileSector+3,r11
+ 206:FAT32.c       **** 				appendFileLocation = i;
+ 1755               		.loc 1 206 0
+ 1756 093e C901      		movw r24,r18
+ 1757 0940 A0E0      		ldi r26,0
+ 1758 0942 B0E0      		ldi r27,0
+ 1759               	.LVL123:
+ 1760 0944 8093 0000 		sts appendFileLocation,r24
+ 1761 0948 9093 0000 		sts appendFileLocation+1,r25
+ 1762 094c A093 0000 		sts appendFileLocation+2,r26
+ 1763 0950 B093 0000 		sts appendFileLocation+3,r27
+ 207:FAT32.c       **** 				appendStartCluster = (((unsigned long) dir->firstClusterHI) << 16) | dir->firstClusterLO;
+ 1764               		.loc 1 207 0
+ 1765 0954 EA85      		ldd r30,Y+10
+ 1766 0956 FB85      		ldd r31,Y+11
+ 1767 0958 8489      		ldd r24,Z+20
+ 1768 095a 9589      		ldd r25,Z+21
+ 1769 095c A0E0      		ldi r26,0
+ 1770 095e B0E0      		ldi r27,0
+ 1771 0960 DC01      		movw r26,r24
+ 1772 0962 9927      		clr r25
+ 1773 0964 8827      		clr r24
+ 1774               	.LVL124:
+ 1775 0966 428D      		ldd r20,Z+26
+ 1776 0968 538D      		ldd r21,Z+27
+ 1777 096a 60E0      		ldi r22,0
+ 1778 096c 70E0      		ldi r23,0
+ 1779 096e 842B      		or r24,r20
+ 1780 0970 952B      		or r25,r21
+ 1781 0972 A62B      		or r26,r22
+ 1782 0974 B72B      		or r27,r23
+ 1783 0976 8093 0000 		sts appendStartCluster,r24
+ 1784 097a 9093 0000 		sts appendStartCluster+1,r25
+ 1785 097e A093 0000 		sts appendStartCluster+2,r26
+ 1786 0982 B093 0000 		sts appendStartCluster+3,r27
+ 208:FAT32.c       **** 				fileSize = dir->fileSize;
+ 1787               		.loc 1 208 0
+ 1788 0986 848D      		ldd r24,Z+28
+ 1789 0988 958D      		ldd r25,Z+29
+ 1790 098a A68D      		ldd r26,Z+30
+ 1791 098c B78D      		ldd r27,Z+31
+ 1792 098e 8093 0000 		sts fileSize,r24
+ 1793 0992 9093 0000 		sts fileSize+1,r25
+ 1794 0996 A093 0000 		sts fileSize+2,r26
+ 1795 099a B093 0000 		sts fileSize+3,r27
+ 187:FAT32.c       **** 	    dir = (struct dir_Structure *) &buffer[i];
+ 1796               		.loc 1 187 0
+ 1797 099e 8A85      		ldd r24,Y+10
+ 1798 09a0 9B85      		ldd r25,Y+11
+ 209:FAT32.c       **** 			    return (dir);
+ 1799               		.loc 1 209 0
+ 1800 09a2 00C0      		rjmp .L121
+ 1801               	.LVL125:
+ 1802               	.L129:
+ 213:FAT32.c       **** 			     TX_NEWLINE;
+ 1803               		.loc 1 213 0
+ 1804 09a4 8DE0      		ldi r24,lo8(13)
+ 1805 09a6 0E94 0000 		call transmitByte
+ 1806               	.LVL126:
+ 1807 09aa 8AE0      		ldi r24,lo8(10)
+ 1808 09ac 0E94 0000 		call transmitByte
+ 1809               	.LVL127:
+ 214:FAT32.c       **** 				 transmitString_F(PSTR("Deleting.."));
+ 1810               		.loc 1 214 0
+ 1811 09b0 80E0      		ldi r24,lo8(__c.1880)
+ 1812 09b2 90E0      		ldi r25,hi8(__c.1880)
+ 1813 09b4 0E94 0000 		call transmitString_F
+ 1814               	.LVL128:
+ 215:FAT32.c       **** 				 TX_NEWLINE;
+ 1815               		.loc 1 215 0
+ 1816 09b8 8DE0      		ldi r24,lo8(13)
+ 1817 09ba 0E94 0000 		call transmitByte
+ 1818               	.LVL129:
+ 1819 09be 8AE0      		ldi r24,lo8(10)
+ 1820 09c0 0E94 0000 		call transmitByte
+ 1821               	.LVL130:
+ 216:FAT32.c       **** 				 TX_NEWLINE;
+ 1822               		.loc 1 216 0
+ 1823 09c4 8DE0      		ldi r24,lo8(13)
+ 1824 09c6 0E94 0000 		call transmitByte
+ 1825               	.LVL131:
+ 1826 09ca 8AE0      		ldi r24,lo8(10)
+ 1827 09cc 0E94 0000 		call transmitByte
+ 1828               	.LVL132:
+ 217:FAT32.c       **** 				 firstCluster = (((unsigned long) dir->firstClusterHI) << 16) | dir->firstClusterLO;
+ 1829               		.loc 1 217 0
+ 1830 09d0 AA85      		ldd r26,Y+10
+ 1831 09d2 BB85      		ldd r27,Y+11
+ 1832 09d4 5496      		adiw r26,20
+ 1833 09d6 CD90      		ld r12,X+
+ 1834 09d8 DC90      		ld r13,X
+ 1835 09da 5597      		sbiw r26,20+1
+ 1836               	.LVL133:
+ 1837 09dc E12C      		mov r14,__zero_reg__
+ 1838 09de F12C      		mov r15,__zero_reg__
+ 1839 09e0 7601      		movw r14,r12
+ 1840 09e2 DD24      		clr r13
+ 1841 09e4 CC24      		clr r12
+ 1842 09e6 5A96      		adiw r26,26
+ 1843 09e8 8D91      		ld r24,X+
+ 1844 09ea 9C91      		ld r25,X
+ 1845 09ec 5B97      		sbiw r26,26+1
+ 1846 09ee A0E0      		ldi r26,0
+ 1847 09f0 B0E0      		ldi r27,0
+ 1848 09f2 C82A      		or r12,r24
+ 1849 09f4 D92A      		or r13,r25
+ 1850 09f6 EA2A      		or r14,r26
+ 1851 09f8 FB2A      		or r15,r27
+ 1852               	.LVL134:
+ 220:FAT32.c       **** 				 dir->name[0] = DELETED;    
+ 1853               		.loc 1 220 0
+ 1854 09fa 85EE      		ldi r24,lo8(-27)
+ 1855 09fc EA85      		ldd r30,Y+10
+ 1856 09fe FB85      		ldd r31,Y+11
+ 1857 0a00 8083      		st Z,r24
+ 221:FAT32.c       **** 				 SD_writeSingleBlock (firstSector+sector);
+ 1858               		.loc 1 221 0
+ 1859 0a02 C501      		movw r24,r10
+ 1860 0a04 B401      		movw r22,r8
+ 1861 0a06 0E94 0000 		call SD_writeSingleBlock
+ 1862               	.LVL135:
+ 223:FAT32.c       **** 				 freeMemoryUpdate (ADD, dir->fileSize);
+ 1863               		.loc 1 223 0
+ 1864 0a0a AA85      		ldd r26,Y+10
+ 1865 0a0c BB85      		ldd r27,Y+11
+ 1866 0a0e 5C96      		adiw r26,28
+ 1867 0a10 4D91      		ld r20,X+
+ 1868 0a12 5D91      		ld r21,X+
+ 1869 0a14 6D91      		ld r22,X+
+ 1870 0a16 7C91      		ld r23,X
+ 1871 0a18 5F97      		sbiw r26,28+3
+ 1872 0a1a 80E0      		ldi r24,0
+ 1873 0a1c 0E94 0000 		call freeMemoryUpdate
+ 1874               	.LVL136:
+ 226:FAT32.c       **** 				 cluster = getSetFreeCluster (NEXT_FREE, GET, 0); 
+ 1875               		.loc 1 226 0
+ 1876 0a20 20E0      		ldi r18,0
+ 1877 0a22 30E0      		ldi r19,0
+ 1878 0a24 A901      		movw r20,r18
+ 1879 0a26 60E0      		ldi r22,0
+ 1880 0a28 82E0      		ldi r24,lo8(2)
+ 1881 0a2a 0E94 0000 		call getSetFreeCluster
+ 1882               	.LVL137:
+ 227:FAT32.c       **** 				 if(firstCluster < cluster)
+ 1883               		.loc 1 227 0
+ 1884 0a2e C616      		cp r12,r22
+ 1885 0a30 D706      		cpc r13,r23
+ 1886 0a32 E806      		cpc r14,r24
+ 1887 0a34 F906      		cpc r15,r25
+ 1888 0a36 00F4      		brsh .L101
+ 228:FAT32.c       **** 				     getSetFreeCluster (NEXT_FREE, SET, firstCluster);
+ 1889               		.loc 1 228 0
+ 1890 0a38 A701      		movw r20,r14
+ 1891 0a3a 9601      		movw r18,r12
+ 1892 0a3c 61E0      		ldi r22,lo8(1)
+ 1893               	.LVL138:
+ 1894 0a3e 82E0      		ldi r24,lo8(2)
+ 1895 0a40 0E94 0000 		call getSetFreeCluster
+ 1896               	.LVL139:
+ 1897               	.L101:
+ 233:FAT32.c       **** 			        nextCluster = getSetNextCluster (firstCluster, GET, 0);
+ 1898               		.loc 1 233 0
+ 1899 0a44 00E0      		ldi r16,0
+ 1900 0a46 10E0      		ldi r17,0
+ 1901 0a48 9801      		movw r18,r16
+ 1902 0a4a 40E0      		ldi r20,0
+ 1903 0a4c C701      		movw r24,r14
+ 1904 0a4e B601      		movw r22,r12
+ 1905 0a50 0E94 0000 		call getSetNextCluster
+ 1906               	.LVL140:
+ 1907 0a54 4B01      		movw r8,r22
+ 1908 0a56 5C01      		movw r10,r24
+ 1909               	.LVL141:
+ 234:FAT32.c       **** 					getSetNextCluster (firstCluster, SET, 0);
+ 1910               		.loc 1 234 0
+ 1911 0a58 00E0      		ldi r16,0
+ 1912 0a5a 10E0      		ldi r17,0
+ 1913 0a5c 9801      		movw r18,r16
+ 1914 0a5e 41E0      		ldi r20,lo8(1)
+ 1915 0a60 C701      		movw r24,r14
+ 1916 0a62 B601      		movw r22,r12
+ 1917 0a64 0E94 0000 		call getSetNextCluster
+ 1918               	.LVL142:
+ 235:FAT32.c       **** 					if(nextCluster > 0x0ffffff6) 
+ 1919               		.loc 1 235 0
+ 1920 0a68 B7EF      		ldi r27,-9
+ 1921 0a6a 8B16      		cp r8,r27
+ 1922 0a6c BFEF      		ldi r27,-1
+ 1923 0a6e 9B06      		cpc r9,r27
+ 1924 0a70 AB06      		cpc r10,r27
+ 1925 0a72 BFE0      		ldi r27,15
+ 1926 0a74 BB06      		cpc r11,r27
+ 1927 0a76 00F4      		brsh .L100
+ 237:FAT32.c       **** 					firstCluster = nextCluster;
+ 1928               		.loc 1 237 0
+ 1929 0a78 7501      		movw r14,r10
+ 1930 0a7a 6401      		movw r12,r8
+ 1931               	.LVL143:
+ 1932 0a7c 00C0      		rjmp .L101
+ 1933               	.LVL144:
+ 1934               	.L100:
+ 236:FAT32.c       **** 					   {transmitString_F(PSTR("File deleted!"));return 0;}
+ 1935               		.loc 1 236 0
+ 1936 0a7e 80E0      		ldi r24,lo8(__c.1882)
+ 1937 0a80 90E0      		ldi r25,hi8(__c.1882)
+ 1938 0a82 00C0      		rjmp .L123
+ 1939               	.LVL145:
+ 1940               	.L121:
+ 1941               	/* epilogue start */
+ 272:FAT32.c       **** }
+ 1942               		.loc 1 272 0
+ 1943 0a84 2B96      		adiw r28,11
+ 1944 0a86 0FB6      		in __tmp_reg__,__SREG__
+ 1945 0a88 F894      		cli
+ 1946 0a8a DEBF      		out __SP_H__,r29
+ 1947 0a8c 0FBE      		out __SREG__,__tmp_reg__
+ 1948 0a8e CDBF      		out __SP_L__,r28
+ 1949 0a90 DF91      		pop r29
+ 1950 0a92 CF91      		pop r28
+ 1951 0a94 1F91      		pop r17
+ 1952 0a96 0F91      		pop r16
+ 1953 0a98 FF90      		pop r15
+ 1954 0a9a EF90      		pop r14
+ 1955 0a9c DF90      		pop r13
+ 1956 0a9e CF90      		pop r12
+ 1957 0aa0 BF90      		pop r11
+ 1958 0aa2 AF90      		pop r10
+ 1959 0aa4 9F90      		pop r9
+ 1960 0aa6 8F90      		pop r8
+ 1961 0aa8 7F90      		pop r7
+ 1962 0aaa 6F90      		pop r6
+ 1963 0aac 5F90      		pop r5
+ 1964 0aae 4F90      		pop r4
+ 1965               	.LVL146:
+ 1966 0ab0 3F90      		pop r3
+ 1967               	.LVL147:
+ 1968 0ab2 2F90      		pop r2
+ 1969 0ab4 0895      		ret
+ 1970               		.cfi_endproc
+ 1971               	.LFE5:
+ 1973               	.global	readFile
+ 1975               	readFile:
+ 1976               	.LFB6:
+ 283:FAT32.c       **** {
+ 1977               		.loc 1 283 0
+ 1978               		.cfi_startproc
+ 1979               	.LVL148:
+ 1980 0ab6 2F92      		push r2
+ 1981               	.LCFI90:
+ 1982               		.cfi_def_cfa_offset 3
+ 1983               		.cfi_offset 2, -2
+ 1984 0ab8 3F92      		push r3
+ 1985               	.LCFI91:
+ 1986               		.cfi_def_cfa_offset 4
+ 1987               		.cfi_offset 3, -3
+ 1988 0aba 4F92      		push r4
+ 1989               	.LCFI92:
+ 1990               		.cfi_def_cfa_offset 5
+ 1991               		.cfi_offset 4, -4
+ 1992 0abc 5F92      		push r5
+ 1993               	.LCFI93:
+ 1994               		.cfi_def_cfa_offset 6
+ 1995               		.cfi_offset 5, -5
+ 1996 0abe 6F92      		push r6
+ 1997               	.LCFI94:
+ 1998               		.cfi_def_cfa_offset 7
+ 1999               		.cfi_offset 6, -6
+ 2000 0ac0 7F92      		push r7
+ 2001               	.LCFI95:
+ 2002               		.cfi_def_cfa_offset 8
+ 2003               		.cfi_offset 7, -7
+ 2004 0ac2 8F92      		push r8
+ 2005               	.LCFI96:
+ 2006               		.cfi_def_cfa_offset 9
+ 2007               		.cfi_offset 8, -8
+ 2008 0ac4 9F92      		push r9
+ 2009               	.LCFI97:
+ 2010               		.cfi_def_cfa_offset 10
+ 2011               		.cfi_offset 9, -9
+ 2012 0ac6 AF92      		push r10
+ 2013               	.LCFI98:
+ 2014               		.cfi_def_cfa_offset 11
+ 2015               		.cfi_offset 10, -10
+ 2016 0ac8 BF92      		push r11
+ 2017               	.LCFI99:
+ 2018               		.cfi_def_cfa_offset 12
+ 2019               		.cfi_offset 11, -11
+ 2020 0aca CF92      		push r12
+ 2021               	.LCFI100:
+ 2022               		.cfi_def_cfa_offset 13
+ 2023               		.cfi_offset 12, -12
+ 2024 0acc DF92      		push r13
+ 2025               	.LCFI101:
+ 2026               		.cfi_def_cfa_offset 14
+ 2027               		.cfi_offset 13, -13
+ 2028 0ace EF92      		push r14
+ 2029               	.LCFI102:
+ 2030               		.cfi_def_cfa_offset 15
+ 2031               		.cfi_offset 14, -14
+ 2032 0ad0 FF92      		push r15
+ 2033               	.LCFI103:
+ 2034               		.cfi_def_cfa_offset 16
+ 2035               		.cfi_offset 15, -15
+ 2036 0ad2 0F93      		push r16
+ 2037               	.LCFI104:
+ 2038               		.cfi_def_cfa_offset 17
+ 2039               		.cfi_offset 16, -16
+ 2040 0ad4 1F93      		push r17
+ 2041               	.LCFI105:
+ 2042               		.cfi_def_cfa_offset 18
+ 2043               		.cfi_offset 17, -17
+ 2044 0ad6 CF93      		push r28
+ 2045               	.LCFI106:
+ 2046               		.cfi_def_cfa_offset 19
+ 2047               		.cfi_offset 28, -18
+ 2048 0ad8 DF93      		push r29
+ 2049               	.LCFI107:
+ 2050               		.cfi_def_cfa_offset 20
+ 2051               		.cfi_offset 29, -19
+ 2052 0ada CDB7      		in r28,__SP_L__
+ 2053 0adc DEB7      		in r29,__SP_H__
+ 2054               	.LCFI108:
+ 2055               		.cfi_def_cfa_register 28
+ 2056 0ade 2897      		sbiw r28,8
+ 2057               	.LCFI109:
+ 2058               		.cfi_def_cfa_offset 28
+ 2059 0ae0 0FB6      		in __tmp_reg__,__SREG__
+ 2060 0ae2 F894      		cli
+ 2061 0ae4 DEBF      		out __SP_H__,r29
+ 2062 0ae6 0FBE      		out __SREG__,__tmp_reg__
+ 2063 0ae8 CDBF      		out __SP_L__,r28
+ 2064               	/* prologue: function */
+ 2065               	/* frame size = 8 */
+ 2066               	/* stack size = 26 */
+ 2067               	.L__stack_usage = 26
+ 2068 0aea 182F      		mov r17,r24
+ 2069               	.LVL149:
+ 289:FAT32.c       **** error = convertFileName (fileName); //convert fileName into FAT format
+ 2070               		.loc 1 289 0
+ 2071 0aec CB01      		movw r24,r22
+ 2072               	.LVL150:
+ 2073 0aee 6F83      		std Y+7,r22
+ 2074 0af0 7887      		std Y+8,r23
+ 2075 0af2 0E94 0000 		call convertFileName
+ 2076               	.LVL151:
+ 290:FAT32.c       **** if(error) return 2;
+ 2077               		.loc 1 290 0
+ 2078 0af6 6F81      		ldd r22,Y+7
+ 2079 0af8 7885      		ldd r23,Y+8
+ 2080 0afa 8111      		cpse r24,__zero_reg__
+ 2081 0afc 00C0      		rjmp .L140
+ 292:FAT32.c       **** dir = findFiles (GET_FILE, fileName); //get the file location
+ 2082               		.loc 1 292 0
+ 2083 0afe 81E0      		ldi r24,lo8(1)
+ 2084               	.LVL152:
+ 2085 0b00 0E94 0000 		call findFiles
+ 2086               	.LVL153:
+ 2087 0b04 FC01      		movw r30,r24
+ 2088               	.LVL154:
+ 293:FAT32.c       **** if(dir == 0) 
+ 2089               		.loc 1 293 0
+ 2090 0b06 0097      		sbiw r24,0
+ 2091 0b08 01F4      		brne .L132
+ 295:FAT32.c       ****   if(flag == READ) return (1);
+ 2092               		.loc 1 295 0
+ 2093 0b0a 81E0      		ldi r24,lo8(1)
+ 2094               	.LVL155:
+ 2095 0b0c 1123      		tst r17
+ 2096 0b0e 01F4      		brne .+2
+ 2097 0b10 00C0      		rjmp .L131
+ 2098 0b12 00C0      		rjmp .L142
+ 2099               	.LVL156:
+ 2100               	.L132:
+ 299:FAT32.c       **** if(flag == VERIFY) return (1);	//specified file name is already existing
+ 2101               		.loc 1 299 0
+ 2102 0b14 1130      		cpi r17,lo8(1)
+ 2103 0b16 01F4      		brne .+2
+ 2104 0b18 00C0      		rjmp .L141
+ 301:FAT32.c       **** cluster = (((unsigned long) dir->firstClusterHI) << 16) | dir->firstClusterLO;
+ 2105               		.loc 1 301 0
+ 2106 0b1a C488      		ldd r12,Z+20
+ 2107 0b1c D588      		ldd r13,Z+21
+ 2108 0b1e E12C      		mov r14,__zero_reg__
+ 2109 0b20 F12C      		mov r15,__zero_reg__
+ 2110 0b22 7601      		movw r14,r12
+ 2111 0b24 DD24      		clr r13
+ 2112 0b26 CC24      		clr r12
+ 2113 0b28 428D      		ldd r20,Z+26
+ 2114 0b2a 538D      		ldd r21,Z+27
+ 2115 0b2c 60E0      		ldi r22,0
+ 2116 0b2e 70E0      		ldi r23,0
+ 2117 0b30 C42A      		or r12,r20
+ 2118 0b32 D52A      		or r13,r21
+ 2119 0b34 E62A      		or r14,r22
+ 2120 0b36 F72A      		or r15,r23
+ 2121               	.LVL157:
+ 303:FAT32.c       **** fileSize = dir->fileSize;
+ 2122               		.loc 1 303 0
+ 2123 0b38 448C      		ldd r4,Z+28
+ 2124 0b3a 558C      		ldd r5,Z+29
+ 2125 0b3c 668C      		ldd r6,Z+30
+ 2126 0b3e 778C      		ldd r7,Z+31
+ 2127               	.LVL158:
+ 305:FAT32.c       **** TX_NEWLINE;
+ 2128               		.loc 1 305 0
+ 2129 0b40 8DE0      		ldi r24,lo8(13)
+ 2130               	.LVL159:
+ 2131 0b42 0E94 0000 		call transmitByte
+ 2132               	.LVL160:
+ 2133 0b46 8AE0      		ldi r24,lo8(10)
+ 2134 0b48 0E94 0000 		call transmitByte
+ 2135               	.LVL161:
+ 306:FAT32.c       **** TX_NEWLINE;
+ 2136               		.loc 1 306 0
+ 2137 0b4c 8DE0      		ldi r24,lo8(13)
+ 2138 0b4e 0E94 0000 		call transmitByte
+ 2139               	.LVL162:
+ 2140 0b52 8AE0      		ldi r24,lo8(10)
+ 2141 0b54 0E94 0000 		call transmitByte
+ 2142               	.LVL163:
+ 285:FAT32.c       **** unsigned long cluster, byteCounter = 0, fileSize, firstSector;
+ 2143               		.loc 1 285 0
+ 2144 0b58 812C      		mov r8,__zero_reg__
+ 2145 0b5a 912C      		mov r9,__zero_reg__
+ 2146 0b5c 5401      		movw r10,r8
+ 2147               	.LVL164:
+ 2148               	.L139:
+ 310:FAT32.c       ****   firstSector = getFirstSector (cluster);
+ 2149               		.loc 1 310 0
+ 2150 0b5e C701      		movw r24,r14
+ 2151 0b60 B601      		movw r22,r12
+ 2152 0b62 0E94 0000 		call getFirstSector
+ 2153               	.LVL165:
+ 2154 0b66 6983      		std Y+1,r22
+ 2155 0b68 7A83      		std Y+2,r23
+ 2156 0b6a 8B83      		std Y+3,r24
+ 2157 0b6c 9C83      		std Y+4,r25
+ 2158               	.LVL166:
+ 312:FAT32.c       ****   for(j=0; j<sectorPerCluster; j++)
+ 2159               		.loc 1 312 0
+ 2160 0b6e 10E0      		ldi r17,0
+ 2161               	.LVL167:
+ 2162               	.L134:
+ 312:FAT32.c       ****   for(j=0; j<sectorPerCluster; j++)
+ 2163               		.loc 1 312 0 is_stmt 0 discriminator 1
+ 2164 0b70 8091 0000 		lds r24,sectorPerCluster
+ 2165 0b74 9091 0000 		lds r25,sectorPerCluster+1
+ 2166 0b78 212F      		mov r18,r17
+ 2167 0b7a 30E0      		ldi r19,0
+ 2168 0b7c 2817      		cp r18,r24
+ 2169 0b7e 3907      		cpc r19,r25
+ 2170 0b80 00F4      		brsh .L146
+ 314:FAT32.c       ****     SD_readSingleBlock(firstSector + j);
+ 2171               		.loc 1 314 0 is_stmt 1
+ 2172 0b82 6981      		ldd r22,Y+1
+ 2173 0b84 7A81      		ldd r23,Y+2
+ 2174 0b86 8B81      		ldd r24,Y+3
+ 2175 0b88 9C81      		ldd r25,Y+4
+ 2176 0b8a 610F      		add r22,r17
+ 2177 0b8c 711D      		adc r23,__zero_reg__
+ 2178 0b8e 811D      		adc r24,__zero_reg__
+ 2179 0b90 911D      		adc r25,__zero_reg__
+ 2180 0b92 0E94 0000 		call SD_readSingleBlock
+ 2181               	.LVL168:
+ 2182 0b96 B501      		movw r22,r10
+ 2183 0b98 A401      		movw r20,r8
+ 316:FAT32.c       **** 	for(k=0; k<512; k++)
+ 2184               		.loc 1 316 0
+ 2185 0b9a 212C      		mov r2,__zero_reg__
+ 2186 0b9c 312C      		mov r3,__zero_reg__
+ 2187               	.LVL169:
+ 2188               	.L136:
+ 318:FAT32.c       ****       transmitByte(buffer[k]);
+ 2189               		.loc 1 318 0
+ 2190 0b9e F101      		movw r30,r2
+ 2191 0ba0 E050      		subi r30,lo8(-(buffer))
+ 2192 0ba2 F040      		sbci r31,hi8(-(buffer))
+ 2193 0ba4 8081      		ld r24,Z
+ 2194 0ba6 4D83      		std Y+5,r20
+ 2195 0ba8 5E83      		std Y+6,r21
+ 2196 0baa 6F83      		std Y+7,r22
+ 2197 0bac 7887      		std Y+8,r23
+ 2198 0bae 0E94 0000 		call transmitByte
+ 2199               	.LVL170:
+ 319:FAT32.c       ****       if ((byteCounter++) >= fileSize ) return 0;
+ 2200               		.loc 1 319 0
+ 2201 0bb2 8FEF      		ldi r24,-1
+ 2202 0bb4 881A      		sub r8,r24
+ 2203 0bb6 980A      		sbc r9,r24
+ 2204 0bb8 A80A      		sbc r10,r24
+ 2205 0bba B80A      		sbc r11,r24
+ 2206               	.LVL171:
+ 2207 0bbc 4D81      		ldd r20,Y+5
+ 2208 0bbe 5E81      		ldd r21,Y+6
+ 2209 0bc0 6F81      		ldd r22,Y+7
+ 2210 0bc2 7885      		ldd r23,Y+8
+ 2211 0bc4 4415      		cp r20,r4
+ 2212 0bc6 5505      		cpc r21,r5
+ 2213 0bc8 6605      		cpc r22,r6
+ 2214 0bca 7705      		cpc r23,r7
+ 2215 0bcc 00F4      		brsh .L142
+ 316:FAT32.c       **** 	for(k=0; k<512; k++)
+ 2216               		.loc 1 316 0
+ 2217 0bce EFEF      		ldi r30,-1
+ 2218 0bd0 2E1A      		sub r2,r30
+ 2219 0bd2 3E0A      		sbc r3,r30
+ 2220               	.LVL172:
+ 2221 0bd4 2114      		cp r2,__zero_reg__
+ 2222 0bd6 F2E0      		ldi r31,2
+ 2223 0bd8 3F06      		cpc r3,r31
+ 2224 0bda 01F0      		breq .L135
+ 319:FAT32.c       ****       if ((byteCounter++) >= fileSize ) return 0;
+ 2225               		.loc 1 319 0
+ 2226 0bdc B501      		movw r22,r10
+ 2227 0bde A401      		movw r20,r8
+ 2228 0be0 00C0      		rjmp .L136
+ 2229               	.L135:
+ 312:FAT32.c       ****   for(j=0; j<sectorPerCluster; j++)
+ 2230               		.loc 1 312 0
+ 2231 0be2 1F5F      		subi r17,lo8(-(1))
+ 2232               	.LVL173:
+ 2233 0be4 00C0      		rjmp .L134
+ 2234               	.LVL174:
+ 2235               	.L146:
+ 322:FAT32.c       ****   cluster = getSetNextCluster (cluster, GET, 0);
+ 2236               		.loc 1 322 0
+ 2237 0be6 00E0      		ldi r16,0
+ 2238 0be8 10E0      		ldi r17,0
+ 2239 0bea 9801      		movw r18,r16
+ 2240 0bec 40E0      		ldi r20,0
+ 2241 0bee C701      		movw r24,r14
+ 2242 0bf0 B601      		movw r22,r12
+ 2243 0bf2 0E94 0000 		call getSetNextCluster
+ 2244               	.LVL175:
+ 2245 0bf6 6B01      		movw r12,r22
+ 2246 0bf8 7C01      		movw r14,r24
+ 2247               	.LVL176:
+ 323:FAT32.c       ****   if(cluster == 0) {transmitString_F(PSTR("Error in getting cluster")); return 0;}
+ 2248               		.loc 1 323 0
+ 2249 0bfa 6115      		cp r22,__zero_reg__
+ 2250 0bfc 7105      		cpc r23,__zero_reg__
+ 2251 0bfe 8105      		cpc r24,__zero_reg__
+ 2252 0c00 9105      		cpc r25,__zero_reg__
+ 2253 0c02 01F0      		breq .+2
+ 2254 0c04 00C0      		rjmp .L139
+ 323:FAT32.c       ****   if(cluster == 0) {transmitString_F(PSTR("Error in getting cluster")); return 0;}
+ 2255               		.loc 1 323 0 is_stmt 0 discriminator 1
+ 2256 0c06 80E0      		ldi r24,lo8(__c.1925)
+ 2257 0c08 90E0      		ldi r25,hi8(__c.1925)
+ 2258 0c0a 0E94 0000 		call transmitString_F
+ 2259               	.LVL177:
+ 2260 0c0e 00C0      		rjmp .L142
+ 2261               	.LVL178:
+ 2262               	.L140:
+ 290:FAT32.c       **** if(error) return 2;
+ 2263               		.loc 1 290 0 is_stmt 1
+ 2264 0c10 82E0      		ldi r24,lo8(2)
+ 2265               	.LVL179:
+ 2266 0c12 00C0      		rjmp .L131
+ 2267               	.LVL180:
+ 2268               	.L141:
+ 299:FAT32.c       **** if(flag == VERIFY) return (1);	//specified file name is already existing
+ 2269               		.loc 1 299 0
+ 2270 0c14 81E0      		ldi r24,lo8(1)
+ 2271               	.LVL181:
+ 2272 0c16 00C0      		rjmp .L131
+ 2273               	.LVL182:
+ 2274               	.L142:
+ 319:FAT32.c       ****       if ((byteCounter++) >= fileSize ) return 0;
+ 2275               		.loc 1 319 0
+ 2276 0c18 80E0      		ldi r24,0
+ 2277               	.L131:
+ 2278               	/* epilogue start */
+ 326:FAT32.c       **** }
+ 2279               		.loc 1 326 0
+ 2280 0c1a 2896      		adiw r28,8
+ 2281 0c1c 0FB6      		in __tmp_reg__,__SREG__
+ 2282 0c1e F894      		cli
+ 2283 0c20 DEBF      		out __SP_H__,r29
+ 2284 0c22 0FBE      		out __SREG__,__tmp_reg__
+ 2285 0c24 CDBF      		out __SP_L__,r28
+ 2286 0c26 DF91      		pop r29
+ 2287 0c28 CF91      		pop r28
+ 2288 0c2a 1F91      		pop r17
+ 2289 0c2c 0F91      		pop r16
+ 2290 0c2e FF90      		pop r15
+ 2291 0c30 EF90      		pop r14
+ 2292 0c32 DF90      		pop r13
+ 2293 0c34 CF90      		pop r12
+ 2294 0c36 BF90      		pop r11
+ 2295 0c38 AF90      		pop r10
+ 2296 0c3a 9F90      		pop r9
+ 2297 0c3c 8F90      		pop r8
+ 2298 0c3e 7F90      		pop r7
+ 2299 0c40 6F90      		pop r6
+ 2300 0c42 5F90      		pop r5
+ 2301 0c44 4F90      		pop r4
+ 2302 0c46 3F90      		pop r3
+ 2303 0c48 2F90      		pop r2
+ 2304 0c4a 0895      		ret
+ 2305               		.cfi_endproc
+ 2306               	.LFE6:
+ 2308               	.global	deleteFile
+ 2310               	deleteFile:
+ 2311               	.LFB11:
+ 653:FAT32.c       **** {
+ 2312               		.loc 1 653 0
+ 2313               		.cfi_startproc
+ 2314               	.LVL183:
+ 2315 0c4c CF93      		push r28
+ 2316               	.LCFI110:
+ 2317               		.cfi_def_cfa_offset 3
+ 2318               		.cfi_offset 28, -2
+ 2319 0c4e DF93      		push r29
+ 2320               	.LCFI111:
+ 2321               		.cfi_def_cfa_offset 4
+ 2322               		.cfi_offset 29, -3
+ 2323               	/* prologue: function */
+ 2324               	/* frame size = 0 */
+ 2325               	/* stack size = 2 */
+ 2326               	.L__stack_usage = 2
+ 2327 0c50 EC01      		movw r28,r24
+ 656:FAT32.c       ****   error = convertFileName (fileName);
+ 2328               		.loc 1 656 0
+ 2329 0c52 0E94 0000 		call convertFileName
+ 2330               	.LVL184:
+ 657:FAT32.c       ****   if(error) return;
+ 2331               		.loc 1 657 0
+ 2332 0c56 8111      		cpse r24,__zero_reg__
+ 2333 0c58 00C0      		rjmp .L147
+ 659:FAT32.c       ****   findFiles (DELETE, fileName);
+ 2334               		.loc 1 659 0
+ 2335 0c5a BE01      		movw r22,r28
+ 2336 0c5c 82E0      		ldi r24,lo8(2)
+ 2337               	.LVL185:
+ 2338               	/* epilogue start */
+ 660:FAT32.c       **** }
+ 2339               		.loc 1 660 0
+ 2340 0c5e DF91      		pop r29
+ 2341 0c60 CF91      		pop r28
+ 2342               	.LVL186:
+ 659:FAT32.c       ****   findFiles (DELETE, fileName);
+ 2343               		.loc 1 659 0
+ 2344 0c62 0C94 0000 		jmp findFiles
+ 2345               	.LVL187:
+ 2346               	.L147:
+ 2347               	/* epilogue start */
+ 660:FAT32.c       **** }
+ 2348               		.loc 1 660 0
+ 2349 0c66 DF91      		pop r29
+ 2350 0c68 CF91      		pop r28
+ 2351               	.LVL188:
+ 2352 0c6a 0895      		ret
+ 2353               		.cfi_endproc
+ 2354               	.LFE11:
+ 2356               	.global	writeFile
+ 2358               	writeFile:
+ 2359               	.LFB8:
+ 376:FAT32.c       **** {
+ 2360               		.loc 1 376 0
+ 2361               		.cfi_startproc
+ 2362               	.LVL189:
+ 2363 0c6c 2F92      		push r2
+ 2364               	.LCFI112:
+ 2365               		.cfi_def_cfa_offset 3
+ 2366               		.cfi_offset 2, -2
+ 2367 0c6e 3F92      		push r3
+ 2368               	.LCFI113:
+ 2369               		.cfi_def_cfa_offset 4
+ 2370               		.cfi_offset 3, -3
+ 2371 0c70 4F92      		push r4
+ 2372               	.LCFI114:
+ 2373               		.cfi_def_cfa_offset 5
+ 2374               		.cfi_offset 4, -4
+ 2375 0c72 5F92      		push r5
+ 2376               	.LCFI115:
+ 2377               		.cfi_def_cfa_offset 6
+ 2378               		.cfi_offset 5, -5
+ 2379 0c74 6F92      		push r6
+ 2380               	.LCFI116:
+ 2381               		.cfi_def_cfa_offset 7
+ 2382               		.cfi_offset 6, -6
+ 2383 0c76 7F92      		push r7
+ 2384               	.LCFI117:
+ 2385               		.cfi_def_cfa_offset 8
+ 2386               		.cfi_offset 7, -7
+ 2387 0c78 8F92      		push r8
+ 2388               	.LCFI118:
+ 2389               		.cfi_def_cfa_offset 9
+ 2390               		.cfi_offset 8, -8
+ 2391 0c7a 9F92      		push r9
+ 2392               	.LCFI119:
+ 2393               		.cfi_def_cfa_offset 10
+ 2394               		.cfi_offset 9, -9
+ 2395 0c7c AF92      		push r10
+ 2396               	.LCFI120:
+ 2397               		.cfi_def_cfa_offset 11
+ 2398               		.cfi_offset 10, -10
+ 2399 0c7e BF92      		push r11
+ 2400               	.LCFI121:
+ 2401               		.cfi_def_cfa_offset 12
+ 2402               		.cfi_offset 11, -11
+ 2403 0c80 CF92      		push r12
+ 2404               	.LCFI122:
+ 2405               		.cfi_def_cfa_offset 13
+ 2406               		.cfi_offset 12, -12
+ 2407 0c82 DF92      		push r13
+ 2408               	.LCFI123:
+ 2409               		.cfi_def_cfa_offset 14
+ 2410               		.cfi_offset 13, -13
+ 2411 0c84 EF92      		push r14
+ 2412               	.LCFI124:
+ 2413               		.cfi_def_cfa_offset 15
+ 2414               		.cfi_offset 14, -14
+ 2415 0c86 FF92      		push r15
+ 2416               	.LCFI125:
+ 2417               		.cfi_def_cfa_offset 16
+ 2418               		.cfi_offset 15, -15
+ 2419 0c88 0F93      		push r16
+ 2420               	.LCFI126:
+ 2421               		.cfi_def_cfa_offset 17
+ 2422               		.cfi_offset 16, -16
+ 2423 0c8a 1F93      		push r17
+ 2424               	.LCFI127:
+ 2425               		.cfi_def_cfa_offset 18
+ 2426               		.cfi_offset 17, -17
+ 2427 0c8c CF93      		push r28
+ 2428               	.LCFI128:
+ 2429               		.cfi_def_cfa_offset 19
+ 2430               		.cfi_offset 28, -18
+ 2431 0c8e DF93      		push r29
+ 2432               	.LCFI129:
+ 2433               		.cfi_def_cfa_offset 20
+ 2434               		.cfi_offset 29, -19
+ 2435 0c90 CDB7      		in r28,__SP_L__
+ 2436 0c92 DEB7      		in r29,__SP_H__
+ 2437               	.LCFI130:
+ 2438               		.cfi_def_cfa_register 28
+ 2439 0c94 2897      		sbiw r28,8
+ 2440               	.LCFI131:
+ 2441               		.cfi_def_cfa_offset 28
+ 2442 0c96 0FB6      		in __tmp_reg__,__SREG__
+ 2443 0c98 F894      		cli
+ 2444 0c9a DEBF      		out __SP_H__,r29
+ 2445 0c9c 0FBE      		out __SREG__,__tmp_reg__
+ 2446 0c9e CDBF      		out __SP_L__,r28
+ 2447               	/* prologue: function */
+ 2448               	/* frame size = 8 */
+ 2449               	/* stack size = 26 */
+ 2450               	.L__stack_usage = 26
+ 2451 0ca0 8D83      		std Y+5,r24
+ 2452 0ca2 9E83      		std Y+6,r25
+ 2453               	.LVL190:
+ 382:FAT32.c       **** j = readFile (VERIFY, fileName);
+ 2454               		.loc 1 382 0
+ 2455 0ca4 BC01      		movw r22,r24
+ 2456 0ca6 81E0      		ldi r24,lo8(1)
+ 2457               	.LVL191:
+ 2458 0ca8 0E94 0000 		call readFile
+ 2459               	.LVL192:
+ 384:FAT32.c       **** if(j == 1) 
+ 2460               		.loc 1 384 0
+ 2461 0cac 8130      		cpi r24,lo8(1)
+ 2462 0cae 01F0      		breq .+2
+ 2463 0cb0 00C0      		rjmp .L150
+ 2464               	.LVL193:
+ 388:FAT32.c       ****   cluster = appendStartCluster;
+ 2465               		.loc 1 388 0
+ 2466 0cb2 C090 0000 		lds r12,appendStartCluster
+ 2467 0cb6 D090 0000 		lds r13,appendStartCluster+1
+ 2468 0cba E090 0000 		lds r14,appendStartCluster+2
+ 2469 0cbe F090 0000 		lds r15,appendStartCluster+3
+ 2470               	.LVL194:
+ 389:FAT32.c       ****   clusterCount=0;
+ 2471               		.loc 1 389 0
+ 2472 0cc2 812C      		mov r8,__zero_reg__
+ 2473 0cc4 912C      		mov r9,__zero_reg__
+ 2474 0cc6 5401      		movw r10,r8
+ 2475               	.LVL195:
+ 2476               	.L152:
+ 392:FAT32.c       ****     nextCluster = getSetNextCluster (cluster, GET, 0);
+ 2477               		.loc 1 392 0
+ 2478 0cc8 00E0      		ldi r16,0
+ 2479 0cca 10E0      		ldi r17,0
+ 2480 0ccc 9801      		movw r18,r16
+ 2481 0cce 40E0      		ldi r20,0
+ 2482 0cd0 C701      		movw r24,r14
+ 2483 0cd2 B601      		movw r22,r12
+ 2484 0cd4 0E94 0000 		call getSetNextCluster
+ 2485               	.LVL196:
+ 393:FAT32.c       ****     if(nextCluster == EOF) break;
+ 2486               		.loc 1 393 0
+ 2487 0cd8 6F3F      		cpi r22,-1
+ 2488 0cda 2FEF      		ldi r18,-1
+ 2489 0cdc 7207      		cpc r23,r18
+ 2490 0cde 8207      		cpc r24,r18
+ 2491 0ce0 2FE0      		ldi r18,15
+ 2492 0ce2 9207      		cpc r25,r18
+ 2493 0ce4 01F0      		breq .L151
+ 2494               	.LVL197:
+ 395:FAT32.c       **** 	clusterCount++;
+ 2495               		.loc 1 395 0
+ 2496 0ce6 4FEF      		ldi r20,-1
+ 2497 0ce8 841A      		sub r8,r20
+ 2498 0cea 940A      		sbc r9,r20
+ 2499 0cec A40A      		sbc r10,r20
+ 2500 0cee B40A      		sbc r11,r20
+ 2501               	.LVL198:
+ 394:FAT32.c       **** 	cluster = nextCluster;
+ 2502               		.loc 1 394 0
+ 2503 0cf0 6B01      		movw r12,r22
+ 2504 0cf2 7C01      		movw r14,r24
+ 396:FAT32.c       ****   }
+ 2505               		.loc 1 396 0
+ 2506 0cf4 00C0      		rjmp .L152
+ 2507               	.LVL199:
+ 2508               	.L151:
+ 398:FAT32.c       ****   sector = (fileSize - (clusterCount * sectorPerCluster * bytesPerSector)) / bytesPerSector; //last
+ 2509               		.loc 1 398 0
+ 2510 0cf6 A091 0000 		lds r26,sectorPerCluster
+ 2511 0cfa B091 0000 		lds r27,sectorPerCluster+1
+ 2512 0cfe 2091 0000 		lds r18,bytesPerSector
+ 2513 0d02 3091 0000 		lds r19,bytesPerSector+1
+ 2514 0d06 E091 0000 		lds r30,bytesPerSector
+ 2515 0d0a F091 0000 		lds r31,bytesPerSector+1
+ 2516 0d0e 0E94 0000 		call __umulhisi3
+ 2517               	.LVL200:
+ 2518 0d12 9B01      		movw r18,r22
+ 2519 0d14 AC01      		movw r20,r24
+ 2520 0d16 C501      		movw r24,r10
+ 2521 0d18 B401      		movw r22,r8
+ 2522 0d1a 0E94 0000 		call __mulsi3
+ 2523 0d1e 8B01      		movw r16,r22
+ 2524 0d20 9C01      		movw r18,r24
+ 2525 0d22 6091 0000 		lds r22,fileSize
+ 2526 0d26 7091 0000 		lds r23,fileSize+1
+ 2527 0d2a 8091 0000 		lds r24,fileSize+2
+ 2528 0d2e 9091 0000 		lds r25,fileSize+3
+ 2529 0d32 601B      		sub r22,r16
+ 2530 0d34 710B      		sbc r23,r17
+ 2531 0d36 820B      		sbc r24,r18
+ 2532 0d38 930B      		sbc r25,r19
+ 2533 0d3a 9F01      		movw r18,r30
+ 2534 0d3c 40E0      		ldi r20,0
+ 2535 0d3e 50E0      		ldi r21,0
+ 2536 0d40 0E94 0000 		call __udivmodsi4
+ 2537 0d44 022F      		mov r16,r18
+ 2538               	.LVL201:
+ 378:FAT32.c       **** unsigned int i, firstClusterHigh=0, firstClusterLow=0;  //value 0 is assigned just to avoid warning
+ 2539               		.loc 1 378 0
+ 2540 0d46 212C      		mov r2,__zero_reg__
+ 2541 0d48 312C      		mov r3,__zero_reg__
+ 2542 0d4a 1C82      		std Y+4,__zero_reg__
+ 2543 0d4c 1B82      		std Y+3,__zero_reg__
+ 399:FAT32.c       ****   start = 1;
+ 2544               		.loc 1 399 0
+ 2545 0d4e 7724      		clr r7
+ 2546 0d50 7394      		inc r7
+ 2547 0d52 00C0      		rjmp .L153
+ 2548               	.LVL202:
+ 2549               	.L150:
+ 401:FAT32.c       **** else if(j == 2) 
+ 2550               		.loc 1 401 0
+ 2551 0d54 8230      		cpi r24,lo8(2)
+ 2552 0d56 01F4      		brne .+2
+ 2553 0d58 00C0      		rjmp .L195
+ 409:FAT32.c       ****   cluster = getSetFreeCluster (NEXT_FREE, GET, 0);
+ 2554               		.loc 1 409 0
+ 2555 0d5a 20E0      		ldi r18,0
+ 2556 0d5c 30E0      		ldi r19,0
+ 2557 0d5e A901      		movw r20,r18
+ 2558 0d60 60E0      		ldi r22,0
+ 2559 0d62 82E0      		ldi r24,lo8(2)
+ 2560               	.LVL203:
+ 2561 0d64 0E94 0000 		call getSetFreeCluster
+ 2562               	.LVL204:
+ 410:FAT32.c       ****   if(cluster > totalClusters)
+ 2563               		.loc 1 410 0
+ 2564 0d68 0091 0000 		lds r16,totalClusters
+ 2565 0d6c 1091 0000 		lds r17,totalClusters+1
+ 2566 0d70 2091 0000 		lds r18,totalClusters+2
+ 2567 0d74 3091 0000 		lds r19,totalClusters+3
+ 2568 0d78 0617      		cp r16,r22
+ 2569 0d7a 1707      		cpc r17,r23
+ 2570 0d7c 2807      		cpc r18,r24
+ 2571 0d7e 3907      		cpc r19,r25
+ 2572 0d80 00F4      		brsh .L155
+ 411:FAT32.c       ****      cluster = rootCluster;
+ 2573               		.loc 1 411 0
+ 2574 0d82 6091 0000 		lds r22,rootCluster
+ 2575 0d86 7091 0000 		lds r23,rootCluster+1
+ 2576 0d8a 8091 0000 		lds r24,rootCluster+2
+ 2577 0d8e 9091 0000 		lds r25,rootCluster+3
+ 2578               	.LVL205:
+ 2579               	.L155:
+ 413:FAT32.c       ****   cluster = searchNextFreeCluster(cluster);
+ 2580               		.loc 1 413 0
+ 2581 0d92 0E94 0000 		call searchNextFreeCluster
+ 2582               	.LVL206:
+ 2583 0d96 6B01      		movw r12,r22
+ 2584 0d98 7C01      		movw r14,r24
+ 2585               	.LVL207:
+ 414:FAT32.c       ****    if(cluster == 0)
+ 2586               		.loc 1 414 0
+ 2587 0d9a 6115      		cp r22,__zero_reg__
+ 2588 0d9c 7105      		cpc r23,__zero_reg__
+ 2589 0d9e 8105      		cpc r24,__zero_reg__
+ 2590 0da0 9105      		cpc r25,__zero_reg__
+ 2591 0da2 01F4      		brne .L156
+ 416:FAT32.c       ****       TX_NEWLINE;
+ 2592               		.loc 1 416 0
+ 2593 0da4 8DE0      		ldi r24,lo8(13)
+ 2594 0da6 0E94 0000 		call transmitByte
+ 2595               	.LVL208:
+ 2596 0daa 8AE0      		ldi r24,lo8(10)
+ 2597 0dac 0E94 0000 		call transmitByte
+ 2598               	.LVL209:
+ 417:FAT32.c       ****       transmitString_F(PSTR(" No free cluster!"));
+ 2599               		.loc 1 417 0
+ 2600 0db0 80E0      		ldi r24,lo8(__c.1980)
+ 2601 0db2 90E0      		ldi r25,hi8(__c.1980)
+ 2602 0db4 00C0      		rjmp .L194
+ 2603               	.L156:
+ 420:FAT32.c       ****   getSetNextCluster(cluster, SET, EOF);   //last cluster of the file, marked EOF
+ 2604               		.loc 1 420 0
+ 2605 0db6 0FEF      		ldi r16,lo8(-1)
+ 2606 0db8 1FEF      		ldi r17,lo8(-1)
+ 2607 0dba 2FEF      		ldi r18,lo8(-1)
+ 2608 0dbc 3FE0      		ldi r19,lo8(15)
+ 2609 0dbe 41E0      		ldi r20,lo8(1)
+ 2610 0dc0 0E94 0000 		call getSetNextCluster
+ 2611               	.LVL210:
+ 422:FAT32.c       ****   firstClusterHigh = (unsigned int) ((cluster & 0xffff0000) >> 16 );
+ 2612               		.loc 1 422 0
+ 2613 0dc4 FC82      		std Y+4,r15
+ 2614 0dc6 EB82      		std Y+3,r14
+ 2615               	.LVL211:
+ 423:FAT32.c       ****   firstClusterLow = (unsigned int) ( cluster & 0x0000ffff);
+ 2616               		.loc 1 423 0
+ 2617 0dc8 1601      		movw r2,r12
+ 2618               	.LVL212:
+ 424:FAT32.c       ****   fileSize = 0;
+ 2619               		.loc 1 424 0
+ 2620 0dca 1092 0000 		sts fileSize,__zero_reg__
+ 2621 0dce 1092 0000 		sts fileSize+1,__zero_reg__
+ 2622 0dd2 1092 0000 		sts fileSize+2,__zero_reg__
+ 2623 0dd6 1092 0000 		sts fileSize+3,__zero_reg__
+ 377:FAT32.c       **** unsigned char j,k, data, error, fileCreatedFlag = 0, start = 0, appendFile = 0, sector=0;
+ 2624               		.loc 1 377 0
+ 2625 0dda 00E0      		ldi r16,0
+ 2626 0ddc 712C      		mov r7,__zero_reg__
+ 2627               	.LVL213:
+ 2628               	.L153:
+ 427:FAT32.c       **** k=0;
+ 2629               		.loc 1 427 0
+ 2630 0dde 612C      		mov r6,__zero_reg__
+ 434:FAT32.c       **** 	  startBlock = getFirstSector (cluster) + sector;
+ 2631               		.loc 1 434 0
+ 2632 0de0 802E      		mov r8,r16
+ 2633 0de2 912C      		mov r9,__zero_reg__
+ 2634 0de4 A12C      		mov r10,__zero_reg__
+ 2635 0de6 B12C      		mov r11,__zero_reg__
+ 2636               	.LVL214:
+ 431:FAT32.c       ****    if(start)
+ 2637               		.loc 1 431 0
+ 2638 0de8 7720      		tst r7
+ 2639 0dea 01F0      		breq .L157
+ 2640               	.LVL215:
+ 434:FAT32.c       **** 	  startBlock = getFirstSector (cluster) + sector;
+ 2641               		.loc 1 434 0
+ 2642 0dec C701      		movw r24,r14
+ 2643 0dee B601      		movw r22,r12
+ 2644 0df0 0E94 0000 		call getFirstSector
+ 2645               	.LVL216:
+ 2646 0df4 680D      		add r22,r8
+ 2647 0df6 791D      		adc r23,r9
+ 2648 0df8 8A1D      		adc r24,r10
+ 2649 0dfa 9B1D      		adc r25,r11
+ 2650 0dfc 6093 0000 		sts startBlock,r22
+ 2651 0e00 7093 0000 		sts startBlock+1,r23
+ 2652 0e04 8093 0000 		sts startBlock+2,r24
+ 2653 0e08 9093 0000 		sts startBlock+3,r25
+ 435:FAT32.c       **** 	  SD_readSingleBlock (startBlock);
+ 2654               		.loc 1 435 0
+ 2655 0e0c 6091 0000 		lds r22,startBlock
+ 2656 0e10 7091 0000 		lds r23,startBlock+1
+ 2657 0e14 8091 0000 		lds r24,startBlock+2
+ 2658 0e18 9091 0000 		lds r25,startBlock+3
+ 2659 0e1c 0E94 0000 		call SD_readSingleBlock
+ 2660               	.LVL217:
+ 436:FAT32.c       **** 	  i = fileSize % bytesPerSector;
+ 2661               		.loc 1 436 0
+ 2662 0e20 2091 0000 		lds r18,bytesPerSector
+ 2663 0e24 3091 0000 		lds r19,bytesPerSector+1
+ 2664 0e28 40E0      		ldi r20,0
+ 2665 0e2a 50E0      		ldi r21,0
+ 2666 0e2c 6091 0000 		lds r22,fileSize
+ 2667 0e30 7091 0000 		lds r23,fileSize+1
+ 2668 0e34 8091 0000 		lds r24,fileSize+2
+ 2669 0e38 9091 0000 		lds r25,fileSize+3
+ 2670 0e3c 0E94 0000 		call __udivmodsi4
+ 2671 0e40 00C0      		rjmp .L196
+ 2672               	.LVL218:
+ 2673               	.L169:
+ 486:FAT32.c       ****    getSetNextCluster(prevCluster, SET, cluster);
+ 2674               		.loc 1 486 0
+ 2675 0e42 8B01      		movw r16,r22
+ 2676 0e44 9C01      		movw r18,r24
+ 2677               	.LVL219:
+ 2678 0e46 41E0      		ldi r20,lo8(1)
+ 2679 0e48 C701      		movw r24,r14
+ 2680 0e4a B601      		movw r22,r12
+ 2681 0e4c 0E94 0000 		call getSetNextCluster
+ 2682               	.LVL220:
+ 487:FAT32.c       ****    getSetNextCluster(cluster, SET, EOF);   //last cluster of the file, marked EOF
+ 2683               		.loc 1 487 0
+ 2684 0e50 0FEF      		ldi r16,lo8(-1)
+ 2685 0e52 1FEF      		ldi r17,lo8(-1)
+ 2686 0e54 2FEF      		ldi r18,lo8(-1)
+ 2687 0e56 3FE0      		ldi r19,lo8(15)
+ 2688 0e58 41E0      		ldi r20,lo8(1)
+ 2689 0e5a C501      		movw r24,r10
+ 2690 0e5c B401      		movw r22,r8
+ 2691 0e5e 0E94 0000 		call getSetNextCluster
+ 2692               	.LVL221:
+ 488:FAT32.c       **** }        
+ 2693               		.loc 1 488 0
+ 2694 0e62 7501      		movw r14,r10
+ 2695 0e64 6401      		movw r12,r8
+ 2696               	.LVL222:
+ 2697               	.L157:
+ 441:FAT32.c       ****       startBlock = getFirstSector (cluster);
+ 2698               		.loc 1 441 0
+ 2699 0e66 C701      		movw r24,r14
+ 2700 0e68 B601      		movw r22,r12
+ 2701 0e6a 0E94 0000 		call getFirstSector
+ 2702               	.LVL223:
+ 2703 0e6e 6093 0000 		sts startBlock,r22
+ 2704 0e72 7093 0000 		sts startBlock+1,r23
+ 2705 0e76 8093 0000 		sts startBlock+2,r24
+ 2706 0e7a 9093 0000 		sts startBlock+3,r25
+ 2707               	.LVL224:
+ 442:FAT32.c       **** 	  i=0;
+ 2708               		.loc 1 442 0
+ 2709 0e7e 80E0      		ldi r24,0
+ 2710 0e80 90E0      		ldi r25,0
+ 443:FAT32.c       **** 	  j=0;
+ 2711               		.loc 1 443 0
+ 2712 0e82 00E0      		ldi r16,0
+ 2713               	.LVL225:
+ 2714               	.L158:
+ 2715 0e84 E62D      		mov r30,r6
+ 2716               	.LVL226:
+ 450:FAT32.c       **** 	 data = dataString[k++];
+ 2717               		.loc 1 450 0
+ 2718 0e86 6394      		inc r6
+ 2719               	.LVL227:
+ 2720 0e88 F0E0      		ldi r31,0
+ 2721 0e8a E050      		subi r30,lo8(-(dataString))
+ 2722 0e8c F040      		sbci r31,hi8(-(dataString))
+ 2723 0e8e 1081      		ld r17,Z
+ 2724               	.LVL228:
+ 452:FAT32.c       ****      buffer[i++] = data;
+ 2725               		.loc 1 452 0
+ 2726 0e90 BC01      		movw r22,r24
+ 2727 0e92 6F5F      		subi r22,-1
+ 2728 0e94 7F4F      		sbci r23,-1
+ 2729               	.LVL229:
+ 2730 0e96 FC01      		movw r30,r24
+ 2731 0e98 E050      		subi r30,lo8(-(buffer))
+ 2732 0e9a F040      		sbci r31,hi8(-(buffer))
+ 2733 0e9c 1083      		st Z,r17
+ 453:FAT32.c       **** 	 fileSize++;
+ 2734               		.loc 1 453 0
+ 2735 0e9e 8091 0000 		lds r24,fileSize
+ 2736 0ea2 9091 0000 		lds r25,fileSize+1
+ 2737 0ea6 A091 0000 		lds r26,fileSize+2
+ 2738 0eaa B091 0000 		lds r27,fileSize+3
+ 2739 0eae 0196      		adiw r24,1
+ 2740 0eb0 A11D      		adc r26,__zero_reg__
+ 2741 0eb2 B11D      		adc r27,__zero_reg__
+ 2742 0eb4 8093 0000 		sts fileSize,r24
+ 2743 0eb8 9093 0000 		sts fileSize+1,r25
+ 2744 0ebc A093 0000 		sts fileSize+2,r26
+ 2745 0ec0 B093 0000 		sts fileSize+3,r27
+ 455:FAT32.c       ****      if(i >= 512)   //though 'i' will never become greater than 512, it's kept here to avoid 
+ 2746               		.loc 1 455 0
+ 2747 0ec4 6115      		cp r22,__zero_reg__
+ 2748 0ec6 82E0      		ldi r24,2
+ 2749 0ec8 7807      		cpc r23,r24
+ 2750 0eca 00F0      		brlo .L159
+ 2751               	.LVL230:
+ 458:FAT32.c       **** 	   error = SD_writeSingleBlock (startBlock);
+ 2752               		.loc 1 458 0
+ 2753 0ecc 6091 0000 		lds r22,startBlock
+ 2754 0ed0 7091 0000 		lds r23,startBlock+1
+ 2755 0ed4 8091 0000 		lds r24,startBlock+2
+ 2756 0ed8 9091 0000 		lds r25,startBlock+3
+ 2757 0edc 0E94 0000 		call SD_writeSingleBlock
+ 2758               	.LVL231:
+ 459:FAT32.c       ****        j++;
+ 2759               		.loc 1 459 0
+ 2760 0ee0 0F5F      		subi r16,lo8(-(1))
+ 2761               	.LVL232:
+ 460:FAT32.c       **** 	   if(j == sectorPerCluster) {j = 0; break;}
+ 2762               		.loc 1 460 0
+ 2763 0ee2 8091 0000 		lds r24,sectorPerCluster
+ 2764 0ee6 9091 0000 		lds r25,sectorPerCluster+1
+ 2765 0eea 402F      		mov r20,r16
+ 2766 0eec 50E0      		ldi r21,0
+ 2767 0eee 4817      		cp r20,r24
+ 2768 0ef0 5907      		cpc r21,r25
+ 2769 0ef2 01F0      		breq .L160
+ 461:FAT32.c       **** 	   startBlock++; 
+ 2770               		.loc 1 461 0
+ 2771 0ef4 8091 0000 		lds r24,startBlock
+ 2772 0ef8 9091 0000 		lds r25,startBlock+1
+ 2773 0efc A091 0000 		lds r26,startBlock+2
+ 2774 0f00 B091 0000 		lds r27,startBlock+3
+ 2775 0f04 0196      		adiw r24,1
+ 2776 0f06 A11D      		adc r26,__zero_reg__
+ 2777 0f08 B11D      		adc r27,__zero_reg__
+ 2778 0f0a 8093 0000 		sts startBlock,r24
+ 2779 0f0e 9093 0000 		sts startBlock+1,r25
+ 2780 0f12 A093 0000 		sts startBlock+2,r26
+ 2781 0f16 B093 0000 		sts startBlock+3,r27
+ 457:FAT32.c       **** 	   i=0;
+ 2782               		.loc 1 457 0
+ 2783 0f1a 60E0      		ldi r22,0
+ 2784 0f1c 70E0      		ldi r23,0
+ 2785               	.LVL233:
+ 2786               	.L159:
+ 463:FAT32.c       ****    } while((data != '\n') && (k < MAX_STRING_SIZE)); //stop when newline character is found
+ 2787               		.loc 1 463 0
+ 2788 0f1e 1A30      		cpi r17,lo8(10)
+ 2789 0f20 01F0      		breq .L164
+ 463:FAT32.c       ****    } while((data != '\n') && (k < MAX_STRING_SIZE)); //stop when newline character is found
+ 2790               		.loc 1 463 0 is_stmt 0 discriminator 1
+ 2791 0f22 93E6      		ldi r25,lo8(99)
+ 2792 0f24 9615      		cp r25,r6
+ 2793 0f26 00F0      		brlo .L164
+ 2794               	.LVL234:
+ 2795               	.L196:
+ 450:FAT32.c       **** 	 data = dataString[k++];
+ 2796               		.loc 1 450 0 is_stmt 1
+ 2797 0f28 CB01      		movw r24,r22
+ 2798 0f2a 00C0      		rjmp .L158
+ 2799               	.LVL235:
+ 2800               	.L160:
+ 466:FAT32.c       ****    if((data == '\n') || (k >= MAX_STRING_SIZE))
+ 2801               		.loc 1 466 0
+ 2802 0f2c 1A30      		cpi r17,lo8(10)
+ 2803 0f2e 01F4      		brne .L163
+ 2804               	.L185:
+ 457:FAT32.c       **** 	   i=0;
+ 2805               		.loc 1 457 0
+ 2806 0f30 60E0      		ldi r22,0
+ 2807 0f32 70E0      		ldi r23,0
+ 2808               	.LVL236:
+ 2809 0f34 00C0      		rjmp .L164
+ 2810               	.LVL237:
+ 2811               	.L163:
+ 466:FAT32.c       ****    if((data == '\n') || (k >= MAX_STRING_SIZE))
+ 2812               		.loc 1 466 0 discriminator 1
+ 2813 0f36 A3E6      		ldi r26,lo8(99)
+ 2814 0f38 A615      		cp r26,r6
+ 2815 0f3a 00F4      		brsh .L193
+ 2816 0f3c 00C0      		rjmp .L185
+ 2817               	.LVL238:
+ 2818               	.L164:
+ 469:FAT32.c       ****         buffer[i]= 0x00;
+ 2819               		.loc 1 469 0 discriminator 2
+ 2820 0f3e FB01      		movw r30,r22
+ 2821 0f40 E050      		subi r30,lo8(-(buffer))
+ 2822 0f42 F040      		sbci r31,hi8(-(buffer))
+ 2823 0f44 1082      		st Z,__zero_reg__
+ 468:FAT32.c       ****       for(;i<512;i++)  //fill the rest of the buffer with 0x00
+ 2824               		.loc 1 468 0 discriminator 2
+ 2825 0f46 6F5F      		subi r22,-1
+ 2826 0f48 7F4F      		sbci r23,-1
+ 2827               	.LVL239:
+ 2828 0f4a 6115      		cp r22,__zero_reg__
+ 2829 0f4c B2E0      		ldi r27,2
+ 2830 0f4e 7B07      		cpc r23,r27
+ 2831 0f50 01F4      		brne .L164
+ 470:FAT32.c       ****    	  error = SD_writeSingleBlock (startBlock);
+ 2832               		.loc 1 470 0
+ 2833 0f52 6091 0000 		lds r22,startBlock
+ 2834 0f56 7091 0000 		lds r23,startBlock+1
+ 2835 0f5a 8091 0000 		lds r24,startBlock+2
+ 2836 0f5e 9091 0000 		lds r25,startBlock+3
+ 2837               	.LVL240:
+ 2838 0f62 0E94 0000 		call SD_writeSingleBlock
+ 2839               	.LVL241:
+ 490:FAT32.c       **** getSetFreeCluster (NEXT_FREE, SET, cluster); //update FSinfo next free cluster entry
+ 2840               		.loc 1 490 0
+ 2841 0f66 A701      		movw r20,r14
+ 2842 0f68 9601      		movw r18,r12
+ 2843 0f6a 61E0      		ldi r22,lo8(1)
+ 2844 0f6c 82E0      		ldi r24,lo8(2)
+ 2845 0f6e 0E94 0000 		call getSetFreeCluster
+ 2846               	.LVL242:
+ 492:FAT32.c       **** error = getDateTime_FAT();    //get current date & time from the RTC
+ 2847               		.loc 1 492 0
+ 2848 0f72 0E94 0000 		call getDateTime_FAT
+ 2849               	.LVL243:
+ 493:FAT32.c       **** if(error) { dateFAT = 0; timeFAT = 0;}
+ 2850               		.loc 1 493 0
+ 2851 0f76 8823      		tst r24
+ 2852 0f78 01F0      		breq .L168
+ 493:FAT32.c       **** if(error) { dateFAT = 0; timeFAT = 0;}
+ 2853               		.loc 1 493 0 is_stmt 0 discriminator 1
+ 2854 0f7a 1092 0000 		sts dateFAT+1,__zero_reg__
+ 2855 0f7e 1092 0000 		sts dateFAT,__zero_reg__
+ 2856 0f82 1092 0000 		sts timeFAT+1,__zero_reg__
+ 2857 0f86 1092 0000 		sts timeFAT,__zero_reg__
+ 2858 0f8a 00C0      		rjmp .L168
+ 2859               	.LVL244:
+ 2860               	.L193:
+ 477:FAT32.c       ****    cluster = searchNextFreeCluster(prevCluster); //look for a free cluster starting from the curren
+ 2861               		.loc 1 477 0 is_stmt 1
+ 2862 0f8c C701      		movw r24,r14
+ 2863 0f8e B601      		movw r22,r12
+ 2864 0f90 0E94 0000 		call searchNextFreeCluster
+ 2865               	.LVL245:
+ 2866 0f94 4B01      		movw r8,r22
+ 2867 0f96 5C01      		movw r10,r24
+ 2868               	.LVL246:
+ 479:FAT32.c       ****    if(cluster == 0)
+ 2869               		.loc 1 479 0
+ 2870 0f98 6115      		cp r22,__zero_reg__
+ 2871 0f9a 7105      		cpc r23,__zero_reg__
+ 2872 0f9c 8105      		cpc r24,__zero_reg__
+ 2873 0f9e 9105      		cpc r25,__zero_reg__
+ 2874 0fa0 01F0      		breq .+2
+ 2875 0fa2 00C0      		rjmp .L169
+ 481:FAT32.c       ****       TX_NEWLINE;
+ 2876               		.loc 1 481 0
+ 2877 0fa4 8DE0      		ldi r24,lo8(13)
+ 2878 0fa6 0E94 0000 		call transmitByte
+ 2879               	.LVL247:
+ 2880 0faa 8AE0      		ldi r24,lo8(10)
+ 2881 0fac 0E94 0000 		call transmitByte
+ 2882               	.LVL248:
+ 482:FAT32.c       ****       transmitString_F(PSTR(" No free cluster!"));
+ 2883               		.loc 1 482 0
+ 2884 0fb0 80E0      		ldi r24,lo8(__c.1988)
+ 2885 0fb2 90E0      		ldi r25,hi8(__c.1988)
+ 2886 0fb4 00C0      		rjmp .L194
+ 2887               	.LVL249:
+ 2888               	.L168:
+ 495:FAT32.c       **** if(appendFile)  //executes this loop if file is to be appended
+ 2889               		.loc 1 495 0
+ 2890 0fb6 7720      		tst r7
+ 2891 0fb8 01F4      		brne .+2
+ 2892 0fba 00C0      		rjmp .L171
+ 497:FAT32.c       ****   SD_readSingleBlock (appendFileSector);    
+ 2893               		.loc 1 497 0
+ 2894 0fbc 6091 0000 		lds r22,appendFileSector
+ 2895 0fc0 7091 0000 		lds r23,appendFileSector+1
+ 2896 0fc4 8091 0000 		lds r24,appendFileSector+2
+ 2897 0fc8 9091 0000 		lds r25,appendFileSector+3
+ 2898 0fcc 0E94 0000 		call SD_readSingleBlock
+ 2899               	.LVL250:
+ 498:FAT32.c       ****   dir = (struct dir_Structure *) &buffer[appendFileLocation]; 
+ 2900               		.loc 1 498 0
+ 2901 0fd0 E091 0000 		lds r30,appendFileLocation
+ 2902 0fd4 F091 0000 		lds r31,appendFileLocation+1
+ 2903 0fd8 E050      		subi r30,lo8(-(buffer))
+ 2904 0fda F040      		sbci r31,hi8(-(buffer))
+ 2905               	.LVL251:
+ 500:FAT32.c       ****   dir->lastAccessDate = 0;   //date of last access ignored
+ 2906               		.loc 1 500 0
+ 2907 0fdc 138A      		std Z+19,__zero_reg__
+ 2908 0fde 128A      		std Z+18,__zero_reg__
+ 501:FAT32.c       ****   dir->writeTime = timeFAT;  //setting new time of last write, obtained from RTC
+ 2909               		.loc 1 501 0
+ 2910 0fe0 8091 0000 		lds r24,timeFAT
+ 2911 0fe4 9091 0000 		lds r25,timeFAT+1
+ 2912 0fe8 978B      		std Z+23,r25
+ 2913 0fea 868B      		std Z+22,r24
+ 502:FAT32.c       ****   dir->writeDate = dateFAT;  //setting new date of last write, obtained from RTC
+ 2914               		.loc 1 502 0
+ 2915 0fec 8091 0000 		lds r24,dateFAT
+ 2916 0ff0 9091 0000 		lds r25,dateFAT+1
+ 2917 0ff4 918F      		std Z+25,r25
+ 2918 0ff6 808F      		std Z+24,r24
+ 503:FAT32.c       ****   extraMemory = fileSize - dir->fileSize;
+ 2919               		.loc 1 503 0
+ 2920 0ff8 8091 0000 		lds r24,fileSize
+ 2921 0ffc 9091 0000 		lds r25,fileSize+1
+ 2922 1000 A091 0000 		lds r26,fileSize+2
+ 2923 1004 B091 0000 		lds r27,fileSize+3
+ 2924 1008 448D      		ldd r20,Z+28
+ 2925 100a 558D      		ldd r21,Z+29
+ 2926 100c 668D      		ldd r22,Z+30
+ 2927 100e 778D      		ldd r23,Z+31
+ 2928 1010 6C01      		movw r12,r24
+ 2929 1012 7D01      		movw r14,r26
+ 2930               	.LVL252:
+ 2931 1014 C41A      		sub r12,r20
+ 2932 1016 D50A      		sbc r13,r21
+ 2933 1018 E60A      		sbc r14,r22
+ 2934 101a F70A      		sbc r15,r23
+ 2935               	.LVL253:
+ 504:FAT32.c       ****   dir->fileSize = fileSize;
+ 2936               		.loc 1 504 0
+ 2937 101c 848F      		std Z+28,r24
+ 2938 101e 958F      		std Z+29,r25
+ 2939 1020 A68F      		std Z+30,r26
+ 2940 1022 B78F      		std Z+31,r27
+ 505:FAT32.c       ****   SD_writeSingleBlock (appendFileSector);
+ 2941               		.loc 1 505 0
+ 2942 1024 6091 0000 		lds r22,appendFileSector
+ 2943 1028 7091 0000 		lds r23,appendFileSector+1
+ 2944 102c 8091 0000 		lds r24,appendFileSector+2
+ 2945 1030 9091 0000 		lds r25,appendFileSector+3
+ 2946 1034 0E94 0000 		call SD_writeSingleBlock
+ 2947               	.LVL254:
+ 506:FAT32.c       ****   freeMemoryUpdate (REMOVE, extraMemory); //updating free memory count in FSinfo sector;
+ 2948               		.loc 1 506 0
+ 2949 1038 B701      		movw r22,r14
+ 2950 103a A601      		movw r20,r12
+ 2951 103c 81E0      		ldi r24,lo8(1)
+ 2952 103e 0E94 0000 		call freeMemoryUpdate
+ 2953               	.LVL255:
+ 2954 1042 00C0      		rjmp .L186
+ 2955               	.LVL256:
+ 2956               	.L171:
+ 517:FAT32.c       **** prevCluster = rootCluster; //root cluster
+ 2957               		.loc 1 517 0
+ 2958 1044 C090 0000 		lds r12,rootCluster
+ 2959 1048 D090 0000 		lds r13,rootCluster+1
+ 2960 104c E090 0000 		lds r14,rootCluster+2
+ 2961 1050 F090 0000 		lds r15,rootCluster+3
+ 2962               	.LVL257:
+ 377:FAT32.c       **** unsigned char j,k, data, error, fileCreatedFlag = 0, start = 0, appendFile = 0, sector=0;
+ 2963               		.loc 1 377 0
+ 2964 1054 1A82      		std Y+2,__zero_reg__
+ 2965               	.LVL258:
+ 2966               	.L183:
+ 521:FAT32.c       ****    firstSector = getFirstSector (prevCluster);
+ 2967               		.loc 1 521 0
+ 2968 1056 C701      		movw r24,r14
+ 2969 1058 B601      		movw r22,r12
+ 2970 105a 0E94 0000 		call getFirstSector
+ 2971               	.LVL259:
+ 2972 105e 2B01      		movw r4,r22
+ 2973 1060 3C01      		movw r6,r24
+ 2974               	.LVL260:
+ 523:FAT32.c       ****    for(sector = 0; sector < sectorPerCluster; sector++)
+ 2975               		.loc 1 523 0
+ 2976 1062 1982      		std Y+1,__zero_reg__
+ 2977               	.LVL261:
+ 2978               	.L172:
+ 523:FAT32.c       ****    for(sector = 0; sector < sectorPerCluster; sector++)
+ 2979               		.loc 1 523 0 is_stmt 0 discriminator 1
+ 2980 1064 8091 0000 		lds r24,sectorPerCluster
+ 2981 1068 9091 0000 		lds r25,sectorPerCluster+1
+ 2982 106c 4981      		ldd r20,Y+1
+ 2983 106e 242F      		mov r18,r20
+ 2984 1070 30E0      		ldi r19,0
+ 2985 1072 2817      		cp r18,r24
+ 2986 1074 3907      		cpc r19,r25
+ 2987 1076 00F0      		brlo .+2
+ 2988 1078 00C0      		rjmp .L197
+ 525:FAT32.c       ****      SD_readSingleBlock (firstSector + sector);
+ 2989               		.loc 1 525 0 is_stmt 1
+ 2990 107a 5301      		movw r10,r6
+ 2991 107c 4201      		movw r8,r4
+ 2992 107e 2981      		ldd r18,Y+1
+ 2993 1080 820E      		add r8,r18
+ 2994 1082 911C      		adc r9,__zero_reg__
+ 2995 1084 A11C      		adc r10,__zero_reg__
+ 2996 1086 B11C      		adc r11,__zero_reg__
+ 2997 1088 C501      		movw r24,r10
+ 2998 108a B401      		movw r22,r8
+ 2999 108c 0E94 0000 		call SD_readSingleBlock
+ 3000               	.LVL262:
+ 3001 1090 80E0      		ldi r24,lo8(buffer)
+ 3002 1092 90E0      		ldi r25,hi8(buffer)
+ 3003 1094 9887      		std Y+8,r25
+ 3004 1096 8F83      		std Y+7,r24
+ 528:FAT32.c       ****      for(i=0; i<bytesPerSector; i+=32)
+ 3005               		.loc 1 528 0
+ 3006 1098 00E0      		ldi r16,0
+ 3007 109a 10E0      		ldi r17,0
+ 3008               	.LVL263:
+ 3009               	.L173:
+ 528:FAT32.c       ****      for(i=0; i<bytesPerSector; i+=32)
+ 3010               		.loc 1 528 0 is_stmt 0 discriminator 1
+ 3011 109c 8091 0000 		lds r24,bytesPerSector
+ 3012 10a0 9091 0000 		lds r25,bytesPerSector+1
+ 3013 10a4 0817      		cp r16,r24
+ 3014 10a6 1907      		cpc r17,r25
+ 3015 10a8 00F0      		brlo .+2
+ 3016 10aa 00C0      		rjmp .L198
+ 3017               	.LVL264:
+ 532:FAT32.c       **** 		if(fileCreatedFlag)   //to mark last directory entry with 0x00 (empty) mark
+ 3018               		.loc 1 532 0 is_stmt 1
+ 3019 10ac 9A81      		ldd r25,Y+2
+ 3020 10ae 9111      		cpse r25,__zero_reg__
+ 3021 10b0 00C0      		rjmp .L186
+ 539:FAT32.c       ****         if((dir->name[0] == EMPTY) || (dir->name[0] == DELETED))  //looking for an empty slot to en
+ 3022               		.loc 1 539 0
+ 3023 10b2 AF81      		ldd r26,Y+7
+ 3024 10b4 B885      		ldd r27,Y+8
+ 3025 10b6 8C91      		ld r24,X
+ 3026 10b8 8823      		tst r24
+ 3027 10ba 01F0      		breq .L174
+ 539:FAT32.c       ****         if((dir->name[0] == EMPTY) || (dir->name[0] == DELETED))  //looking for an empty slot to en
+ 3028               		.loc 1 539 0 is_stmt 0 discriminator 1
+ 3029 10bc 853E      		cpi r24,lo8(-27)
+ 3030 10be 01F0      		breq .+2
+ 3031 10c0 00C0      		rjmp .L175
+ 3032               	.L174:
+ 3033 10c2 ED81      		ldd r30,Y+5
+ 3034 10c4 FE81      		ldd r31,Y+6
+ 587:FAT32.c       ****    prevCluster = cluster;
+ 3035               		.loc 1 587 0 is_stmt 1 discriminator 2
+ 3036 10c6 AF81      		ldd r26,Y+7
+ 3037 10c8 B885      		ldd r27,Y+8
+ 3038 10ca 8BE0      		ldi r24,lo8(11)
+ 3039               	.L177:
+ 3040               	.LVL265:
+ 542:FAT32.c       ****   			dir->name[j] = fileName[j];
+ 3041               		.loc 1 542 0 discriminator 2
+ 3042 10cc 9191      		ld r25,Z+
+ 3043               	.LVL266:
+ 3044 10ce 9D93      		st X+,r25
+ 3045               	.LVL267:
+ 3046 10d0 8150      		subi r24,lo8(-(-1))
+ 541:FAT32.c       **** 		  for(j=0; j<11; j++)
+ 3047               		.loc 1 541 0 discriminator 2
+ 3048 10d2 01F4      		brne .L177
+ 3049 10d4 F801      		movw r30,r16
+ 3050               	.LVL268:
+ 3051 10d6 E050      		subi r30,lo8(-(buffer))
+ 3052 10d8 F040      		sbci r31,hi8(-(buffer))
+ 543:FAT32.c       **** 		  dir->attrib = ATTR_ARCHIVE;	//settting file attribute as 'archive'
+ 3053               		.loc 1 543 0
+ 3054 10da B0E2      		ldi r27,lo8(32)
+ 3055 10dc B387      		std Z+11,r27
+ 544:FAT32.c       **** 		  dir->NTreserved = 0;			//always set to 0
+ 3056               		.loc 1 544 0
+ 3057 10de 1486      		std Z+12,__zero_reg__
+ 545:FAT32.c       **** 		  dir->timeTenth = 0;			//always set to 0
+ 3058               		.loc 1 545 0
+ 3059 10e0 1586      		std Z+13,__zero_reg__
+ 546:FAT32.c       **** 		  dir->createTime = timeFAT; 	//setting time of file creation, obtained from RTC
+ 3060               		.loc 1 546 0
+ 3061 10e2 8091 0000 		lds r24,timeFAT
+ 3062 10e6 9091 0000 		lds r25,timeFAT+1
+ 3063 10ea EF81      		ldd r30,Y+7
+ 3064 10ec F885      		ldd r31,Y+8
+ 3065 10ee 9787      		std Z+15,r25
+ 3066 10f0 8687      		std Z+14,r24
+ 547:FAT32.c       **** 		  dir->createDate = dateFAT; 	//setting date of file creation, obtained from RTC
+ 3067               		.loc 1 547 0
+ 3068 10f2 2091 0000 		lds r18,dateFAT
+ 3069 10f6 3091 0000 		lds r19,dateFAT+1
+ 3070 10fa 318B      		std Z+17,r19
+ 3071 10fc 208B      		std Z+16,r18
+ 548:FAT32.c       **** 		  dir->lastAccessDate = 0;   	//date of last access ignored
+ 3072               		.loc 1 548 0
+ 3073 10fe 138A      		std Z+19,__zero_reg__
+ 3074 1100 128A      		std Z+18,__zero_reg__
+ 549:FAT32.c       **** 		  dir->writeTime = timeFAT;  	//setting new time of last write, obtained from RTC
+ 3075               		.loc 1 549 0
+ 3076 1102 978B      		std Z+23,r25
+ 3077 1104 868B      		std Z+22,r24
+ 550:FAT32.c       **** 		  dir->writeDate = dateFAT;  	//setting new date of last write, obtained from RTC
+ 3078               		.loc 1 550 0
+ 3079 1106 318F      		std Z+25,r19
+ 3080 1108 208F      		std Z+24,r18
+ 551:FAT32.c       **** 		  dir->firstClusterHI = firstClusterHigh;
+ 3081               		.loc 1 551 0
+ 3082 110a 8B81      		ldd r24,Y+3
+ 3083 110c 9C81      		ldd r25,Y+4
+ 3084 110e 958B      		std Z+21,r25
+ 3085 1110 848B      		std Z+20,r24
+ 552:FAT32.c       **** 		  dir->firstClusterLO = firstClusterLow;
+ 3086               		.loc 1 552 0
+ 3087 1112 338E      		std Z+27,r3
+ 3088 1114 228E      		std Z+26,r2
+ 553:FAT32.c       **** 		  dir->fileSize = fileSize;
+ 3089               		.loc 1 553 0
+ 3090 1116 8091 0000 		lds r24,fileSize
+ 3091 111a 9091 0000 		lds r25,fileSize+1
+ 3092 111e A091 0000 		lds r26,fileSize+2
+ 3093 1122 B091 0000 		lds r27,fileSize+3
+ 3094 1126 848F      		std Z+28,r24
+ 3095 1128 958F      		std Z+29,r25
+ 3096 112a A68F      		std Z+30,r26
+ 3097 112c B78F      		std Z+31,r27
+ 555:FAT32.c       **** 		  SD_writeSingleBlock (firstSector + sector);
+ 3098               		.loc 1 555 0
+ 3099 112e C501      		movw r24,r10
+ 3100 1130 B401      		movw r22,r8
+ 3101 1132 0E94 0000 		call SD_writeSingleBlock
+ 3102               	.LVL269:
+ 562:FAT32.c       **** 		  freeMemoryUpdate (REMOVE, fileSize); //updating free memory count in FSinfo sector
+ 3103               		.loc 1 562 0
+ 3104 1136 4091 0000 		lds r20,fileSize
+ 3105 113a 5091 0000 		lds r21,fileSize+1
+ 3106 113e 6091 0000 		lds r22,fileSize+2
+ 3107 1142 7091 0000 		lds r23,fileSize+3
+ 3108 1146 81E0      		ldi r24,lo8(1)
+ 3109 1148 0E94 0000 		call freeMemoryUpdate
+ 3110               	.LVL270:
+ 556:FAT32.c       **** 		  fileCreatedFlag = 1;
+ 3111               		.loc 1 556 0
+ 3112 114c F1E0      		ldi r31,lo8(1)
+ 3113 114e FA83      		std Y+2,r31
+ 3114               	.LVL271:
+ 3115               	.L175:
+ 528:FAT32.c       ****      for(i=0; i<bytesPerSector; i+=32)
+ 3116               		.loc 1 528 0
+ 3117 1150 005E      		subi r16,-32
+ 3118 1152 1F4F      		sbci r17,-1
+ 3119               	.LVL272:
+ 3120 1154 8F81      		ldd r24,Y+7
+ 3121 1156 9885      		ldd r25,Y+8
+ 3122 1158 8096      		adiw r24,32
+ 3123 115a 9887      		std Y+8,r25
+ 3124 115c 8F83      		std Y+7,r24
+ 3125 115e 00C0      		rjmp .L173
+ 3126               	.LVL273:
+ 3127               	.L198:
+ 523:FAT32.c       ****    for(sector = 0; sector < sectorPerCluster; sector++)
+ 3128               		.loc 1 523 0
+ 3129 1160 2981      		ldd r18,Y+1
+ 3130 1162 2F5F      		subi r18,lo8(-(1))
+ 3131 1164 2983      		std Y+1,r18
+ 3132               	.LVL274:
+ 3133 1166 00C0      		rjmp .L172
+ 3134               	.LVL275:
+ 3135               	.L197:
+ 568:FAT32.c       ****    cluster = getSetNextCluster (prevCluster, GET, 0);
+ 3136               		.loc 1 568 0
+ 3137 1168 00E0      		ldi r16,0
+ 3138 116a 10E0      		ldi r17,0
+ 3139 116c 9801      		movw r18,r16
+ 3140 116e 40E0      		ldi r20,0
+ 3141 1170 C701      		movw r24,r14
+ 3142 1172 B601      		movw r22,r12
+ 3143 1174 0E94 0000 		call getSetNextCluster
+ 3144               	.LVL276:
+ 3145 1178 4B01      		movw r8,r22
+ 3146 117a 5C01      		movw r10,r24
+ 3147               	.LVL277:
+ 570:FAT32.c       ****    if(cluster > 0x0ffffff6)
+ 3148               		.loc 1 570 0
+ 3149 117c 87EF      		ldi r24,-9
+ 3150 117e 8816      		cp r8,r24
+ 3151 1180 8FEF      		ldi r24,-1
+ 3152 1182 9806      		cpc r9,r24
+ 3153 1184 A806      		cpc r10,r24
+ 3154 1186 8FE0      		ldi r24,15
+ 3155 1188 B806      		cpc r11,r24
+ 3156 118a 00F0      		brlo .L180
+ 572:FAT32.c       ****       if(cluster == EOF)   //this situation will come when total files in root is multiple of (32*s
+ 3157               		.loc 1 572 0
+ 3158 118c 9FEF      		ldi r25,-1
+ 3159 118e 8916      		cp r8,r25
+ 3160 1190 9906      		cpc r9,r25
+ 3161 1192 A906      		cpc r10,r25
+ 3162 1194 9FE0      		ldi r25,15
+ 3163 1196 B906      		cpc r11,r25
+ 3164 1198 01F4      		brne .L181
+ 574:FAT32.c       **** 		cluster = searchNextFreeCluster(prevCluster); //find next cluster for root directory entries
+ 3165               		.loc 1 574 0
+ 3166 119a C701      		movw r24,r14
+ 3167 119c B601      		movw r22,r12
+ 3168 119e 0E94 0000 		call searchNextFreeCluster
+ 3169               	.LVL278:
+ 3170 11a2 4B01      		movw r8,r22
+ 3171 11a4 5C01      		movw r10,r24
+ 3172               	.LVL279:
+ 575:FAT32.c       **** 		getSetNextCluster(prevCluster, SET, cluster); //link the new cluster of root to the previous clus
+ 3173               		.loc 1 575 0
+ 3174 11a6 8B01      		movw r16,r22
+ 3175 11a8 9C01      		movw r18,r24
+ 3176 11aa 41E0      		ldi r20,lo8(1)
+ 3177 11ac C701      		movw r24,r14
+ 3178 11ae B601      		movw r22,r12
+ 3179 11b0 0E94 0000 		call getSetNextCluster
+ 3180               	.LVL280:
+ 576:FAT32.c       **** 		getSetNextCluster(cluster, SET, EOF);  //set the new cluster as end of the root directory
+ 3181               		.loc 1 576 0
+ 3182 11b4 0FEF      		ldi r16,lo8(-1)
+ 3183 11b6 1FEF      		ldi r17,lo8(-1)
+ 3184 11b8 2FEF      		ldi r18,lo8(-1)
+ 3185 11ba 3FE0      		ldi r19,lo8(15)
+ 3186 11bc 41E0      		ldi r20,lo8(1)
+ 3187 11be C501      		movw r24,r10
+ 3188 11c0 B401      		movw r22,r8
+ 3189 11c2 0E94 0000 		call getSetNextCluster
+ 3190               	.LVL281:
+ 3191 11c6 00C0      		rjmp .L180
+ 3192               	.L181:
+ 581:FAT32.c       **** 	    transmitString_F(PSTR("End of Cluster Chain")); 
+ 3193               		.loc 1 581 0
+ 3194 11c8 80E0      		ldi r24,lo8(__c.2000)
+ 3195 11ca 90E0      		ldi r25,hi8(__c.2000)
+ 3196 11cc 00C0      		rjmp .L194
+ 3197               	.L180:
+ 585:FAT32.c       ****    if(cluster == 0) {transmitString_F(PSTR("Error in getting cluster")); return 1;}
+ 3198               		.loc 1 585 0
+ 3199 11ce 8114      		cp r8,__zero_reg__
+ 3200 11d0 9104      		cpc r9,__zero_reg__
+ 3201 11d2 A104      		cpc r10,__zero_reg__
+ 3202 11d4 B104      		cpc r11,__zero_reg__
+ 3203 11d6 01F0      		breq .L182
+ 587:FAT32.c       ****    prevCluster = cluster;
+ 3204               		.loc 1 587 0
+ 3205 11d8 7501      		movw r14,r10
+ 3206 11da 6401      		movw r12,r8
+ 3207               	.LVL282:
+ 3208 11dc 00C0      		rjmp .L183
+ 3209               	.LVL283:
+ 3210               	.L182:
+ 585:FAT32.c       ****    if(cluster == 0) {transmitString_F(PSTR("Error in getting cluster")); return 1;}
+ 3211               		.loc 1 585 0 discriminator 1
+ 3212 11de 80E0      		ldi r24,lo8(__c.2002)
+ 3213 11e0 90E0      		ldi r25,hi8(__c.2002)
+ 3214               	.LVL284:
+ 3215               	.L194:
+ 3216 11e2 0E94 0000 		call transmitString_F
+ 3217               	.LVL285:
+ 3218               	.L195:
+ 3219 11e6 81E0      		ldi r24,lo8(1)
+ 3220 11e8 00C0      		rjmp .L154
+ 3221               	.LVL286:
+ 3222               	.L186:
+ 536:FAT32.c       ****            return 0;
+ 3223               		.loc 1 536 0
+ 3224 11ea 80E0      		ldi r24,0
+ 3225               	.LVL287:
+ 3226               	.L154:
+ 3227               	/* epilogue start */
+ 591:FAT32.c       **** }
+ 3228               		.loc 1 591 0
+ 3229 11ec 2896      		adiw r28,8
+ 3230 11ee 0FB6      		in __tmp_reg__,__SREG__
+ 3231 11f0 F894      		cli
+ 3232 11f2 DEBF      		out __SP_H__,r29
+ 3233 11f4 0FBE      		out __SREG__,__tmp_reg__
+ 3234 11f6 CDBF      		out __SP_L__,r28
+ 3235 11f8 DF91      		pop r29
+ 3236 11fa CF91      		pop r28
+ 3237 11fc 1F91      		pop r17
+ 3238 11fe 0F91      		pop r16
+ 3239 1200 FF90      		pop r15
+ 3240 1202 EF90      		pop r14
+ 3241 1204 DF90      		pop r13
+ 3242 1206 CF90      		pop r12
+ 3243 1208 BF90      		pop r11
+ 3244 120a AF90      		pop r10
+ 3245 120c 9F90      		pop r9
+ 3246 120e 8F90      		pop r8
+ 3247 1210 7F90      		pop r7
+ 3248 1212 6F90      		pop r6
+ 3249 1214 5F90      		pop r5
+ 3250 1216 4F90      		pop r4
+ 3251 1218 3F90      		pop r3
+ 3252 121a 2F90      		pop r2
+ 3253 121c 0895      		ret
+ 3254               		.cfi_endproc
+ 3255               	.LFE8:
+ 3257               		.section	.progmem.data,"a",@progbits
+ 3260               	__c.2002:
+ 3261 0000 4572 726F 		.string	"Error in getting cluster"
+ 3261      7220 696E 
+ 3261      2067 6574 
+ 3261      7469 6E67 
+ 3261      2063 6C75 
+ 3264               	__c.2000:
+ 3265 0019 456E 6420 		.string	"End of Cluster Chain"
+ 3265      6F66 2043 
+ 3265      6C75 7374 
+ 3265      6572 2043 
+ 3265      6861 696E 
+ 3268               	__c.1988:
+ 3269 002e 204E 6F20 		.string	" No free cluster!"
+ 3269      6672 6565 
+ 3269      2063 6C75 
+ 3269      7374 6572 
+ 3269      2100 
+ 3272               	__c.1980:
+ 3273 0040 204E 6F20 		.string	" No free cluster!"
+ 3273      6672 6565 
+ 3273      2063 6C75 
+ 3273      7374 6572 
+ 3273      2100 
+ 3276               	__c.1937:
+ 3277 0052 496E 7661 		.string	"Invalid fileName.."
+ 3277      6C69 6420 
+ 3277      6669 6C65 
+ 3277      4E61 6D65 
+ 3277      2E2E 00
+ 3280               	__c.1925:
+ 3281 0065 4572 726F 		.string	"Error in getting cluster"
+ 3281      7220 696E 
+ 3281      2067 6574 
+ 3281      7469 6E67 
+ 3281      2063 6C75 
+ 3284               	__c.1904:
+ 3285 007e 4572 726F 		.string	"Error in getting cluster"
+ 3285      7220 696E 
+ 3285      2067 6574 
+ 3285      7469 6E67 
+ 3285      2063 6C75 
+ 3288               	__c.1896:
+ 3289 0097 524F 4F54 		.string	"ROOT"
+ 3289      00
+ 3292               	__c.1894:
+ 3293 009c 4449 5200 		.string	"DIR"
+ 3296               	__c.1892:
+ 3297 00a0 2020 2000 		.string	"   "
+ 3300               	__c.1890:
+ 3301 00a4 4649 4C45 		.string	"FILE"
+ 3301      00
+ 3304               	__c.1888:
+ 3305 00a9 2020 2000 		.string	"   "
+ 3308               	__c.1882:
+ 3309 00ad 4669 6C65 		.string	"File deleted!"
+ 3309      2064 656C 
+ 3309      6574 6564 
+ 3309      2100 
+ 3312               	__c.1880:
+ 3313 00bb 4465 6C65 		.string	"Deleting.."
+ 3313      7469 6E67 
+ 3313      2E2E 00
+ 3316               	__c.1875:
+ 3317 00c6 4669 6C65 		.string	"File does not exist!"
+ 3317      2064 6F65 
+ 3317      7320 6E6F 
+ 3317      7420 6578 
+ 3317      6973 7421 
+ 3318               		.comm	rtc_register,7,1
+ 3319               		.comm	timeFAT,2,1
+ 3320               		.comm	dateFAT,2,1
+ 3321               		.comm	day,1,1
+ 3322               		.comm	date,11,1
+ 3323               		.comm	time,9,1
+ 3324               		.comm	buffer,512,1
+ 3325               		.comm	cardType,1,1
+ 3326               		.comm	SDHC_flag,1,1
+ 3327               		.comm	totalBlocks,4,1
+ 3328               		.comm	startBlock,4,1
+ 3329               		.comm	dataString,100,1
+ 3330               		.comm	freeClusterCountUpdated,1,1
+ 3331               		.comm	appendStartCluster,4,1
+ 3332               		.comm	fileSize,4,1
+ 3333               		.comm	appendFileLocation,4,1
+ 3334               		.comm	appendFileSector,4,1
+ 3335               		.comm	unusedSectors,4,1
+ 3336               		.comm	reservedSectorCount,2,1
+ 3337               		.comm	sectorPerCluster,2,1
+ 3338               		.comm	bytesPerSector,2,1
+ 3339               		.comm	totalClusters,4,1
+ 3340               		.comm	rootCluster,4,1
+ 3341               		.comm	firstDataSector,4,1
+ 3342               		.text
+ 3343               	.Letext0:
+ 3344               		.file 2 "FAT32.h"
+ 3345               		.file 3 "SD_routines.h"
+ 3346               		.file 4 "RTC_routines.h"
+ 3347               		.file 5 "UART_routines.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 FAT32.c
+     /tmp/ccmPl3oI.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/ccmPl3oI.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/ccmPl3oI.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/ccmPl3oI.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/ccmPl3oI.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/ccmPl3oI.s:12     .text:0000000000000000 getFirstSector
+                            *COM*:0000000000000002 sectorPerCluster
+                            *COM*:0000000000000004 firstDataSector
+     /tmp/ccmPl3oI.s:69     .text:0000000000000042 getSetNextCluster
+                            *COM*:0000000000000002 reservedSectorCount
+                            *COM*:0000000000000002 bytesPerSector
+                            *COM*:0000000000000004 unusedSectors
+                            *COM*:0000000000000200 buffer
+     /tmp/ccmPl3oI.s:269    .text:000000000000012e getSetFreeCluster
+     /tmp/ccmPl3oI.s:461    .text:0000000000000266 getBootSectorData
+                            *COM*:0000000000000004 rootCluster
+                            *COM*:0000000000000004 totalClusters
+                            *COM*:0000000000000001 freeClusterCountUpdated
+     /tmp/ccmPl3oI.s:653    .text:00000000000003fc convertFileName
+     /tmp/ccmPl3oI.s:3276   .progmem.data:0000000000000052 __c.1937
+     /tmp/ccmPl3oI.s:842    .text:00000000000004d2 searchNextFreeCluster
+     /tmp/ccmPl3oI.s:1032   .text:00000000000005c4 displayMemory
+     /tmp/ccmPl3oI.s:1210   .text:0000000000000688 freeMemoryUpdate
+     /tmp/ccmPl3oI.s:1373   .text:0000000000000748 findFiles
+     /tmp/ccmPl3oI.s:3316   .progmem.data:00000000000000c6 __c.1875
+     /tmp/ccmPl3oI.s:3304   .progmem.data:00000000000000a9 __c.1888
+     /tmp/ccmPl3oI.s:3300   .progmem.data:00000000000000a4 __c.1890
+     /tmp/ccmPl3oI.s:3296   .progmem.data:00000000000000a0 __c.1892
+     /tmp/ccmPl3oI.s:3292   .progmem.data:000000000000009c __c.1894
+     /tmp/ccmPl3oI.s:3288   .progmem.data:0000000000000097 __c.1896
+     /tmp/ccmPl3oI.s:3284   .progmem.data:000000000000007e __c.1904
+                            *COM*:0000000000000004 appendFileSector
+                            *COM*:0000000000000004 appendFileLocation
+                            *COM*:0000000000000004 appendStartCluster
+                            *COM*:0000000000000004 fileSize
+     /tmp/ccmPl3oI.s:3312   .progmem.data:00000000000000bb __c.1880
+     /tmp/ccmPl3oI.s:3308   .progmem.data:00000000000000ad __c.1882
+     /tmp/ccmPl3oI.s:1975   .text:0000000000000ab6 readFile
+     /tmp/ccmPl3oI.s:3280   .progmem.data:0000000000000065 __c.1925
+     /tmp/ccmPl3oI.s:2310   .text:0000000000000c4c deleteFile
+     /tmp/ccmPl3oI.s:2358   .text:0000000000000c6c writeFile
+     /tmp/ccmPl3oI.s:3272   .progmem.data:0000000000000040 __c.1980
+                            *COM*:0000000000000004 startBlock
+                            *COM*:0000000000000064 dataString
+                            *COM*:0000000000000002 dateFAT
+                            *COM*:0000000000000002 timeFAT
+     /tmp/ccmPl3oI.s:3268   .progmem.data:000000000000002e __c.1988
+     /tmp/ccmPl3oI.s:3264   .progmem.data:0000000000000019 __c.2000
+     /tmp/ccmPl3oI.s:3260   .progmem.data:0000000000000000 __c.2002
+                            *COM*:0000000000000007 rtc_register
+                            *COM*:0000000000000001 day
+                            *COM*:000000000000000b date
+                            *COM*:0000000000000009 time
+                            *COM*:0000000000000001 cardType
+                            *COM*:0000000000000001 SDHC_flag
+                            *COM*:0000000000000004 totalBlocks
+
+UNDEFINED SYMBOLS
+__muluhisi3
+__udivmodsi4
+SD_readSingleBlock
+SD_writeSingleBlock
+transmitString_F
+transmitString
+transmitByte
+__umulhisi3
+__mulsi3
+getDateTime_FAT
+__do_copy_data
+__do_clear_bss

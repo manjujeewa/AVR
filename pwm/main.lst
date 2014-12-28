@@ -1,0 +1,314 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	__vector_1
+  18               	__vector_1:
+  19               	.LFB8:
+  20               	.LM1:
+  21 0000 1F92      		push __zero_reg__
+  22 0002 0F92      		push r0
+  23 0004 0FB6      		in r0,__SREG__
+  24 0006 0F92      		push r0
+  25 0008 1124      		clr __zero_reg__
+  26 000a 2F93      		push r18
+  27 000c 3F93      		push r19
+  28 000e 8F93      		push r24
+  29 0010 9F93      		push r25
+  30 0012 EF93      		push r30
+  31 0014 FF93      		push r31
+  32               	/* prologue: Signal */
+  33               	/* frame size = 0 */
+  34               	.LM2:
+  35 0016 8BB3      		in r24,59-32
+  36 0018 91E0      		ldi r25,lo8(1)
+  37 001a 8927      		eor r24,r25
+  38 001c 8BBB      		out 59-32,r24
+  39 001e 80E1      		ldi r24,lo8(10000)
+  40 0020 97E2      		ldi r25,hi8(10000)
+  41               	.LVL0:
+  42               	.LBB30:
+  43               	.LBB31:
+  44               	.LBB32:
+  45               	.LBB33:
+  46               	.LM3:
+  47 0022 20E9      		ldi r18,lo8(400)
+  48 0024 31E0      		ldi r19,hi8(400)
+  49               	.L2:
+  50 0026 F901      		movw r30,r18
+  51               	.LVL1:
+  52               	/* #APP */
+  53               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+  54 0028 3197      		1: sbiw r30,1
+  55 002a 01F4      		brne 1b
+  56               	 ;  0 "" 2
+  57               	/* #NOAPP */
+  58               	.LBE33:
+  59               	.LBE32:
+  60               	.LM4:
+  61 002c 0197      		sbiw r24,1
+  62               	.LM5:
+  63 002e 01F4      		brne .L2
+  64               	.LBE31:
+  65               	.LBE30:
+  66               	.LM6:
+  67 0030 81E0      		ldi r24,lo8(1)
+  68               	.LVL2:
+  69 0032 8093 0000 		sts charging,r24
+  70               	/* epilogue start */
+  71               	.LM7:
+  72 0036 FF91      		pop r31
+  73 0038 EF91      		pop r30
+  74               	.LVL3:
+  75 003a 9F91      		pop r25
+  76 003c 8F91      		pop r24
+  77 003e 3F91      		pop r19
+  78 0040 2F91      		pop r18
+  79 0042 0F90      		pop r0
+  80 0044 0FBE      		out __SREG__,r0
+  81 0046 0F90      		pop r0
+  82 0048 1F90      		pop __zero_reg__
+  83 004a 1895      		reti
+  84               	.LFE8:
+  86               	.global	__vector_2
+  88               	__vector_2:
+  89               	.LFB9:
+  90               	.LM8:
+  91 004c 1F92      		push __zero_reg__
+  92 004e 0F92      		push r0
+  93 0050 0FB6      		in r0,__SREG__
+  94 0052 0F92      		push r0
+  95 0054 1124      		clr __zero_reg__
+  96 0056 2F93      		push r18
+  97 0058 3F93      		push r19
+  98 005a 8F93      		push r24
+  99 005c 9F93      		push r25
+ 100 005e EF93      		push r30
+ 101 0060 FF93      		push r31
+ 102               	/* prologue: Signal */
+ 103               	/* frame size = 0 */
+ 104               	.LM9:
+ 105 0062 88B3      		in r24,56-32
+ 106 0064 92E0      		ldi r25,lo8(2)
+ 107 0066 8927      		eor r24,r25
+ 108 0068 88BB      		out 56-32,r24
+ 109 006a 80E1      		ldi r24,lo8(10000)
+ 110 006c 97E2      		ldi r25,hi8(10000)
+ 111               	.LVL4:
+ 112               	.LBB34:
+ 113               	.LBB35:
+ 114               	.LBB36:
+ 115               	.LBB37:
+ 116               	.LM10:
+ 117 006e 20E9      		ldi r18,lo8(400)
+ 118 0070 31E0      		ldi r19,hi8(400)
+ 119               	.L6:
+ 120 0072 F901      		movw r30,r18
+ 121               	.LVL5:
+ 122               	/* #APP */
+ 123               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 124 0074 3197      		1: sbiw r30,1
+ 125 0076 01F4      		brne 1b
+ 126               	 ;  0 "" 2
+ 127               	/* #NOAPP */
+ 128               	.LBE37:
+ 129               	.LBE36:
+ 130               	.LM11:
+ 131 0078 0197      		sbiw r24,1
+ 132               	.LM12:
+ 133 007a 01F4      		brne .L6
+ 134               	/* epilogue start */
+ 135               	.LBE35:
+ 136               	.LBE34:
+ 137               	.LM13:
+ 138 007c FF91      		pop r31
+ 139 007e EF91      		pop r30
+ 140               	.LVL6:
+ 141 0080 9F91      		pop r25
+ 142 0082 8F91      		pop r24
+ 143               	.LVL7:
+ 144 0084 3F91      		pop r19
+ 145 0086 2F91      		pop r18
+ 146 0088 0F90      		pop r0
+ 147 008a 0FBE      		out __SREG__,r0
+ 148 008c 0F90      		pop r0
+ 149 008e 1F90      		pop __zero_reg__
+ 150 0090 1895      		reti
+ 151               	.LFE9:
+ 153               		.data
+ 154               	.LC0:
+ 155 0000 4368 6172 		.string	"Charging Started"
+ 155      6769 6E67 
+ 155      2053 7461 
+ 155      7274 6564 
+ 155      00
+ 156               	.LC1:
+ 157 0011 4368 6172 		.string	"Charging Complete"
+ 157      6769 6E67 
+ 157      2043 6F6D 
+ 157      706C 6574 
+ 157      6500 
+ 158               		.text
+ 159               	.global	main
+ 161               	main:
+ 162               	.LFB7:
+ 163               	.LM14:
+ 164 0092 CF93      		push r28
+ 165 0094 DF93      		push r29
+ 166               	/* prologue: function */
+ 167               	/* frame size = 0 */
+ 168               	.LM15:
+ 169 0096 0E94 0000 		call system_init
+ 170               	.LM16:
+ 171 009a 0E94 0000 		call pwm_init
+ 172               	.LM17:
+ 173 009e 8CE0      		ldi r24,lo8(12)
+ 174 00a0 0E94 0000 		call lcd_init
+ 175               	.LM18:
+ 176 00a4 0E94 0000 		call adc_init
+ 177               	.LM19:
+ 178               	/* #APP */
+ 179               	 ;  35 "main.c" 1
+ 180 00a8 7894      		sei
+ 181               	 ;  0 "" 2
+ 182               	.LM20:
+ 183               	/* #NOAPP */
+ 184 00aa 80E0      		ldi r24,lo8(.LC0)
+ 185 00ac 90E0      		ldi r25,hi8(.LC0)
+ 186 00ae 0E94 0000 		call lcd_puts
+ 187               	.LBB38:
+ 188               	.LBB39:
+ 189               	.LBB40:
+ 190               	.LBB41:
+ 191               	.LM21:
+ 192 00b2 C0E9      		ldi r28,lo8(400)
+ 193 00b4 D1E0      		ldi r29,hi8(400)
+ 194               	.LVL8:
+ 195               	.L12:
+ 196               	.LBE41:
+ 197               	.LBE40:
+ 198               	.LBE39:
+ 199               	.LBE38:
+ 200               	.LM22:
+ 201 00b6 0E94 0000 		call green_on
+ 202               	.LVL9:
+ 203               	.LM23:
+ 204 00ba 0E94 0000 		call red_on
+ 205               	.LM24:
+ 206 00be 0E94 0000 		call MPPT_out
+ 207               	.LM25:
+ 208 00c2 1092 0000 		sts charging,__zero_reg__
+ 209               	.LM26:
+ 210 00c6 80E0      		ldi r24,lo8(.LC1)
+ 211 00c8 90E0      		ldi r25,hi8(.LC1)
+ 212 00ca 0E94 0000 		call lcd_puts
+ 213               	.LVL10:
+ 214               	.L13:
+ 215               	.LM27:
+ 216 00ce 0E94 0000 		call green_on
+ 217               	.LVL11:
+ 218               	.LM28:
+ 219 00d2 0E94 0000 		call red_on
+ 220 00d6 88E8      		ldi r24,lo8(5000)
+ 221 00d8 93E1      		ldi r25,hi8(5000)
+ 222               	.LVL12:
+ 223               	.L10:
+ 224               	.LBB45:
+ 225               	.LBB44:
+ 226               	.LBB43:
+ 227               	.LBB42:
+ 228               	.LM29:
+ 229 00da FE01      		movw r30,r28
+ 230               	.LVL13:
+ 231               	/* #APP */
+ 232               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 233 00dc 3197      		1: sbiw r30,1
+ 234 00de 01F4      		brne 1b
+ 235               	 ;  0 "" 2
+ 236               	/* #NOAPP */
+ 237               	.LBE42:
+ 238               	.LBE43:
+ 239               	.LM30:
+ 240 00e0 0197      		sbiw r24,1
+ 241               	.LM31:
+ 242 00e2 01F4      		brne .L10
+ 243               	.LBE44:
+ 244               	.LBE45:
+ 245               	.LM32:
+ 246 00e4 0E94 0000 		call green_off
+ 247               	.LVL14:
+ 248               	.LM33:
+ 249 00e8 0E94 0000 		call red_off
+ 250 00ec 88E8      		ldi r24,lo8(5000)
+ 251 00ee 93E1      		ldi r25,hi8(5000)
+ 252               	.LVL15:
+ 253               	.L11:
+ 254               	.LBB46:
+ 255               	.LBB47:
+ 256               	.LBB48:
+ 257               	.LBB49:
+ 258               	.LM34:
+ 259 00f0 FE01      		movw r30,r28
+ 260               	.LVL16:
+ 261               	/* #APP */
+ 262               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+ 263 00f2 3197      		1: sbiw r30,1
+ 264 00f4 01F4      		brne 1b
+ 265               	 ;  0 "" 2
+ 266               	/* #NOAPP */
+ 267               	.LBE49:
+ 268               	.LBE48:
+ 269               	.LM35:
+ 270 00f6 0197      		sbiw r24,1
+ 271               	.LM36:
+ 272 00f8 01F4      		brne .L11
+ 273               	.LBE47:
+ 274               	.LBE46:
+ 275               	.LM37:
+ 276 00fa 8091 0000 		lds r24,charging
+ 277               	.LVL17:
+ 278 00fe 8130      		cpi r24,lo8(1)
+ 279 0100 01F4      		brne .L13
+ 280 0102 00C0      		rjmp .L12
+ 281               	.LFE7:
+ 283               	.global	charging
+ 284               		.data
+ 287               	charging:
+ 288 0023 01        		.byte	1
+ 289               		.comm int_buffer,10,1
+ 290               		.comm printbuff,10,1
+ 291               		.comm brightness,1,1
+ 332               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:18     .text:00000000 __vector_1
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:287    .data:00000023 charging
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:88     .text:0000004c __vector_2
+C:\Users\Rasika\AppData\Local\Temp/ccLSwH56.s:161    .text:00000092 main
+                            *COM*:0000000a int_buffer
+                            *COM*:0000000a printbuff
+                            *COM*:00000001 brightness
+
+UNDEFINED SYMBOLS
+system_init
+pwm_init
+lcd_init
+adc_init
+lcd_puts
+green_on
+red_on
+MPPT_out
+green_off
+red_off
+__do_copy_data
+__do_clear_bss

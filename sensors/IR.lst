@@ -1,0 +1,243 @@
+   1               		.file	"IR.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	init_IR
+  18               	init_IR:
+  19               	.LFB7:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 8AE4      		ldi r24,lo8(74)
+  25 0002 8EBD      		out 78-32,r24
+  26               	.LM3:
+  27 0004 84E2      		ldi r24,lo8(36)
+  28 0006 89BF      		out 89-32,r24
+  29               	.LM4:
+  30 0008 1DBC      		out (76)+1-32,__zero_reg__
+  31 000a 1CBC      		out 76-32,__zero_reg__
+  32               	/* epilogue start */
+  33               	.LM5:
+  34 000c 0895      		ret
+  35               	.LFE7:
+  37               	.global	calculate
+  39               	calculate:
+  40               	.LFB8:
+  41               	.LM6:
+  42               	/* prologue: function */
+  43               	/* frame size = 0 */
+  44               	.LM7:
+  45 000e 60E0      		ldi r22,lo8(0x3f800000)
+  46 0010 70E0      		ldi r23,hi8(0x3f800000)
+  47 0012 80E8      		ldi r24,hlo8(0x3f800000)
+  48 0014 9FE3      		ldi r25,hhi8(0x3f800000)
+  49               	/* epilogue start */
+  50 0016 0895      		ret
+  51               	.LFE8:
+  53               	.global	__vector_9
+  55               	__vector_9:
+  56               	.LFB9:
+  57               	.LM8:
+  58 0018 1F92      		push __zero_reg__
+  59 001a 0F92      		push r0
+  60 001c 0FB6      		in r0,__SREG__
+  61 001e 0F92      		push r0
+  62 0020 1124      		clr __zero_reg__
+  63 0022 2F93      		push r18
+  64 0024 3F93      		push r19
+  65 0026 4F93      		push r20
+  66 0028 5F93      		push r21
+  67 002a 6F93      		push r22
+  68 002c 7F93      		push r23
+  69 002e 8F93      		push r24
+  70 0030 9F93      		push r25
+  71 0032 AF93      		push r26
+  72 0034 BF93      		push r27
+  73 0036 EF93      		push r30
+  74 0038 FF93      		push r31
+  75               	/* prologue: Signal */
+  76               	/* frame size = 0 */
+  77               	.LM9:
+  78 003a 1DBC      		out (76)+1-32,__zero_reg__
+  79 003c 1CBC      		out 76-32,__zero_reg__
+  80               	.LM10:
+  81 003e 6091 0000 		lds r22,rounds
+  82 0042 7091 0000 		lds r23,(rounds)+1
+  83 0046 8091 0000 		lds r24,(rounds)+2
+  84 004a 9091 0000 		lds r25,(rounds)+3
+  85 004e 20E0      		ldi r18,lo8(0x3f800000)
+  86 0050 30E0      		ldi r19,hi8(0x3f800000)
+  87 0052 40E8      		ldi r20,hlo8(0x3f800000)
+  88 0054 5FE3      		ldi r21,hhi8(0x3f800000)
+  89 0056 0E94 0000 		call __addsf3
+  90 005a 6093 0000 		sts rounds,r22
+  91 005e 7093 0000 		sts (rounds)+1,r23
+  92 0062 8093 0000 		sts (rounds)+2,r24
+  93 0066 9093 0000 		sts (rounds)+3,r25
+  94               	/* epilogue start */
+  95               	.LM11:
+  96 006a FF91      		pop r31
+  97 006c EF91      		pop r30
+  98 006e BF91      		pop r27
+  99 0070 AF91      		pop r26
+ 100 0072 9F91      		pop r25
+ 101 0074 8F91      		pop r24
+ 102 0076 7F91      		pop r23
+ 103 0078 6F91      		pop r22
+ 104 007a 5F91      		pop r21
+ 105 007c 4F91      		pop r20
+ 106 007e 3F91      		pop r19
+ 107 0080 2F91      		pop r18
+ 108 0082 0F90      		pop r0
+ 109 0084 0FBE      		out __SREG__,r0
+ 110 0086 0F90      		pop r0
+ 111 0088 1F90      		pop __zero_reg__
+ 112 008a 1895      		reti
+ 113               	.LFE9:
+ 115               	.global	__vector_6
+ 117               	__vector_6:
+ 118               	.LFB10:
+ 119               	.LM12:
+ 120 008c 1F92      		push __zero_reg__
+ 121 008e 0F92      		push r0
+ 122 0090 0FB6      		in r0,__SREG__
+ 123 0092 0F92      		push r0
+ 124 0094 1124      		clr __zero_reg__
+ 125 0096 EF92      		push r14
+ 126 0098 FF92      		push r15
+ 127 009a 0F93      		push r16
+ 128 009c 1F93      		push r17
+ 129 009e 2F93      		push r18
+ 130 00a0 3F93      		push r19
+ 131 00a2 4F93      		push r20
+ 132 00a4 5F93      		push r21
+ 133 00a6 6F93      		push r22
+ 134 00a8 7F93      		push r23
+ 135 00aa 8F93      		push r24
+ 136 00ac 9F93      		push r25
+ 137 00ae AF93      		push r26
+ 138 00b0 BF93      		push r27
+ 139 00b2 EF93      		push r30
+ 140 00b4 FF93      		push r31
+ 141               	/* prologue: Signal */
+ 142               	/* frame size = 0 */
+ 143               	.LM13:
+ 144 00b6 869B      		sbis 48-32,6
+ 145 00b8 00C0      		rjmp .L8
+ 146               	.LM14:
+ 147 00ba 66B5      		in r22,70-32
+ 148 00bc 77B5      		in r23,(70)+1-32
+ 149 00be 80E0      		ldi r24,lo8(0)
+ 150 00c0 90E0      		ldi r25,hi8(0)
+ 151 00c2 0E94 0000 		call __floatunsisf
+ 152 00c6 7B01      		movw r14,r22
+ 153 00c8 8C01      		movw r16,r24
+ 154 00ca 6093 0000 		sts falling,r22
+ 155 00ce 7093 0000 		sts (falling)+1,r23
+ 156 00d2 8093 0000 		sts (falling)+2,r24
+ 157 00d6 9093 0000 		sts (falling)+3,r25
+ 158               	.LM15:
+ 159 00da 8AE0      		ldi r24,lo8(10)
+ 160 00dc 8EBD      		out 78-32,r24
+ 161               	.LM16:
+ 162 00de 6091 0000 		lds r22,rounds
+ 163 00e2 7091 0000 		lds r23,(rounds)+1
+ 164 00e6 8091 0000 		lds r24,(rounds)+2
+ 165 00ea 9091 0000 		lds r25,(rounds)+3
+ 166 00ee 20E0      		ldi r18,lo8(0x477fff00)
+ 167 00f0 3FEF      		ldi r19,hi8(0x477fff00)
+ 168 00f2 4FE7      		ldi r20,hlo8(0x477fff00)
+ 169 00f4 57E4      		ldi r21,hhi8(0x477fff00)
+ 170 00f6 0E94 0000 		call __mulsf3
+ 171 00fa 9B01      		movw r18,r22
+ 172 00fc AC01      		movw r20,r24
+ 173 00fe C801      		movw r24,r16
+ 174 0100 B701      		movw r22,r14
+ 175 0102 0E94 0000 		call __addsf3
+ 176 0106 6093 0000 		sts counts,r22
+ 177 010a 7093 0000 		sts (counts)+1,r23
+ 178 010e 8093 0000 		sts (counts)+2,r24
+ 179 0112 9093 0000 		sts (counts)+3,r25
+ 180 0116 00C0      		rjmp .L10
+ 181               	.L8:
+ 182               	.LM17:
+ 183 0118 80E0      		ldi r24,lo8(0x0)
+ 184 011a 90E0      		ldi r25,hi8(0x0)
+ 185 011c A0E0      		ldi r26,hlo8(0x0)
+ 186 011e B0E0      		ldi r27,hhi8(0x0)
+ 187 0120 8093 0000 		sts rounds,r24
+ 188 0124 9093 0000 		sts (rounds)+1,r25
+ 189 0128 A093 0000 		sts (rounds)+2,r26
+ 190 012c B093 0000 		sts (rounds)+3,r27
+ 191               	.LM18:
+ 192 0130 1DBC      		out (76)+1-32,__zero_reg__
+ 193 0132 1CBC      		out 76-32,__zero_reg__
+ 194               	.LM19:
+ 195 0134 8AE4      		ldi r24,lo8(74)
+ 196 0136 8EBD      		out 78-32,r24
+ 197               	.L10:
+ 198               	/* epilogue start */
+ 199               	.LM20:
+ 200 0138 FF91      		pop r31
+ 201 013a EF91      		pop r30
+ 202 013c BF91      		pop r27
+ 203 013e AF91      		pop r26
+ 204 0140 9F91      		pop r25
+ 205 0142 8F91      		pop r24
+ 206 0144 7F91      		pop r23
+ 207 0146 6F91      		pop r22
+ 208 0148 5F91      		pop r21
+ 209 014a 4F91      		pop r20
+ 210 014c 3F91      		pop r19
+ 211 014e 2F91      		pop r18
+ 212 0150 1F91      		pop r17
+ 213 0152 0F91      		pop r16
+ 214 0154 FF90      		pop r15
+ 215 0156 EF90      		pop r14
+ 216 0158 0F90      		pop r0
+ 217 015a 0FBE      		out __SREG__,r0
+ 218 015c 0F90      		pop r0
+ 219 015e 1F90      		pop __zero_reg__
+ 220 0160 1895      		reti
+ 221               	.LFE10:
+ 223               	.global	r
+ 224               		.data
+ 227               	r:
+ 228 0000 8F        		.byte	-113
+ 229 0001 C2        		.byte	-62
+ 230 0002 F5        		.byte	-11
+ 231 0003 3C        		.byte	60
+ 232               		.comm rounds,4,1
+ 233               		.comm point,4,1
+ 234               		.comm falling,4,1
+ 235               		.comm counts,4,1
+ 284               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 IR.c
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:18     .text:00000000 init_IR
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:39     .text:0000000e calculate
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:55     .text:00000018 __vector_9
+                            *COM*:00000004 rounds
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:117    .text:0000008c __vector_6
+                            *COM*:00000004 falling
+                            *COM*:00000004 counts
+C:\Users\Rasika\AppData\Local\Temp/cct0E9uJ.s:227    .data:00000000 r
+                            *COM*:00000004 point
+
+UNDEFINED SYMBOLS
+__addsf3
+__floatunsisf
+__mulsf3
+__do_copy_data
+__do_clear_bss

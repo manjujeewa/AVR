@@ -1,0 +1,1608 @@
+   1               		.file	"main.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	port_init
+  12               	port_init:
+  13               	.LFB7:
+  14               		.file 1 "main.c"
+   1:main.c        **** //*******************************************************************
+   2:main.c        **** //        **** MAIN routine for microSD Data-Logger ****
+   3:main.c        **** //*******************************************************************
+   4:main.c        **** //Controller		: ATmega32 (Clock: 8 Mhz-internal)
+   5:main.c        **** //Compiler			: AVR-GCC (winAVR with AVRStudio-4)
+   6:main.c        **** //Project Version	: DL_1.0
+   7:main.c        **** //Author			: CC Dharmani, Chennai (India)
+   8:main.c        **** //			  		  www.dharmanitech.com
+   9:main.c        **** //Date				: 10 May 2011
+  10:main.c        **** //*******************************************************************
+  11:main.c        **** 
+  12:main.c        **** //visit the webpage of the project at below link: 
+  13:main.c        **** //  http://www.dharmanitech.com/2011/05/microsd-atmega32-datalogger.html
+  14:main.c        **** 
+  15:main.c        **** #define F_CPU 8000000UL		//freq 8 MHz
+  16:main.c        **** #include <avr/io.h>
+  17:main.c        **** #include <avr/pgmspace.h>
+  18:main.c        **** #include <avr/interrupt.h>
+  19:main.c        **** #include <util/delay.h>
+  20:main.c        **** #include "SPI_routines.h"
+  21:main.c        **** #include "SD_routines.h"
+  22:main.c        **** #include "UART_routines.h"
+  23:main.c        **** #include "RTC_routines.h"
+  24:main.c        **** #include "i2c_routines.h"
+  25:main.c        **** #include "ADC_routines.h"
+  26:main.c        **** #include "FAT32.h"
+  27:main.c        **** 
+  28:main.c        **** #define INTERVAL 1000 	//interval in milliseconds, between two measurements
+  29:main.c        **** 						//interval defined here is approximate only, as the overhead delays
+  30:main.c        **** 						//are not added, error is more for smaller values (i.e. <100ms)
+  31:main.c        **** 						//minimum: 10; maximum: 600000 (600 seconds)
+  32:main.c        **** 
+  33:main.c        **** #define KEY_PRESSED		(!(PINC & 0x80))
+  34:main.c        **** //#define GREEN_LED_ON	PORTC |= 0x20
+  35:main.c        **** #define RED_LED_ON		PORTC |= 0x40
+  36:main.c        **** #define RED_LED_OFF		PORTC &= ~0x40
+  37:main.c        **** 
+  38:main.c        **** 
+  39:main.c        **** void port_init(void)
+  40:main.c        **** {
+  15               		.loc 1 40 0
+  16               		.cfi_startproc
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 0 */
+  20               	.L__stack_usage = 0
+  41:main.c        ****   PORTA = 0x00;
+  21               		.loc 1 41 0
+  22 0000 1BBA      		out 0x1b,__zero_reg__
+  42:main.c        ****   DDRA  = 0x00;
+  23               		.loc 1 42 0
+  24 0002 1ABA      		out 0x1a,__zero_reg__
+  43:main.c        ****   PORTB = 0x00; //pull-up on for pushbutton
+  25               		.loc 1 43 0
+  26 0004 18BA      		out 0x18,__zero_reg__
+  44:main.c        ****   DDRB  = 0xBF; //MISO line i/p, rest o/p
+  27               		.loc 1 44 0
+  28 0006 8FEB      		ldi r24,lo8(-65)
+  29 0008 87BB      		out 0x17,r24
+  45:main.c        ****   PORTC = 0x80; //pull-up for push-button
+  30               		.loc 1 45 0
+  31 000a 80E8      		ldi r24,lo8(-128)
+  32 000c 85BB      		out 0x15,r24
+  46:main.c        ****   DDRC  = 0x20; //PC7- i/p (pushbutton), PC6, PC5 - o/p (two LEDs)
+  33               		.loc 1 46 0
+  34 000e 80E2      		ldi r24,lo8(32)
+  35 0010 84BB      		out 0x14,r24
+  47:main.c        ****   PORTD = 0x00;
+  36               		.loc 1 47 0
+  37 0012 12BA      		out 0x12,__zero_reg__
+  48:main.c        ****   DDRD  = 0x00;
+  38               		.loc 1 48 0
+  39 0014 11BA      		out 0x11,__zero_reg__
+  40 0016 0895      		ret
+  41               		.cfi_endproc
+  42               	.LFE7:
+  44               	.global	init_devices
+  46               	init_devices:
+  47               	.LFB8:
+  49:main.c        **** }
+  50:main.c        **** 
+  51:main.c        **** 
+  52:main.c        **** //call this routine to initialize all peripherals
+  53:main.c        **** void init_devices(void)
+  54:main.c        **** {
+  48               		.loc 1 54 0
+  49               		.cfi_startproc
+  50               	/* prologue: function */
+  51               	/* frame size = 0 */
+  52               	/* stack size = 0 */
+  53               	.L__stack_usage = 0
+  55:main.c        ****   cli();  //all interrupts disabled
+  54               		.loc 1 55 0
+  55               	/* #APP */
+  56               	 ;  55 "main.c" 1
+  57 0018 F894      		cli
+  58               	 ;  0 "" 2
+  56:main.c        ****   port_init();
+  59               		.loc 1 56 0
+  60               	/* #NOAPP */
+  61 001a 0E94 0000 		call port_init
+  62               	.LVL0:
+  57:main.c        ****   spi_init();
+  63               		.loc 1 57 0
+  64 001e 0E94 0000 		call spi_init
+  65               	.LVL1:
+  58:main.c        ****   twi_init();
+  66               		.loc 1 58 0
+  67 0022 0E94 0000 		call twi_init
+  68               	.LVL2:
+  59:main.c        ****   uart0_init();
+  69               		.loc 1 59 0
+  70 0026 0E94 0000 		call uart0_init
+  71               	.LVL3:
+  60:main.c        ****   ADC_init();
+  72               		.loc 1 60 0
+  73 002a 0E94 0000 		call ADC_init
+  74               	.LVL4:
+  61:main.c        **** 
+  62:main.c        ****   MCUCR = 0x00;
+  75               		.loc 1 62 0
+  76 002e 15BE      		out 0x35,__zero_reg__
+  63:main.c        ****   GICR  = 0x00;
+  77               		.loc 1 63 0
+  78 0030 1BBE      		out 0x3b,__zero_reg__
+  64:main.c        ****   TIMSK = 0x00; //timer interrupt sources
+  79               		.loc 1 64 0
+  80 0032 19BE      		out 0x39,__zero_reg__
+  81 0034 0895      		ret
+  82               		.cfi_endproc
+  83               	.LFE8:
+  85               	.global	blinkRedLED
+  87               	blinkRedLED:
+  88               	.LFB9:
+  65:main.c        ****   //all peripherals are now initialized
+  66:main.c        **** }
+  67:main.c        **** 
+  68:main.c        **** //function to blink LED in case of any error
+  69:main.c        **** void blinkRedLED(void)
+  70:main.c        **** {
+  89               		.loc 1 70 0
+  90               		.cfi_startproc
+  91               	/* prologue: function */
+  92               	/* frame size = 0 */
+  93               	/* stack size = 0 */
+  94               	.L__stack_usage = 0
+  95               	.L4:
+  71:main.c        ****   while(1)  //blink red LED continuously, if error
+  72:main.c        ****   {
+  73:main.c        ****     RED_LED_ON;
+  96               		.loc 1 73 0 discriminator 1
+  97 0036 AE9A      		sbi 0x15,6
+  98               	.LVL5:
+  99               	.LBB43:
+ 100               	.LBB44:
+ 101               		.file 2 "/usr/lib/avr/include/util/delay.h"
+   1:/usr/lib/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/lib/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/lib/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/lib/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/lib/avr/include/util/delay.h **** 
+   6:/usr/lib/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/lib/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/lib/avr/include/util/delay.h **** 
+   9:/usr/lib/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/lib/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/lib/avr/include/util/delay.h **** 
+  12:/usr/lib/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/lib/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/lib/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/lib/avr/include/util/delay.h ****      distribution.
+  16:/usr/lib/avr/include/util/delay.h **** 
+  17:/usr/lib/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/lib/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/lib/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/lib/avr/include/util/delay.h **** 
+  21:/usr/lib/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/lib/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/lib/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/lib/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/lib/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/lib/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/lib/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/lib/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/lib/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/lib/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/lib/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/lib/avr/include/util/delay.h **** 
+  33:/usr/lib/avr/include/util/delay.h **** /* $Id: delay.h.in 2251 2011-09-14 08:20:33Z joerg_wunsch $ */
+  34:/usr/lib/avr/include/util/delay.h **** 
+  35:/usr/lib/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/lib/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/lib/avr/include/util/delay.h **** 
+  38:/usr/lib/avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/usr/lib/avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/usr/lib/avr/include/util/delay.h **** #endif
+  41:/usr/lib/avr/include/util/delay.h **** 
+  42:/usr/lib/avr/include/util/delay.h **** #include <inttypes.h>
+  43:/usr/lib/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/usr/lib/avr/include/util/delay.h **** #include <math.h>
+  45:/usr/lib/avr/include/util/delay.h **** 
+  46:/usr/lib/avr/include/util/delay.h **** /** \file */
+  47:/usr/lib/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/usr/lib/avr/include/util/delay.h ****     \code
+  49:/usr/lib/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/usr/lib/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/usr/lib/avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/usr/lib/avr/include/util/delay.h ****     \endcode
+  53:/usr/lib/avr/include/util/delay.h **** 
+  54:/usr/lib/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/usr/lib/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/usr/lib/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/usr/lib/avr/include/util/delay.h ****     used.
+  58:/usr/lib/avr/include/util/delay.h **** 
+  59:/usr/lib/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/usr/lib/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/usr/lib/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/usr/lib/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/usr/lib/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/usr/lib/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/usr/lib/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/usr/lib/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/usr/lib/avr/include/util/delay.h **** 
+  68:/usr/lib/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/usr/lib/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/usr/lib/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/usr/lib/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/usr/lib/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/usr/lib/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/usr/lib/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/usr/lib/avr/include/util/delay.h ****     routines linked into the application.
+  76:/usr/lib/avr/include/util/delay.h **** 
+  77:/usr/lib/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/usr/lib/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/usr/lib/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/usr/lib/avr/include/util/delay.h **** 
+  81:/usr/lib/avr/include/util/delay.h **** */
+  82:/usr/lib/avr/include/util/delay.h **** 
+  83:/usr/lib/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/usr/lib/avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/usr/lib/avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/usr/lib/avr/include/util/delay.h **** #endif
+  87:/usr/lib/avr/include/util/delay.h **** 
+  88:/usr/lib/avr/include/util/delay.h **** #ifndef F_CPU
+  89:/usr/lib/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/usr/lib/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/usr/lib/avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/usr/lib/avr/include/util/delay.h **** #endif
+  93:/usr/lib/avr/include/util/delay.h **** 
+  94:/usr/lib/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/usr/lib/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/usr/lib/avr/include/util/delay.h **** #endif
+  97:/usr/lib/avr/include/util/delay.h **** 
+  98:/usr/lib/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/usr/lib/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/usr/lib/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/usr/lib/avr/include/util/delay.h **** #  include <math.h>
+ 102:/usr/lib/avr/include/util/delay.h **** #endif
+ 103:/usr/lib/avr/include/util/delay.h **** 
+ 104:/usr/lib/avr/include/util/delay.h **** /**
+ 105:/usr/lib/avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/usr/lib/avr/include/util/delay.h **** 
+ 107:/usr/lib/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/usr/lib/avr/include/util/delay.h **** 
+ 109:/usr/lib/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/usr/lib/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/usr/lib/avr/include/util/delay.h **** 
+ 112:/usr/lib/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/usr/lib/avr/include/util/delay.h **** 
+ 114:/usr/lib/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/usr/lib/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/usr/lib/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/usr/lib/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/usr/lib/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/usr/lib/avr/include/util/delay.h **** 
+ 120:/usr/lib/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/usr/lib/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/usr/lib/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/usr/lib/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/usr/lib/avr/include/util/delay.h **** 
+ 125:/usr/lib/avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/usr/lib/avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/usr/lib/avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/usr/lib/avr/include/util/delay.h **** 
+ 129:/usr/lib/avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/usr/lib/avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/usr/lib/avr/include/util/delay.h **** 
+ 132:/usr/lib/avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/usr/lib/avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/usr/lib/avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/usr/lib/avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/usr/lib/avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/usr/lib/avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/usr/lib/avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/usr/lib/avr/include/util/delay.h **** 
+ 140:/usr/lib/avr/include/util/delay.h ****  */
+ 141:/usr/lib/avr/include/util/delay.h **** void
+ 142:/usr/lib/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/usr/lib/avr/include/util/delay.h **** {
+ 144:/usr/lib/avr/include/util/delay.h **** 	uint16_t __ticks;
+ 145:/usr/lib/avr/include/util/delay.h **** 	double __tmp ; 
+ 146:/usr/lib/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 147:/usr/lib/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 148:/usr/lib/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 149:/usr/lib/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 150:/usr/lib/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 151:/usr/lib/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 152:/usr/lib/avr/include/util/delay.h **** 
+ 153:/usr/lib/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 154:/usr/lib/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 155:/usr/lib/avr/include/util/delay.h **** 
+ 156:/usr/lib/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 157:/usr/lib/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 158:/usr/lib/avr/include/util/delay.h **** 
+ 159:/usr/lib/avr/include/util/delay.h **** 	#else
+ 160:/usr/lib/avr/include/util/delay.h **** 		//round up by default
+ 161:/usr/lib/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 162:/usr/lib/avr/include/util/delay.h **** 	#endif
+ 163:/usr/lib/avr/include/util/delay.h **** 
+ 164:/usr/lib/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 102               		.loc 2 164 0 discriminator 1
+ 103 0038 2FEF      		ldi r18,lo8(639999)
+ 104 003a 83EC      		ldi r24,hi8(639999)
+ 105 003c 99E0      		ldi r25,hlo8(639999)
+ 106 003e 2150      		1: subi r18,1
+ 107 0040 8040      		sbci r24,0
+ 108 0042 9040      		sbci r25,0
+ 109 0044 01F4      		brne 1b
+ 110 0046 00C0      		rjmp .
+ 111 0048 0000      		nop
+ 112               	.LBE44:
+ 113               	.LBE43:
+  74:main.c        **** 	_delay_ms(400);
+  75:main.c        **** 	RED_LED_OFF;
+ 114               		.loc 1 75 0 discriminator 1
+ 115 004a AE98      		cbi 0x15,6
+ 116               	.LVL6:
+ 117               	.LBB45:
+ 118               	.LBB46:
+ 119               		.loc 2 164 0 discriminator 1
+ 120 004c 2FEF      		ldi r18,lo8(639999)
+ 121 004e 83EC      		ldi r24,hi8(639999)
+ 122 0050 99E0      		ldi r25,hlo8(639999)
+ 123 0052 2150      		1: subi r18,1
+ 124 0054 8040      		sbci r24,0
+ 125 0056 9040      		sbci r25,0
+ 126 0058 01F4      		brne 1b
+ 127 005a 00C0      		rjmp .
+ 128 005c 0000      		nop
+ 129 005e 00C0      		rjmp .L4
+ 130               	.LBE46:
+ 131               	.LBE45:
+ 132               		.cfi_endproc
+ 133               	.LFE9:
+ 135               		.section	.text.startup,"ax",@progbits
+ 136               	.global	main
+ 138               	main:
+ 139               	.LFB10:
+  76:main.c        **** 	_delay_ms(400);
+  77:main.c        ****   }
+  78:main.c        **** 
+  79:main.c        **** }
+  80:main.c        **** 
+  81:main.c        **** //*************************** MAIN *******************************//
+  82:main.c        **** int main(void)
+  83:main.c        **** {
+ 140               		.loc 1 83 0
+ 141               		.cfi_startproc
+ 142 0000 CF93      		push r28
+ 143               	.LCFI0:
+ 144               		.cfi_def_cfa_offset 3
+ 145               		.cfi_offset 28, -2
+ 146 0002 DF93      		push r29
+ 147               	.LCFI1:
+ 148               		.cfi_def_cfa_offset 4
+ 149               		.cfi_offset 29, -3
+ 150 0004 CDB7      		in r28,__SP_L__
+ 151 0006 DEB7      		in r29,__SP_H__
+ 152               	.LCFI2:
+ 153               		.cfi_def_cfa_register 28
+ 154 0008 2E97      		sbiw r28,14
+ 155               	.LCFI3:
+ 156               		.cfi_def_cfa_offset 18
+ 157 000a 0FB6      		in __tmp_reg__,__SREG__
+ 158 000c F894      		cli
+ 159 000e DEBF      		out __SP_H__,r29
+ 160 0010 0FBE      		out __SREG__,__tmp_reg__
+ 161 0012 CDBF      		out __SP_L__,r28
+ 162               	/* prologue: function */
+ 163               	/* frame size = 14 */
+ 164               	/* stack size = 16 */
+ 165               	.L__stack_usage = 16
+ 166               	.LVL7:
+ 167               	.LBB47:
+ 168               	.LBB48:
+ 169               		.loc 2 164 0
+ 170 0014 2FEF      		ldi r18,lo8(159999)
+ 171 0016 30E7      		ldi r19,hi8(159999)
+ 172 0018 42E0      		ldi r20,hlo8(159999)
+ 173 001a 2150      		1: subi r18,1
+ 174 001c 3040      		sbci r19,0
+ 175 001e 4040      		sbci r20,0
+ 176 0020 01F4      		brne 1b
+ 177 0022 00C0      		rjmp .
+ 178 0024 0000      		nop
+ 179               	.LBE48:
+ 180               	.LBE47:
+  84:main.c        ****   unsigned char option, error, i, j, data, channel;
+  85:main.c        ****   unsigned char fileName[13];
+  86:main.c        ****   unsigned int delay, k;
+  87:main.c        **** 
+  88:main.c        ****   _delay_ms(100);  //delay for VCC stabilization
+  89:main.c        **** 
+  90:main.c        ****   init_devices();
+ 181               		.loc 1 90 0
+ 182 0026 0E94 0000 		call init_devices
+ 183               	.LVL8:
+  91:main.c        **** 
+  92:main.c        ****   //GREEN_LED_ON;  //turn on green LED to indicate power on
+  93:main.c        ****   RED_LED_OFF; 	 //keep red LED off for now
+ 184               		.loc 1 93 0
+ 185 002a AE98      		cbi 0x15,6
+  94:main.c        **** 
+  95:main.c        ****   transmitString_F (PSTR("\n\r\n\r****************************************************"));
+ 186               		.loc 1 95 0
+ 187 002c 80E0      		ldi r24,lo8(__c.2015)
+ 188 002e 90E0      		ldi r25,hi8(__c.2015)
+ 189 0030 0E94 0000 		call transmitString_F
+ 190               	.LVL9:
+  96:main.c        ****   transmitString_F (PSTR("\n\r         microSD Datalogger - by CC Dharmani "));
+ 191               		.loc 1 96 0
+ 192 0034 80E0      		ldi r24,lo8(__c.2017)
+ 193 0036 90E0      		ldi r25,hi8(__c.2017)
+ 194 0038 0E94 0000 		call transmitString_F
+ 195               	.LVL10:
+  97:main.c        ****   transmitString_F (PSTR("\n\r****************************************************\n\r"));
+ 196               		.loc 1 97 0
+ 197 003c 80E0      		ldi r24,lo8(__c.2019)
+ 198 003e 90E0      		ldi r25,hi8(__c.2019)
+ 199 0040 0E94 0000 		call transmitString_F
+ 200               	.LVL11:
+  98:main.c        **** 
+  99:main.c        ****   cardType = 0;
+ 201               		.loc 1 99 0
+ 202 0044 1092 0000 		sts cardType,__zero_reg__
+ 203               	.LVL12:
+ 204 0048 1AE0      		ldi r17,lo8(10)
+ 205               	.LVL13:
+ 206               	.L8:
+ 100:main.c        **** 
+ 101:main.c        ****   for (i=0; i<10; i++)
+ 102:main.c        ****   {
+ 103:main.c        ****   	error = SD_init();
+ 207               		.loc 1 103 0
+ 208 004a 0E94 0000 		call SD_init
+ 209               	.LVL14:
+ 104:main.c        ****   	if(!error) break;
+ 210               		.loc 1 104 0
+ 211 004e 8823      		tst r24
+ 212 0050 01F0      		breq .L6
+ 213               	.LVL15:
+ 214 0052 1150      		subi r17,lo8(-(-1))
+ 215               	.LVL16:
+ 101:main.c        ****   for (i=0; i<10; i++)
+ 216               		.loc 1 101 0
+ 217 0054 01F4      		brne .L8
+ 105:main.c        ****   }
+ 106:main.c        **** 
+ 107:main.c        ****   if(error)
+ 108:main.c        ****   {
+ 109:main.c        ****   	if(error == 1) transmitString_F(PSTR("SD card not detected.."));
+ 218               		.loc 1 109 0
+ 219 0056 8130      		cpi r24,lo8(1)
+ 220 0058 01F4      		brne .L9
+ 221               		.loc 1 109 0 is_stmt 0 discriminator 1
+ 222 005a 80E0      		ldi r24,lo8(__c.2024)
+ 223 005c 90E0      		ldi r25,hi8(__c.2024)
+ 224               	.LVL17:
+ 225 005e 00C0      		rjmp .L71
+ 226               	.LVL18:
+ 227               	.L9:
+ 110:main.c        ****   	if(error == 2) transmitString_F(PSTR("Card Initialization failed.."));
+ 228               		.loc 1 110 0 is_stmt 1
+ 229 0060 8230      		cpi r24,lo8(2)
+ 230 0062 01F4      		brne .L10
+ 231               		.loc 1 110 0 is_stmt 0 discriminator 1
+ 232 0064 80E0      		ldi r24,lo8(__c.2026)
+ 233 0066 90E0      		ldi r25,hi8(__c.2026)
+ 234               	.LVL19:
+ 235               	.L71:
+ 236 0068 0E94 0000 		call transmitString_F
+ 237               	.LVL20:
+ 238               	.L10:
+ 111:main.c        ****   
+ 112:main.c        ****   	blinkRedLED();
+ 239               		.loc 1 112 0 is_stmt 1
+ 240 006c 0E94 0000 		call blinkRedLED
+ 241               	.LVL21:
+ 242               	.L6:
+ 113:main.c        ****   }
+ 114:main.c        **** 
+ 115:main.c        ****   switch (cardType)
+ 243               		.loc 1 115 0
+ 244 0070 8091 0000 		lds r24,cardType
+ 245 0074 8230      		cpi r24,lo8(2)
+ 246 0076 01F0      		breq .L12
+ 247 0078 8330      		cpi r24,lo8(3)
+ 248 007a 01F0      		breq .L13
+ 249 007c 8130      		cpi r24,lo8(1)
+ 250 007e 01F4      		brne .L70
+ 116:main.c        ****   {
+ 117:main.c        ****   	case 1:transmitString_F(PSTR("Standard Capacity Card (Ver 1.x) Detected!"));
+ 251               		.loc 1 117 0
+ 252 0080 80E0      		ldi r24,lo8(__c.2029)
+ 253 0082 90E0      		ldi r25,hi8(__c.2029)
+ 254 0084 00C0      		rjmp .L72
+ 255               	.L12:
+ 118:main.c        ****   		   break;
+ 119:main.c        ****   	case 2:transmitString_F(PSTR("High Capacity Card Detected!"));
+ 256               		.loc 1 119 0
+ 257 0086 80E0      		ldi r24,lo8(__c.2033)
+ 258 0088 90E0      		ldi r25,hi8(__c.2033)
+ 259 008a 00C0      		rjmp .L72
+ 260               	.L13:
+ 120:main.c        ****   		   break;
+ 121:main.c        ****   	case 3:transmitString_F(PSTR("Standard Capacity Card (Ver 2.x) Detected!"));
+ 261               		.loc 1 121 0
+ 262 008c 80E0      		ldi r24,lo8(__c.2036)
+ 263 008e 90E0      		ldi r25,hi8(__c.2036)
+ 264 0090 00C0      		rjmp .L72
+ 265               	.L70:
+ 122:main.c        ****   		   break;
+ 123:main.c        ****   	default:transmitString_F(PSTR("Unknown SD Card Detected!"));
+ 266               		.loc 1 123 0
+ 267 0092 80E0      		ldi r24,lo8(__c.2039)
+ 268 0094 90E0      		ldi r25,hi8(__c.2039)
+ 269               	.L72:
+ 270 0096 0E94 0000 		call transmitString_F
+ 271               	.LVL22:
+ 124:main.c        ****   		   break; 
+ 125:main.c        ****   }
+ 126:main.c        **** 
+ 127:main.c        ****   error = getBootSectorData (); //read boot sector and keep necessary data in global variables
+ 272               		.loc 1 127 0
+ 273 009a 0E94 0000 		call getBootSectorData
+ 274               	.LVL23:
+ 128:main.c        ****   if(error) 
+ 275               		.loc 1 128 0
+ 276 009e 8823      		tst r24
+ 277 00a0 01F0      		breq .L16
+ 129:main.c        ****   {
+ 130:main.c        ****    	transmitString_F (PSTR("\n\rFAT32 not found!"));  //FAT32 incompatible drive
+ 278               		.loc 1 130 0
+ 279 00a2 80E0      		ldi r24,lo8(__c.2041)
+ 280 00a4 90E0      		ldi r25,hi8(__c.2041)
+ 281               	.LVL24:
+ 282 00a6 00C0      		rjmp .L71
+ 283               	.LVL25:
+ 284               	.L16:
+ 131:main.c        ****    	blinkRedLED();
+ 132:main.c        ****   }
+ 133:main.c        **** 
+ 134:main.c        ****   SPI_HIGH_SPEED;	//SCK - 4 MHz
+ 285               		.loc 1 134 0
+ 286 00a8 80E5      		ldi r24,lo8(80)
+ 287               	.LVL26:
+ 288 00aa 8DB9      		out 0xd,r24
+ 289 00ac 709A      		sbi 0xe,0
+ 290               	.LVL27:
+ 291               	.LBB49:
+ 292               	.LBB50:
+ 293               		.loc 2 164 0
+ 294 00ae 8FEC      		ldi r24,lo8(1999)
+ 295 00b0 97E0      		ldi r25,hi8(1999)
+ 296 00b2 0197      		1: sbiw r24,1
+ 297 00b4 01F4      		brne 1b
+ 298 00b6 00C0      		rjmp .
+ 299 00b8 0000      		nop
+ 300               	.LBE50:
+ 301               	.LBE49:
+ 135:main.c        ****   _delay_ms(1);   	//some delay for settling new spi speed
+ 136:main.c        **** 
+ 137:main.c        ****  //For displaying menu on hyper terminal, the key (psh-button) must be kept pressed while 
+ 138:main.c        ****  //powering ON or while reset. If key is not kept pressed, the program will not display menu and it
+ 139:main.c        ****  //simply wait for start recording command (i.e. pressing of key afterwards)
+ 140:main.c        **** 
+ 141:main.c        ****   if(KEY_PRESSED)
+ 302               		.loc 1 141 0
+ 303 00ba 9F99      		sbic 0x13,7
+ 304 00bc 00C0      		rjmp .L38
+ 305 00be 8E01      		movw r16,r28
+ 306 00c0 025F      		subi r16,-14
+ 307 00c2 1F4F      		sbci r17,-1
+ 308               	.LVL28:
+ 309               	.L18:
+ 142:main.c        ****   while(1)
+ 143:main.c        ****   {
+ 144:main.c        ****   	transmitString_F(PSTR("\n\r\n\r> 0 : Exit the Menu"));
+ 310               		.loc 1 144 0
+ 311 00c4 80E0      		ldi r24,lo8(__c.2043)
+ 312 00c6 90E0      		ldi r25,hi8(__c.2043)
+ 313 00c8 0E94 0000 		call transmitString_F
+ 314               	.LVL29:
+ 145:main.c        ****   	transmitString_F(PSTR("\n\r> 1 : Display current Date/Time"));
+ 315               		.loc 1 145 0
+ 316 00cc 80E0      		ldi r24,lo8(__c.2045)
+ 317 00ce 90E0      		ldi r25,hi8(__c.2045)
+ 318 00d0 0E94 0000 		call transmitString_F
+ 319               	.LVL30:
+ 146:main.c        ****   	transmitString_F(PSTR("\n\r> 2 : Update Date"));
+ 320               		.loc 1 146 0
+ 321 00d4 80E0      		ldi r24,lo8(__c.2047)
+ 322 00d6 90E0      		ldi r25,hi8(__c.2047)
+ 323 00d8 0E94 0000 		call transmitString_F
+ 324               	.LVL31:
+ 147:main.c        ****   	transmitString_F(PSTR("\n\r> 3 : Update Time"));
+ 325               		.loc 1 147 0
+ 326 00dc 80E0      		ldi r24,lo8(__c.2049)
+ 327 00de 90E0      		ldi r25,hi8(__c.2049)
+ 328 00e0 0E94 0000 		call transmitString_F
+ 329               	.LVL32:
+ 148:main.c        ****   	transmitString_F(PSTR("\n\r> 4 : Get file list"));
+ 330               		.loc 1 148 0
+ 331 00e4 80E0      		ldi r24,lo8(__c.2051)
+ 332 00e6 90E0      		ldi r25,hi8(__c.2051)
+ 333 00e8 0E94 0000 		call transmitString_F
+ 334               	.LVL33:
+ 149:main.c        ****   	transmitString_F(PSTR("\n\r> 5 : Read File"));
+ 335               		.loc 1 149 0
+ 336 00ec 80E0      		ldi r24,lo8(__c.2053)
+ 337 00ee 90E0      		ldi r25,hi8(__c.2053)
+ 338 00f0 0E94 0000 		call transmitString_F
+ 339               	.LVL34:
+ 150:main.c        ****   	transmitString_F(PSTR("\n\r> 6 : Delete File"));
+ 340               		.loc 1 150 0
+ 341 00f4 80E0      		ldi r24,lo8(__c.2055)
+ 342 00f6 90E0      		ldi r25,hi8(__c.2055)
+ 343 00f8 0E94 0000 		call transmitString_F
+ 344               	.LVL35:
+ 151:main.c        **** 
+ 152:main.c        ****   	transmitString_F(PSTR("\n\r\n\r> Enter the option:"));
+ 345               		.loc 1 152 0
+ 346 00fc 80E0      		ldi r24,lo8(__c.2057)
+ 347 00fe 90E0      		ldi r25,hi8(__c.2057)
+ 348 0100 0E94 0000 		call transmitString_F
+ 349               	.LVL36:
+ 153:main.c        ****   	option = receiveByte();
+ 350               		.loc 1 153 0
+ 351 0104 0E94 0000 		call receiveByte
+ 352               	.LVL37:
+ 353 0108 E82E      		mov r14,r24
+ 354               	.LVL38:
+ 154:main.c        ****   	transmitByte(option);
+ 355               		.loc 1 154 0
+ 356 010a 0E94 0000 		call transmitByte
+ 357               	.LVL39:
+ 155:main.c        **** 
+ 156:main.c        **** 
+ 157:main.c        **** 	switch (option)
+ 358               		.loc 1 157 0
+ 359 010e 4E2D      		mov r20,r14
+ 360 0110 50E0      		ldi r21,0
+ 361 0112 FA01      		movw r30,r20
+ 362 0114 F097      		sbiw r30,48
+ 363 0116 E730      		cpi r30,7
+ 364 0118 F105      		cpc r31,__zero_reg__
+ 365 011a 00F0      		brlo .+2
+ 366 011c 00C0      		rjmp .L19
+ 367 011e E050      		subi r30,lo8(-(gs(.L21)))
+ 368 0120 F040      		sbci r31,hi8(-(gs(.L21)))
+ 369 0122 0C94 0000 		jmp __tablejump2__
+ 370               		.section	.progmem.gcc_sw_table,"a",@progbits
+ 371               		.p2align	1
+ 372               	.L21:
+ 373 0000 0000      		.word gs(.L20)
+ 374 0002 0000      		.word gs(.L22)
+ 375 0004 0000      		.word gs(.L23)
+ 376 0006 0000      		.word gs(.L24)
+ 377 0008 0000      		.word gs(.L25)
+ 378 000a 0000      		.word gs(.L26)
+ 379 000c 0000      		.word gs(.L26)
+ 380               		.section	.text.startup
+ 381               	.L20:
+ 158:main.c        **** 	{
+ 159:main.c        **** 		case '0':transmitString_F(PSTR("\n\rNormal operation started.."));
+ 382               		.loc 1 159 0
+ 383 0126 80E0      		ldi r24,lo8(__c.2060)
+ 384 0128 90E0      		ldi r25,hi8(__c.2060)
+ 385 012a 0E94 0000 		call transmitString_F
+ 386               	.LVL40:
+ 160:main.c        **** 		  		 goto STOP;
+ 387               		.loc 1 160 0
+ 388 012e 00C0      		rjmp .L27
+ 389               	.L22:
+ 161:main.c        **** 
+ 162:main.c        **** 		case '1':RTC_displayDate();
+ 390               		.loc 1 162 0
+ 391 0130 0E94 0000 		call RTC_displayDate
+ 392               	.LVL41:
+ 163:main.c        **** 		  		 RTC_displayTime();
+ 393               		.loc 1 163 0
+ 394 0134 0E94 0000 		call RTC_displayTime
+ 395               	.LVL42:
+ 164:main.c        **** 		  		 break;
+ 396               		.loc 1 164 0
+ 397 0138 00C0      		rjmp .L18
+ 398               	.L23:
+ 165:main.c        **** 
+ 166:main.c        **** 		case '2':RTC_updateDate();
+ 399               		.loc 1 166 0
+ 400 013a 0E94 0000 		call RTC_updateDate
+ 401               	.LVL43:
+ 167:main.c        **** 		  		 break;
+ 402               		.loc 1 167 0
+ 403 013e 00C0      		rjmp .L18
+ 404               	.L24:
+ 168:main.c        **** 
+ 169:main.c        **** 		case '3':RTC_updateTime();
+ 405               		.loc 1 169 0
+ 406 0140 0E94 0000 		call RTC_updateTime
+ 407               	.LVL44:
+ 170:main.c        **** 	      		 break;
+ 408               		.loc 1 170 0
+ 409 0144 00C0      		rjmp .L18
+ 410               	.L25:
+ 171:main.c        **** 
+ 172:main.c        **** 		case '4':TX_NEWLINE;
+ 411               		.loc 1 172 0
+ 412 0146 8DE0      		ldi r24,lo8(13)
+ 413 0148 0E94 0000 		call transmitByte
+ 414               	.LVL45:
+ 415 014c 8AE0      		ldi r24,lo8(10)
+ 416 014e 0E94 0000 		call transmitByte
+ 417               	.LVL46:
+ 173:main.c        ****   		  		 findFiles(GET_LIST,0);
+ 418               		.loc 1 173 0
+ 419 0152 60E0      		ldi r22,0
+ 420 0154 70E0      		ldi r23,0
+ 421 0156 80E0      		ldi r24,0
+ 422 0158 0E94 0000 		call findFiles
+ 423               	.LVL47:
+ 174:main.c        ****           		 break;
+ 424               		.loc 1 174 0
+ 425 015c 00C0      		rjmp .L18
+ 426               	.L26:
+ 175:main.c        **** 
+ 176:main.c        **** 		case '5':
+ 177:main.c        **** 		case '6':transmitString_F(PSTR("\n\rEnter file name: "));
+ 427               		.loc 1 177 0
+ 428 015e 80E0      		ldi r24,lo8(__c.2070)
+ 429 0160 90E0      		ldi r25,hi8(__c.2070)
+ 430 0162 0E94 0000 		call transmitString_F
+ 431               	.LVL48:
+ 432 0166 FE01      		movw r30,r28
+ 433 0168 3196      		adiw r30,1
+ 434               	.LVL49:
+ 435               	.L31:
+ 178:main.c        ****           		 for(i=0; i<13; i++)
+ 179:main.c        **** 				 fileName[i] = 0x00;   //clearing any previously stored file name
+ 436               		.loc 1 179 0 discriminator 2
+ 437 016a 1192      		st Z+,__zero_reg__
+ 178:main.c        ****           		 for(i=0; i<13; i++)
+ 438               		.loc 1 178 0 discriminator 2
+ 439 016c E017      		cp r30,r16
+ 440 016e F107      		cpc r31,r17
+ 441 0170 01F4      		brne .L31
+ 178:main.c        ****           		 for(i=0; i<13; i++)
+ 442               		.loc 1 178 0 is_stmt 0
+ 443 0172 F12C      		mov r15,__zero_reg__
+ 444               	.L30:
+ 445               	.LVL50:
+ 180:main.c        ****           		 i=0;
+ 181:main.c        ****           		 while(1)
+ 182:main.c        ****           		 {
+ 183:main.c        ****             		data = receiveByte();
+ 446               		.loc 1 183 0 is_stmt 1
+ 447 0174 0E94 0000 		call receiveByte
+ 448               	.LVL51:
+ 449 0178 982F      		mov r25,r24
+ 450               	.LVL52:
+ 184:main.c        ****             		if(data == 0x0d) break;  //'ENTER' key pressed
+ 451               		.loc 1 184 0
+ 452 017a 8D30      		cpi r24,lo8(13)
+ 453 017c 01F0      		breq .L32
+ 185:main.c        **** 					if(data == 0x08)	//'Back Space' key pressed
+ 454               		.loc 1 185 0
+ 455 017e 8830      		cpi r24,lo8(8)
+ 456 0180 01F4      		brne .L33
+ 186:main.c        **** 	 				{ 
+ 187:main.c        **** 	   					if(i != 0)
+ 457               		.loc 1 187 0
+ 458 0182 FF20      		tst r15
+ 459 0184 01F0      		breq .L30
+ 188:main.c        **** 	   					{ 
+ 189:main.c        **** 	     					transmitByte(data);
+ 460               		.loc 1 189 0
+ 461 0186 88E0      		ldi r24,lo8(8)
+ 462               	.LVL53:
+ 463 0188 0E94 0000 		call transmitByte
+ 464               	.LVL54:
+ 190:main.c        **** 							transmitByte(' '); 
+ 465               		.loc 1 190 0
+ 466 018c 80E2      		ldi r24,lo8(32)
+ 467 018e 0E94 0000 		call transmitByte
+ 468               	.LVL55:
+ 191:main.c        **** 	     					transmitByte(data); 
+ 469               		.loc 1 191 0
+ 470 0192 88E0      		ldi r24,lo8(8)
+ 471 0194 0E94 0000 		call transmitByte
+ 472               	.LVL56:
+ 192:main.c        **** 	     					i--; 
+ 473               		.loc 1 192 0
+ 474 0198 FA94      		dec r15
+ 475               	.LVL57:
+ 476 019a 00C0      		rjmp .L30
+ 477               	.LVL58:
+ 478               	.L33:
+ 193:main.c        **** 	   					} 
+ 194:main.c        **** 	   					continue;     
+ 195:main.c        **** 	 				}
+ 196:main.c        **** 					if(data <0x20 || data > 0x7e) continue;  //check for valid English text character
+ 479               		.loc 1 196 0
+ 480 019c 80EE      		ldi r24,lo8(-32)
+ 481               	.LVL59:
+ 482 019e 890F      		add r24,r25
+ 483 01a0 8F35      		cpi r24,lo8(95)
+ 484 01a2 00F4      		brsh .L30
+ 197:main.c        **** 					transmitByte(data);
+ 485               		.loc 1 197 0
+ 486 01a4 892F      		mov r24,r25
+ 487 01a6 9E87      		std Y+14,r25
+ 488 01a8 0E94 0000 		call transmitByte
+ 489               	.LVL60:
+ 198:main.c        ****             		fileName[i++] = data;
+ 490               		.loc 1 198 0
+ 491 01ac 81E0      		ldi r24,lo8(1)
+ 492 01ae 8F0D      		add r24,r15
+ 493               	.LVL61:
+ 494 01b0 E1E0      		ldi r30,lo8(1)
+ 495 01b2 F0E0      		ldi r31,0
+ 496 01b4 EC0F      		add r30,r28
+ 497 01b6 FD1F      		adc r31,r29
+ 498 01b8 EF0D      		add r30,r15
+ 499 01ba F11D      		adc r31,__zero_reg__
+ 500 01bc 9E85      		ldd r25,Y+14
+ 501 01be 9083      		st Z,r25
+ 199:main.c        ****             		if(i==13){transmitString_F(PSTR(" file name too long..")); break;}
+ 502               		.loc 1 199 0
+ 503 01c0 8D30      		cpi r24,lo8(13)
+ 504 01c2 01F0      		breq .L75
+ 505 01c4 F82E      		mov r15,r24
+ 506 01c6 00C0      		rjmp .L30
+ 507               	.L75:
+ 508               		.loc 1 199 0 is_stmt 0 discriminator 1
+ 509 01c8 80E0      		ldi r24,lo8(__c.2077)
+ 510 01ca 90E0      		ldi r25,hi8(__c.2077)
+ 511               	.LVL62:
+ 512 01cc 00C0      		rjmp .L73
+ 513               	.LVL63:
+ 514               	.L32:
+ 200:main.c        ****           		}
+ 201:main.c        ****           		if(i>12) break;
+ 515               		.loc 1 201 0 is_stmt 1
+ 516 01ce 9CE0      		ldi r25,lo8(12)
+ 517 01d0 9F15      		cp r25,r15
+ 518 01d2 00F4      		brsh .+2
+ 519 01d4 00C0      		rjmp .L18
+ 202:main.c        ****        
+ 203:main.c        **** 	      		TX_NEWLINE;
+ 520               		.loc 1 203 0
+ 521 01d6 8DE0      		ldi r24,lo8(13)
+ 522               	.LVL64:
+ 523 01d8 0E94 0000 		call transmitByte
+ 524               	.LVL65:
+ 525 01dc 8AE0      		ldi r24,lo8(10)
+ 526 01de 0E94 0000 		call transmitByte
+ 527               	.LVL66:
+ 204:main.c        **** 		  		if(option == '5') 
+ 528               		.loc 1 204 0
+ 529 01e2 E5E3      		ldi r30,lo8(53)
+ 530 01e4 EE12      		cpse r14,r30
+ 531 01e6 00C0      		rjmp .L35
+ 205:main.c        **** 				{ 
+ 206:main.c        **** 					error = readFile( READ, fileName);
+ 532               		.loc 1 206 0
+ 533 01e8 BE01      		movw r22,r28
+ 534 01ea 6F5F      		subi r22,-1
+ 535 01ec 7F4F      		sbci r23,-1
+ 536 01ee 80E0      		ldi r24,0
+ 537 01f0 0E94 0000 		call readFile
+ 538               	.LVL67:
+ 207:main.c        **** 					if(error == 1) transmitString_F(PSTR("File does not exist.."));
+ 539               		.loc 1 207 0
+ 540 01f4 8130      		cpi r24,lo8(1)
+ 541 01f6 01F0      		breq .+2
+ 542 01f8 00C0      		rjmp .L18
+ 543               		.loc 1 207 0 is_stmt 0 discriminator 1
+ 544 01fa 80E0      		ldi r24,lo8(__c.2080)
+ 545 01fc 90E0      		ldi r25,hi8(__c.2080)
+ 546               	.LVL68:
+ 547 01fe 00C0      		rjmp .L73
+ 548               	.LVL69:
+ 549               	.L19:
+ 208:main.c        **** 				}
+ 209:main.c        **** 		  		if(option == '6') deleteFile(fileName);
+ 210:main.c        ****           		break;
+ 211:main.c        **** 
+ 212:main.c        ****     	default:transmitString_F(PSTR("\n\r\n\r Invalid option!\n\r"));
+ 550               		.loc 1 212 0 is_stmt 1
+ 551 0200 80E0      		ldi r24,lo8(__c.2083)
+ 552 0202 90E0      		ldi r25,hi8(__c.2083)
+ 553               	.L73:
+ 554 0204 0E94 0000 		call transmitString_F
+ 555               	.LVL70:
+ 556 0208 00C0      		rjmp .L18
+ 557               	.LVL71:
+ 558               	.L76:
+ 559               	.LBB51:
+ 560               	.LBB52:
+ 561               		.loc 2 164 0
+ 562 020a FFEF      		ldi r31,lo8(63999)
+ 563 020c 29EF      		ldi r18,hi8(63999)
+ 564 020e 30E0      		ldi r19,hlo8(63999)
+ 565 0210 F150      		1: subi r31,1
+ 566 0212 2040      		sbci r18,0
+ 567 0214 3040      		sbci r19,0
+ 568 0216 01F4      		brne 1b
+ 569 0218 00C0      		rjmp .
+ 570 021a 0000      		nop
+ 571               	.LBE52:
+ 572               	.LBE51:
+ 213:main.c        **** 	}
+ 214:main.c        ****   }
+ 215:main.c        **** 
+ 216:main.c        ****   
+ 217:main.c        ****   while(1)
+ 218:main.c        ****   { 
+ 219:main.c        ****   	while(!KEY_PRESSED); 	//wait here for key-press, recording starts when key is pressed
+ 220:main.c        ****   	_delay_ms(40);	   		//key debounce delay
+ 221:main.c        **** 
+ 222:main.c        ****   	if(!KEY_PRESSED) continue;
+ 573               		.loc 1 222 0
+ 574 021c 9F9B      		sbis 0x13,7
+ 575 021e 00C0      		rjmp .L42
+ 576               	.LVL72:
+ 577               	.L38:
+ 219:main.c        ****   	while(!KEY_PRESSED); 	//wait here for key-press, recording starts when key is pressed
+ 578               		.loc 1 219 0 discriminator 1
+ 579 0220 9F99      		sbic 0x13,7
+ 580 0222 00C0      		rjmp .L38
+ 581 0224 00C0      		rjmp .L76
+ 582               	.LVL73:
+ 583               	.L42:
+ 223:main.c        **** 
+ 224:main.c        ****   	while(KEY_PRESSED);  	//wait here for key-depress
+ 584               		.loc 1 224 0 discriminator 1
+ 585 0226 9F9B      		sbis 0x13,7
+ 586 0228 00C0      		rjmp .L42
+ 587               	.LVL74:
+ 588               	.LBB53:
+ 589               	.LBB54:
+ 590               		.loc 2 164 0
+ 591 022a 4FEF      		ldi r20,lo8(63999)
+ 592 022c 89EF      		ldi r24,hi8(63999)
+ 593 022e 90E0      		ldi r25,hlo8(63999)
+ 594 0230 4150      		1: subi r20,1
+ 595 0232 8040      		sbci r24,0
+ 596 0234 9040      		sbci r25,0
+ 597 0236 01F4      		brne 1b
+ 598 0238 00C0      		rjmp .
+ 599 023a 0000      		nop
+ 600               	.LBE54:
+ 601               	.LBE53:
+ 225:main.c        ****   	_delay_ms(40);	   		//key debounce delay
+ 226:main.c        **** 
+ 227:main.c        ****   
+ 228:main.c        **** 	RED_LED_ON;  //turn on red LED to indicate that recording has started
+ 602               		.loc 1 228 0
+ 603 023c AE9A      		sbi 0x15,6
+ 604 023e 7E01      		movw r14,r28
+ 605 0240 E9E0      		ldi r30,9
+ 606 0242 EE0E      		add r14,r30
+ 607 0244 F11C      		adc r15,__zero_reg__
+ 608               	.L61:
+ 229:main.c        **** 
+ 230:main.c        **** 	while(1)
+ 231:main.c        **** 	{
+ 232:main.c        **** 		error = RTC_getDate();
+ 609               		.loc 1 232 0
+ 610 0246 0E94 0000 		call RTC_getDate
+ 611               	.LVL75:
+ 233:main.c        **** 		if(error) blinkRedLED();
+ 612               		.loc 1 233 0
+ 613 024a 8111      		cpse r24,__zero_reg__
+ 614 024c 00C0      		rjmp .L10
+ 615 024e FE01      		movw r30,r28
+ 616 0250 3196      		adiw r30,1
+ 617               	.LVL76:
+ 618               	.L46:
+ 234:main.c        **** 
+ 235:main.c        **** 		j=0;
+ 236:main.c        **** 		for(i=0; i<8; i++)
+ 237:main.c        **** 		{
+ 238:main.c        **** 			fileName[i] = date[j++];
+ 619               		.loc 1 238 0
+ 620 0252 91E0      		ldi r25,lo8(1)
+ 621 0254 980F      		add r25,r24
+ 622               	.LVL77:
+ 623 0256 A82F      		mov r26,r24
+ 624 0258 B0E0      		ldi r27,0
+ 625 025a A050      		subi r26,lo8(-(date))
+ 626 025c B040      		sbci r27,hi8(-(date))
+ 627 025e 2C91      		ld r18,X
+ 628 0260 2193      		st Z+,r18
+ 239:main.c        **** 			if(j==2 || j==5) j++;	//excluding the '/' character from date in the fileName
+ 629               		.loc 1 239 0
+ 630 0262 9230      		cpi r25,lo8(2)
+ 631 0264 01F0      		breq .L43
+ 632               		.loc 1 239 0 is_stmt 0 discriminator 2
+ 633 0266 9530      		cpi r25,lo8(5)
+ 634 0268 01F4      		brne .L44
+ 635               	.L43:
+ 636               		.loc 1 239 0 discriminator 1
+ 637 026a 92E0      		ldi r25,lo8(2)
+ 638               	.LVL78:
+ 639 026c 980F      		add r25,r24
+ 640               	.LVL79:
+ 641               	.L44:
+ 236:main.c        **** 		for(i=0; i<8; i++)
+ 642               		.loc 1 236 0 is_stmt 1
+ 643 026e EE15      		cp r30,r14
+ 644 0270 FF05      		cpc r31,r15
+ 645 0272 01F0      		breq .L45
+ 646 0274 892F      		mov r24,r25
+ 647 0276 00C0      		rjmp .L46
+ 648               	.L45:
+ 240:main.c        **** 		}
+ 241:main.c        **** 
+ 242:main.c        **** 		fileName[8] = '.';
+ 649               		.loc 1 242 0
+ 650 0278 8EE2      		ldi r24,lo8(46)
+ 651 027a 8987      		std Y+9,r24
+ 243:main.c        **** 		fileName[9] = 'C';
+ 652               		.loc 1 243 0
+ 653 027c 83E4      		ldi r24,lo8(67)
+ 654 027e 8A87      		std Y+10,r24
+ 244:main.c        **** 		fileName[10] = 'S';
+ 655               		.loc 1 244 0
+ 656 0280 83E5      		ldi r24,lo8(83)
+ 657 0282 8B87      		std Y+11,r24
+ 245:main.c        **** 		fileName[11] = 'V';
+ 658               		.loc 1 245 0
+ 659 0284 86E5      		ldi r24,lo8(86)
+ 660 0286 8C87      		std Y+12,r24
+ 246:main.c        **** 
+ 247:main.c        **** 		error = RTC_getTime();
+ 661               		.loc 1 247 0
+ 662 0288 0E94 0000 		call RTC_getTime
+ 663               	.LVL80:
+ 248:main.c        ****     	if(error) blinkRedLED();
+ 664               		.loc 1 248 0
+ 665 028c 8111      		cpse r24,__zero_reg__
+ 666 028e 00C0      		rjmp .L10
+ 667 0290 E0E0      		ldi r30,lo8(date)
+ 668 0292 F0E0      		ldi r31,hi8(date)
+ 669 0294 80E0      		ldi r24,0
+ 670 0296 90E0      		ldi r25,0
+ 671               	.LVL81:
+ 672               	.L48:
+ 249:main.c        **** 								
+ 250:main.c        **** 		//From here onwards, gather data by appending strings in dataString
+ 251:main.c        **** 		//dataString is declared in FAT32.h
+ 252:main.c        **** 		//make sure dataString doesn't exceed its MAX_STRING_SIZE, defined in FAT32.h
+ 253:main.c        **** 		//Also, end the data string with '\r' & '\n' characters to maintain CSV format
+ 254:main.c        **** 
+ 255:main.c        **** 		for(i=0; i<10; i++) dataString[i] = date[i];
+ 673               		.loc 1 255 0 discriminator 2
+ 674 0298 2191      		ld r18,Z+
+ 675 029a DC01      		movw r26,r24
+ 676 029c A050      		subi r26,lo8(-(dataString))
+ 677 029e B040      		sbci r27,hi8(-(dataString))
+ 678 02a0 2C93      		st X,r18
+ 679               	.LVL82:
+ 680 02a2 0196      		adiw r24,1
+ 681               	.LVL83:
+ 682 02a4 8A30      		cpi r24,10
+ 683 02a6 9105      		cpc r25,__zero_reg__
+ 684 02a8 01F4      		brne .L48
+ 685               	.LVL84:
+ 256:main.c        **** 		dataString[i++] = ',';
+ 686               		.loc 1 256 0
+ 687 02aa 8CE2      		ldi r24,lo8(44)
+ 688 02ac 8093 0000 		sts dataString+10,r24
+ 689               	.LVL85:
+ 690 02b0 E0E0      		ldi r30,lo8(time)
+ 691 02b2 F0E0      		ldi r31,hi8(time)
+ 692 02b4 8BE0      		ldi r24,lo8(11)
+ 693 02b6 90E0      		ldi r25,0
+ 694               	.LVL86:
+ 695               	.L50:
+ 257:main.c        **** 
+ 258:main.c        **** 		for(j=0;j<8; j++)  dataString[i++] = time[j];
+ 696               		.loc 1 258 0 discriminator 2
+ 697 02b8 2191      		ld r18,Z+
+ 698 02ba DC01      		movw r26,r24
+ 699 02bc A050      		subi r26,lo8(-(dataString))
+ 700 02be B040      		sbci r27,hi8(-(dataString))
+ 701 02c0 2C93      		st X,r18
+ 702               	.LVL87:
+ 703 02c2 0196      		adiw r24,1
+ 704               	.LVL88:
+ 705 02c4 8331      		cpi r24,19
+ 706 02c6 9105      		cpc r25,__zero_reg__
+ 707 02c8 01F4      		brne .L50
+ 708               	.LVL89:
+ 259:main.c        **** 		dataString[i++] = ',';
+ 709               		.loc 1 259 0
+ 710 02ca 8CE2      		ldi r24,lo8(44)
+ 711               	.LVL90:
+ 712 02cc 8093 0000 		sts dataString+19,r24
+ 260:main.c        **** 		
+ 261:main.c        **** 		readTemperature(0); //read temperature from adc channel-0
+ 713               		.loc 1 261 0
+ 714 02d0 80E0      		ldi r24,0
+ 715 02d2 0E94 0000 		call readTemperature
+ 716               	.LVL91:
+ 717 02d6 E0E0      		ldi r30,lo8(temperature)
+ 718 02d8 F0E0      		ldi r31,hi8(temperature)
+ 719 02da 84E1      		ldi r24,lo8(20)
+ 720 02dc 90E0      		ldi r25,0
+ 721               	.LVL92:
+ 722               	.L52:
+ 262:main.c        **** 		for(j=0;j<7; j++)  dataString[i++] = temperature[j];
+ 723               		.loc 1 262 0 discriminator 2
+ 724 02de 2191      		ld r18,Z+
+ 725 02e0 DC01      		movw r26,r24
+ 726 02e2 A050      		subi r26,lo8(-(dataString))
+ 727 02e4 B040      		sbci r27,hi8(-(dataString))
+ 728 02e6 2C93      		st X,r18
+ 729               	.LVL93:
+ 730 02e8 0196      		adiw r24,1
+ 731               	.LVL94:
+ 732 02ea 8B31      		cpi r24,27
+ 733 02ec 9105      		cpc r25,__zero_reg__
+ 734 02ee 01F4      		brne .L52
+ 735               		.loc 1 262 0 is_stmt 0
+ 736 02f0 0BE1      		ldi r16,lo8(27)
+ 737 02f2 10E0      		ldi r17,0
+ 738 02f4 91E0      		ldi r25,lo8(1)
+ 263:main.c        **** 		
+ 264:main.c        **** 
+ 265:main.c        **** 		for(channel=1; channel<8; channel++)  //read voltages from ADC channel 1 to 7
+ 266:main.c        **** 		{
+ 267:main.c        **** 			dataString[i++] = ',';
+ 739               		.loc 1 267 0 is_stmt 1
+ 740 02f6 8CE2      		ldi r24,lo8(44)
+ 741 02f8 C82E      		mov r12,r24
+ 742               	.LVL95:
+ 743               	.L56:
+ 744 02fa DD24      		clr r13
+ 745 02fc D394      		inc r13
+ 746 02fe D00E      		add r13,r16
+ 747               	.LVL96:
+ 748 0300 D801      		movw r26,r16
+ 749 0302 A050      		subi r26,lo8(-(dataString))
+ 750 0304 B040      		sbci r27,hi8(-(dataString))
+ 751 0306 CC92      		st X,r12
+ 268:main.c        **** 			readVoltage(channel); 
+ 752               		.loc 1 268 0
+ 753 0308 892F      		mov r24,r25
+ 754 030a 9E87      		std Y+14,r25
+ 755 030c 0E94 0000 		call readVoltage
+ 756               	.LVL97:
+ 757 0310 A0E0      		ldi r26,lo8(voltage)
+ 758 0312 B0E0      		ldi r27,hi8(voltage)
+ 759 0314 28E0      		ldi r18,lo8(8)
+ 760 0316 200F      		add r18,r16
+ 761 0318 9E85      		ldd r25,Y+14
+ 762               	.LVL98:
+ 763               	.L54:
+ 269:main.c        **** 			for(j=0;j<7; j++)  dataString[i++] = voltage[j];
+ 764               		.loc 1 269 0 discriminator 2
+ 765 031a 81E0      		ldi r24,lo8(1)
+ 766 031c 8D0D      		add r24,r13
+ 767               	.LVL99:
+ 768 031e ED2D      		mov r30,r13
+ 769 0320 F0E0      		ldi r31,0
+ 770 0322 3D91      		ld r19,X+
+ 771 0324 E050      		subi r30,lo8(-(dataString))
+ 772 0326 F040      		sbci r31,hi8(-(dataString))
+ 773 0328 3083      		st Z,r19
+ 774               	.LVL100:
+ 775 032a 8217      		cp r24,r18
+ 776 032c 01F0      		breq .L53
+ 777               		.loc 1 269 0 is_stmt 0
+ 778 032e D82E      		mov r13,r24
+ 779 0330 00C0      		rjmp .L54
+ 780               	.L53:
+ 265:main.c        **** 		for(channel=1; channel<8; channel++)  //read voltages from ADC channel 1 to 7
+ 781               		.loc 1 265 0 is_stmt 1
+ 782 0332 9F5F      		subi r25,lo8(-(1))
+ 783               	.LVL101:
+ 784 0334 085F      		subi r16,-8
+ 785 0336 1F4F      		sbci r17,-1
+ 786               	.LVL102:
+ 787 0338 9830      		cpi r25,lo8(8)
+ 788 033a 01F4      		brne .L56
+ 789               	.LVL103:
+ 270:main.c        **** 		}
+ 271:main.c        **** 
+ 272:main.c        **** 		dataString[i++] = '\r';
+ 790               		.loc 1 272 0
+ 791 033c 8DE0      		ldi r24,lo8(13)
+ 792               	.LVL104:
+ 793 033e 8093 0000 		sts dataString+83,r24
+ 273:main.c        **** 		dataString[i] = '\n';    //always end the string with these two characters,
+ 794               		.loc 1 273 0
+ 795 0342 8AE0      		ldi r24,lo8(10)
+ 796 0344 8093 0000 		sts dataString+84,r24
+ 274:main.c        **** 								 //before calling the writeFile function
+ 275:main.c        **** 
+ 276:main.c        **** 		error = writeFile(fileName);
+ 797               		.loc 1 276 0
+ 798 0348 CE01      		movw r24,r28
+ 799 034a 0196      		adiw r24,1
+ 800 034c 0E94 0000 		call writeFile
+ 801               	.LVL105:
+ 277:main.c        **** 		if(error) blinkRedLED();
+ 802               		.loc 1 277 0
+ 803 0350 8111      		cpse r24,__zero_reg__
+ 804 0352 00C0      		rjmp .L10
+ 805 0354 84E6      		ldi r24,lo8(100)
+ 806 0356 90E0      		ldi r25,0
+ 807               	.LVL106:
+ 808               	.L62:
+ 809               	.LBB55:
+ 810               	.LBB56:
+ 811               		.loc 2 164 0
+ 812 0358 EFE1      		ldi r30,lo8(19999)
+ 813 035a FEE4      		ldi r31,hi8(19999)
+ 814 035c 3197      		1: sbiw r30,1
+ 815 035e 01F4      		brne 1b
+ 816 0360 00C0      		rjmp .
+ 817 0362 0000      		nop
+ 818               	.LBE56:
+ 819               	.LBE55:
+ 278:main.c        **** 
+ 279:main.c        **** 		delay = INTERVAL / 10;
+ 280:main.c        **** 		for(k=0; k<delay; k++) 
+ 281:main.c        **** 		{
+ 282:main.c        **** 		 	_delay_ms(10);  //10ms delay in each loop
+ 283:main.c        **** 			
+ 284:main.c        **** 			if(KEY_PRESSED) 	//check for key-press
+ 820               		.loc 1 284 0
+ 821 0364 9F99      		sbic 0x13,7
+ 822 0366 00C0      		rjmp .L57
+ 823               	.LVL107:
+ 824               	.LBB57:
+ 825               	.LBB58:
+ 826               		.loc 2 164 0
+ 827 0368 FFEF      		ldi r31,lo8(63999)
+ 828 036a 29EF      		ldi r18,hi8(63999)
+ 829 036c 30E0      		ldi r19,hlo8(63999)
+ 830 036e F150      		1: subi r31,1
+ 831 0370 2040      		sbci r18,0
+ 832 0372 3040      		sbci r19,0
+ 833 0374 01F4      		brne 1b
+ 834 0376 00C0      		rjmp .
+ 835 0378 0000      		nop
+ 836               	.LBE58:
+ 837               	.LBE57:
+ 285:main.c        ****   			{
+ 286:main.c        **** 				_delay_ms(40);	   		//key debounce delay
+ 287:main.c        ****   				if(KEY_PRESSED) 
+ 838               		.loc 1 287 0
+ 839 037a 9F99      		sbic 0x13,7
+ 840 037c 00C0      		rjmp .L57
+ 841               	.L59:
+ 288:main.c        ****   				{
+ 289:main.c        **** 					while(KEY_PRESSED);  	//wait here for key-depress
+ 842               		.loc 1 289 0 discriminator 1
+ 843 037e 9F9B      		sbis 0x13,7
+ 844 0380 00C0      		rjmp .L59
+ 845               	.LVL108:
+ 846               	.LBB59:
+ 847               	.LBB60:
+ 848               		.loc 2 164 0
+ 849 0382 4FEF      		ldi r20,lo8(63999)
+ 850 0384 89EF      		ldi r24,hi8(63999)
+ 851 0386 90E0      		ldi r25,hlo8(63999)
+ 852 0388 4150      		1: subi r20,1
+ 853 038a 8040      		sbci r24,0
+ 854 038c 9040      		sbci r25,0
+ 855 038e 01F4      		brne 1b
+ 856               	.LVL109:
+ 857 0390 00C0      		rjmp .
+ 858 0392 0000      		nop
+ 859 0394 00C0      		rjmp .L27
+ 860               	.LVL110:
+ 861               	.L57:
+ 862 0396 0197      		sbiw r24,1
+ 863               	.LVL111:
+ 864               	.LBE60:
+ 865               	.LBE59:
+ 280:main.c        **** 		for(k=0; k<delay; k++) 
+ 866               		.loc 1 280 0
+ 867 0398 0097      		sbiw r24,0
+ 868 039a 01F4      		brne .L62
+ 869 039c 00C0      		rjmp .L61
+ 870               	.LVL112:
+ 871               	.L27:
+ 290:main.c        ****   					_delay_ms(40);	   		//key debounce delay
+ 291:main.c        **** 					goto STOP;
+ 292:main.c        **** 				}
+ 293:main.c        **** 			}
+ 294:main.c        **** 		}
+ 295:main.c        **** 
+ 296:main.c        **** 	}//end of while(1)
+ 297:main.c        **** 
+ 298:main.c        **** 	STOP: 
+ 299:main.c        **** 	RED_LED_OFF;  //recording stopped
+ 872               		.loc 1 299 0
+ 873 039e AE98      		cbi 0x15,6
+ 874 03a0 00C0      		rjmp .L38
+ 875               	.LVL113:
+ 876               	.L35:
+ 209:main.c        **** 		  		if(option == '6') deleteFile(fileName);
+ 877               		.loc 1 209 0
+ 878 03a2 CE01      		movw r24,r28
+ 879 03a4 0196      		adiw r24,1
+ 880 03a6 0E94 0000 		call deleteFile
+ 881               	.LVL114:
+ 882 03aa 00C0      		rjmp .L18
+ 883               		.cfi_endproc
+ 884               	.LFE10:
+ 886               		.section	.progmem.data,"a",@progbits
+ 889               	__c.2083:
+ 890 0000 0A0D 0A0D 		.string	"\n\r\n\r Invalid option!\n\r"
+ 890      2049 6E76 
+ 890      616C 6964 
+ 890      206F 7074 
+ 890      696F 6E21 
+ 893               	__c.2080:
+ 894 0017 4669 6C65 		.string	"File does not exist.."
+ 894      2064 6F65 
+ 894      7320 6E6F 
+ 894      7420 6578 
+ 894      6973 742E 
+ 897               	__c.2077:
+ 898 002d 2066 696C 		.string	" file name too long.."
+ 898      6520 6E61 
+ 898      6D65 2074 
+ 898      6F6F 206C 
+ 898      6F6E 672E 
+ 901               	__c.2070:
+ 902 0043 0A0D 456E 		.string	"\n\rEnter file name: "
+ 902      7465 7220 
+ 902      6669 6C65 
+ 902      206E 616D 
+ 902      653A 2000 
+ 905               	__c.2060:
+ 906 0057 0A0D 4E6F 		.string	"\n\rNormal operation started.."
+ 906      726D 616C 
+ 906      206F 7065 
+ 906      7261 7469 
+ 906      6F6E 2073 
+ 909               	__c.2057:
+ 910 0074 0A0D 0A0D 		.string	"\n\r\n\r> Enter the option:"
+ 910      3E20 456E 
+ 910      7465 7220 
+ 910      7468 6520 
+ 910      6F70 7469 
+ 913               	__c.2055:
+ 914 008c 0A0D 3E20 		.string	"\n\r> 6 : Delete File"
+ 914      3620 3A20 
+ 914      4465 6C65 
+ 914      7465 2046 
+ 914      696C 6500 
+ 917               	__c.2053:
+ 918 00a0 0A0D 3E20 		.string	"\n\r> 5 : Read File"
+ 918      3520 3A20 
+ 918      5265 6164 
+ 918      2046 696C 
+ 918      6500 
+ 921               	__c.2051:
+ 922 00b2 0A0D 3E20 		.string	"\n\r> 4 : Get file list"
+ 922      3420 3A20 
+ 922      4765 7420 
+ 922      6669 6C65 
+ 922      206C 6973 
+ 925               	__c.2049:
+ 926 00c8 0A0D 3E20 		.string	"\n\r> 3 : Update Time"
+ 926      3320 3A20 
+ 926      5570 6461 
+ 926      7465 2054 
+ 926      696D 6500 
+ 929               	__c.2047:
+ 930 00dc 0A0D 3E20 		.string	"\n\r> 2 : Update Date"
+ 930      3220 3A20 
+ 930      5570 6461 
+ 930      7465 2044 
+ 930      6174 6500 
+ 933               	__c.2045:
+ 934 00f0 0A0D 3E20 		.string	"\n\r> 1 : Display current Date/Time"
+ 934      3120 3A20 
+ 934      4469 7370 
+ 934      6C61 7920 
+ 934      6375 7272 
+ 937               	__c.2043:
+ 938 0112 0A0D 0A0D 		.string	"\n\r\n\r> 0 : Exit the Menu"
+ 938      3E20 3020 
+ 938      3A20 4578 
+ 938      6974 2074 
+ 938      6865 204D 
+ 941               	__c.2041:
+ 942 012a 0A0D 4641 		.string	"\n\rFAT32 not found!"
+ 942      5433 3220 
+ 942      6E6F 7420 
+ 942      666F 756E 
+ 942      6421 00
+ 945               	__c.2039:
+ 946 013d 556E 6B6E 		.string	"Unknown SD Card Detected!"
+ 946      6F77 6E20 
+ 946      5344 2043 
+ 946      6172 6420 
+ 946      4465 7465 
+ 949               	__c.2036:
+ 950 0157 5374 616E 		.string	"Standard Capacity Card (Ver 2.x) Detected!"
+ 950      6461 7264 
+ 950      2043 6170 
+ 950      6163 6974 
+ 950      7920 4361 
+ 953               	__c.2033:
+ 954 0182 4869 6768 		.string	"High Capacity Card Detected!"
+ 954      2043 6170 
+ 954      6163 6974 
+ 954      7920 4361 
+ 954      7264 2044 
+ 957               	__c.2029:
+ 958 019f 5374 616E 		.string	"Standard Capacity Card (Ver 1.x) Detected!"
+ 958      6461 7264 
+ 958      2043 6170 
+ 958      6163 6974 
+ 958      7920 4361 
+ 961               	__c.2026:
+ 962 01ca 4361 7264 		.string	"Card Initialization failed.."
+ 962      2049 6E69 
+ 962      7469 616C 
+ 962      697A 6174 
+ 962      696F 6E20 
+ 965               	__c.2024:
+ 966 01e7 5344 2063 		.string	"SD card not detected.."
+ 966      6172 6420 
+ 966      6E6F 7420 
+ 966      6465 7465 
+ 966      6374 6564 
+ 969               	__c.2019:
+ 970 01fe 0A0D 2A2A 		.string	"\n\r****************************************************\n\r"
+ 970      2A2A 2A2A 
+ 970      2A2A 2A2A 
+ 970      2A2A 2A2A 
+ 970      2A2A 2A2A 
+ 973               	__c.2017:
+ 974 0237 0A0D 2020 		.string	"\n\r         microSD Datalogger - by CC Dharmani "
+ 974      2020 2020 
+ 974      2020 206D 
+ 974      6963 726F 
+ 974      5344 2044 
+ 977               	__c.2015:
+ 978 0267 0A0D 0A0D 		.string	"\n\r\n\r****************************************************"
+ 978      2A2A 2A2A 
+ 978      2A2A 2A2A 
+ 978      2A2A 2A2A 
+ 978      2A2A 2A2A 
+ 979               		.comm	dataString,100,1
+ 980               		.comm	freeClusterCountUpdated,1,1
+ 981               		.comm	appendStartCluster,4,1
+ 982               		.comm	fileSize,4,1
+ 983               		.comm	appendFileLocation,4,1
+ 984               		.comm	appendFileSector,4,1
+ 985               		.comm	unusedSectors,4,1
+ 986               		.comm	reservedSectorCount,2,1
+ 987               		.comm	sectorPerCluster,2,1
+ 988               		.comm	bytesPerSector,2,1
+ 989               		.comm	totalClusters,4,1
+ 990               		.comm	rootCluster,4,1
+ 991               		.comm	firstDataSector,4,1
+ 992               		.comm	voltage,7,1
+ 993               		.comm	temperature,7,1
+ 994               		.comm	rtc_register,7,1
+ 995               		.comm	timeFAT,2,1
+ 996               		.comm	dateFAT,2,1
+ 997               		.comm	day,1,1
+ 998               		.comm	date,11,1
+ 999               		.comm	time,9,1
+ 1000               		.comm	buffer,512,1
+ 1001               		.comm	cardType,1,1
+ 1002               		.comm	SDHC_flag,1,1
+ 1003               		.comm	totalBlocks,4,1
+ 1004               		.comm	startBlock,4,1
+ 1005               		.text
+ 1006               	.Letext0:
+ 1007               		.file 3 "/usr/lib/avr/include/stdint.h"
+ 1008               		.file 4 "FAT32.h"
+ 1009               		.file 5 "SD_routines.h"
+ 1010               		.file 6 "RTC_routines.h"
+ 1011               		.file 7 "ADC_routines.h"
+ 1012               		.file 8 "SPI_routines.h"
+ 1013               		.file 9 "i2c_routines.h"
+ 1014               		.file 10 "UART_routines.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 main.c
+     /tmp/cc9yWikb.s:2      *ABS*:000000000000003e __SP_H__
+     /tmp/cc9yWikb.s:3      *ABS*:000000000000003d __SP_L__
+     /tmp/cc9yWikb.s:4      *ABS*:000000000000003f __SREG__
+     /tmp/cc9yWikb.s:5      *ABS*:0000000000000000 __tmp_reg__
+     /tmp/cc9yWikb.s:6      *ABS*:0000000000000001 __zero_reg__
+     /tmp/cc9yWikb.s:12     .text:0000000000000000 port_init
+     /tmp/cc9yWikb.s:46     .text:0000000000000018 init_devices
+     /tmp/cc9yWikb.s:87     .text:0000000000000036 blinkRedLED
+     /tmp/cc9yWikb.s:138    .text.startup:0000000000000000 main
+     /tmp/cc9yWikb.s:977    .progmem.data:0000000000000267 __c.2015
+     /tmp/cc9yWikb.s:973    .progmem.data:0000000000000237 __c.2017
+     /tmp/cc9yWikb.s:969    .progmem.data:00000000000001fe __c.2019
+                            *COM*:0000000000000001 cardType
+     /tmp/cc9yWikb.s:965    .progmem.data:00000000000001e7 __c.2024
+     /tmp/cc9yWikb.s:961    .progmem.data:00000000000001ca __c.2026
+     /tmp/cc9yWikb.s:957    .progmem.data:000000000000019f __c.2029
+     /tmp/cc9yWikb.s:953    .progmem.data:0000000000000182 __c.2033
+     /tmp/cc9yWikb.s:949    .progmem.data:0000000000000157 __c.2036
+     /tmp/cc9yWikb.s:945    .progmem.data:000000000000013d __c.2039
+     /tmp/cc9yWikb.s:941    .progmem.data:000000000000012a __c.2041
+     /tmp/cc9yWikb.s:937    .progmem.data:0000000000000112 __c.2043
+     /tmp/cc9yWikb.s:933    .progmem.data:00000000000000f0 __c.2045
+     /tmp/cc9yWikb.s:929    .progmem.data:00000000000000dc __c.2047
+     /tmp/cc9yWikb.s:925    .progmem.data:00000000000000c8 __c.2049
+     /tmp/cc9yWikb.s:921    .progmem.data:00000000000000b2 __c.2051
+     /tmp/cc9yWikb.s:917    .progmem.data:00000000000000a0 __c.2053
+     /tmp/cc9yWikb.s:913    .progmem.data:000000000000008c __c.2055
+     /tmp/cc9yWikb.s:909    .progmem.data:0000000000000074 __c.2057
+     /tmp/cc9yWikb.s:905    .progmem.data:0000000000000057 __c.2060
+     /tmp/cc9yWikb.s:901    .progmem.data:0000000000000043 __c.2070
+     /tmp/cc9yWikb.s:897    .progmem.data:000000000000002d __c.2077
+     /tmp/cc9yWikb.s:893    .progmem.data:0000000000000017 __c.2080
+     /tmp/cc9yWikb.s:889    .progmem.data:0000000000000000 __c.2083
+                            *COM*:000000000000000b date
+                            *COM*:0000000000000064 dataString
+                            *COM*:0000000000000009 time
+                            *COM*:0000000000000007 temperature
+                            *COM*:0000000000000007 voltage
+                            *COM*:0000000000000001 freeClusterCountUpdated
+                            *COM*:0000000000000004 appendStartCluster
+                            *COM*:0000000000000004 fileSize
+                            *COM*:0000000000000004 appendFileLocation
+                            *COM*:0000000000000004 appendFileSector
+                            *COM*:0000000000000004 unusedSectors
+                            *COM*:0000000000000002 reservedSectorCount
+                            *COM*:0000000000000002 sectorPerCluster
+                            *COM*:0000000000000002 bytesPerSector
+                            *COM*:0000000000000004 totalClusters
+                            *COM*:0000000000000004 rootCluster
+                            *COM*:0000000000000004 firstDataSector
+                            *COM*:0000000000000007 rtc_register
+                            *COM*:0000000000000002 timeFAT
+                            *COM*:0000000000000002 dateFAT
+                            *COM*:0000000000000001 day
+                            *COM*:0000000000000200 buffer
+                            *COM*:0000000000000001 SDHC_flag
+                            *COM*:0000000000000004 totalBlocks
+                            *COM*:0000000000000004 startBlock
+
+UNDEFINED SYMBOLS
+spi_init
+twi_init
+uart0_init
+ADC_init
+transmitString_F
+SD_init
+getBootSectorData
+receiveByte
+transmitByte
+__tablejump2__
+RTC_displayDate
+RTC_displayTime
+RTC_updateDate
+RTC_updateTime
+findFiles
+readFile
+RTC_getDate
+RTC_getTime
+readTemperature
+readVoltage
+writeFile
+deleteFile
+__do_clear_bss

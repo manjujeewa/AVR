@@ -1,0 +1,75 @@
+   1               		.file	"uart.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	put_uart_char
+  18               	put_uart_char:
+  19               	.LFB3:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LVL0:
+  24               	.L2:
+  25               	.LM2:
+  26 0000 5D9B      		sbis 43-32,5
+  27 0002 00C0      		rjmp .L2
+  28               	.LM3:
+  29 0004 8CB9      		out 44-32,r24
+  30               	.LM4:
+  31 0006 80E0      		ldi r24,lo8(0)
+  32 0008 90E0      		ldi r25,hi8(0)
+  33               	.LVL1:
+  34               	/* epilogue start */
+  35 000a 0895      		ret
+  36               	.LFE3:
+  38               	.global	uart_init
+  40               	uart_init:
+  41               	.LFB4:
+  42               	.LM5:
+  43               	/* prologue: function */
+  44               	/* frame size = 0 */
+  45               	.LM6:
+  46 000c 8AB1      		in r24,42-32
+  47 000e 8869      		ori r24,lo8(-104)
+  48 0010 8AB9      		out 42-32,r24
+  49               	.LM7:
+  50 0012 80B5      		in r24,64-32
+  51 0014 8660      		ori r24,lo8(6)
+  52 0016 80BD      		out 64-32,r24
+  53               	.LM8:
+  54 0018 10BC      		out 64-32,__zero_reg__
+  55               	.LM9:
+  56 001a 87E6      		ldi r24,lo8(103)
+  57 001c 89B9      		out 41-32,r24
+  58               	.LM10:
+  59 001e 80E0      		ldi r24,lo8(gs(put_uart_char))
+  60 0020 90E0      		ldi r25,hi8(gs(put_uart_char))
+  61 0022 60E0      		ldi r22,lo8(0)
+  62 0024 70E0      		ldi r23,hi8(0)
+  63 0026 0E94 0000 		call fdevopen
+  64               	.LM11:
+  65 002a 8FB7      		in r24,__SREG__
+  66 002c 8068      		ori r24,lo8(-128)
+  67 002e 8FBF      		out __SREG__,r24
+  68               	/* epilogue start */
+  69               	.LM12:
+  70 0030 0895      		ret
+  71               	.LFE4:
+ 105               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 uart.c
+C:\Users\Rasika\AppData\Local\Temp/cc7J8kKc.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/cc7J8kKc.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/cc7J8kKc.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/cc7J8kKc.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/cc7J8kKc.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc7J8kKc.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc7J8kKc.s:18     .text:00000000 put_uart_char
+C:\Users\Rasika\AppData\Local\Temp/cc7J8kKc.s:40     .text:0000000c uart_init
+
+UNDEFINED SYMBOLS
+fdevopen

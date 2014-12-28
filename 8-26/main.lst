@@ -1,0 +1,109 @@
+   1               		.file	"main.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	main
+  18               	main:
+  19               	.LFB6:
+  20               	.LM1:
+  21               	/* prologue: function */
+  22               	/* frame size = 0 */
+  23               	.LM2:
+  24 0000 8FEF      		ldi r24,lo8(-1)
+  25 0002 84BB      		out 52-32,r24
+  26               	.LM3:
+  27 0004 80E3      		ldi r24,lo8(48)
+  28 0006 8ABB      		out 58-32,r24
+  29               	.LM4:
+  30 0008 8BBB      		out 59-32,r24
+  31 000a 20E0      		ldi r18,lo8(0)
+  32               	.LVL0:
+  33               	.LBB13:
+  34               	.LBB14:
+  35               	.LBB15:
+  36               	.LBB16:
+  37               	.LBB17:
+  38               	.LM5:
+  39 000c 48EC      		ldi r20,lo8(200)
+  40 000e 50E0      		ldi r21,hi8(200)
+  41               	.LVL1:
+  42               	.L8:
+  43               	.LBE17:
+  44               	.LBE16:
+  45               	.LBE15:
+  46               	.LBE14:
+  47               	.LM6:
+  48 0010 E22F      		mov r30,r18
+  49               	.LVL2:
+  50 0012 F0E0      		ldi r31,lo8(0)
+  51 0014 E050      		subi r30,lo8(-(array))
+  52 0016 F040      		sbci r31,hi8(-(array))
+  53               	.LVL3:
+  54 0018 8081      		ld r24,Z
+  55               	.LVL4:
+  56 001a 85BB      		out 53-32,r24
+  57 001c 80E1      		ldi r24,lo8(10000)
+  58 001e 97E2      		ldi r25,hi8(10000)
+  59               	.LVL5:
+  60               	.L2:
+  61               	.LBB21:
+  62               	.LBB20:
+  63               	.LBB19:
+  64               	.LBB18:
+  65               	.LM7:
+  66 0020 FA01      		movw r30,r20
+  67               	.LVL6:
+  68               	/* #APP */
+  69               	 ;  105 "c:/winavr-20100110/lib/gcc/../../avr/include/util/delay_basic.h" 1
+  70 0022 3197      		1: sbiw r30,1
+  71 0024 01F4      		brne 1b
+  72               	 ;  0 "" 2
+  73               	/* #NOAPP */
+  74               	.LBE18:
+  75               	.LBE19:
+  76               	.LM8:
+  77 0026 0197      		sbiw r24,1
+  78               	.LM9:
+  79 0028 01F4      		brne .L2
+  80               	.LBE20:
+  81               	.LBE21:
+  82               	.LM10:
+  83 002a 2F5F      		subi r18,lo8(-(1))
+  84               	.LVL7:
+  85 002c 2A30      		cpi r18,lo8(10)
+  86 002e 00F0      		brlo .L8
+  87 0030 20E0      		ldi r18,lo8(0)
+  88 0032 00C0      		rjmp .L8
+  89               	.LBE13:
+  90               	.LFE6:
+  92               	.global	array
+  93               		.data
+  96               	array:
+  97 0000 3F        		.byte	63
+  98 0001 06        		.byte	6
+  99 0002 5B        		.byte	91
+ 100 0003 4F        		.byte	79
+ 101 0004 66        		.byte	102
+ 102 0005 6D        		.byte	109
+ 103 0006 7D        		.byte	125
+ 104 0007 07        		.byte	7
+ 105 0008 7F        		.byte	127
+ 106 0009 6F        		.byte	111
+ 131               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Rasika\AppData\Local\Temp/cc3BBS6h.s:2      *ABS*:0000003f __SREG__
+C:\Users\Rasika\AppData\Local\Temp/cc3BBS6h.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Rasika\AppData\Local\Temp/cc3BBS6h.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Rasika\AppData\Local\Temp/cc3BBS6h.s:5      *ABS*:00000034 __CCP__
+C:\Users\Rasika\AppData\Local\Temp/cc3BBS6h.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc3BBS6h.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Rasika\AppData\Local\Temp/cc3BBS6h.s:18     .text:00000000 main
+C:\Users\Rasika\AppData\Local\Temp/cc3BBS6h.s:96     .data:00000000 array
+
+UNDEFINED SYMBOLS
+__do_copy_data
